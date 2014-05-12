@@ -21,7 +21,7 @@ private:
 			if (participant.nick->resource().find("Viol") != std::string::npos)
 			{
 				sleep(5);
-				room->ban(participant.nick->resource(), "No reason");
+				room->ban(participant.nick->resource(), "UNACCEPTABLE");
 				sleep(5);
 				room->setAffiliation(participant.nick->full(), AffiliationNone, "");
 			}
