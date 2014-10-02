@@ -11,4 +11,5 @@ QMAKE_CXXFLAGS += -std=c++11 -I../gloox/src
 QMAKE_LFLAGS += -L../gloox/.libs
 
 OTHER_FILES += \
-    update.sh
+    update.sh \
+    README.md
