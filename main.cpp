@@ -1,4 +1,6 @@
 #include <iostream>
+#include <string>
+#include <sstream>
 
 #include <unistd.h>
 
@@ -18,18 +20,15 @@ private:
 	public:
 		void handleMUCParticipantPresence(MUCRoom *room, const MUCRoomParticipant participant, const Presence &presence)
 		{
-			if (participant.nick->resource().find("Viol") != std::string::npos)
-			{
-				sleep(5);
-				room->ban(participant.nick->resource(), "UNACCEPTABLE");
-				sleep(5);
-				room->setAffiliation(participant.nick->full(), AffiliationNone, "");
-			}
+
 		}
 
 		void handleMUCMessage(MUCRoom *room, const Message &msg, bool priv)
 		{
 			std::cout << msg.body() << std::endl;
+			std::stringstream Command(msg.body());
+
+			std::string word;
 		}
 
 		void handleMUCError(MUCRoom *room, StanzaError error) {
@@ -50,15 +49,14 @@ private:
 
 public:
 
-
-
 	Bot(std::string password)
 	{
 		flag = true;
-		JID jid( "ash@gnoll.ru/Ian Holm" );
+		JID jid( "lemongrab@gnoll.ru/LEMONGRAB" );
 		j = new Client( jid, password );
 		j->registerMessageHandler( this );
-		j->connect();
+		if (!j->connect())
+			std::cout << "Can't connect";
 	}
 
 	virtual void handleMessage( const Message& stanza,
@@ -67,7 +65,7 @@ public:
 		if (flag)
 		{
 			flag = false;
-/*			Message msg (Message::Chat, stanza.from(), "hello world" );
+			/*			Message msg (Message::Chat, stanza.from(), "hello world" );
 			j->send( msg );*/
 
 			joinroom();
@@ -83,10 +81,12 @@ public:
 	void joinroom()
 	{
 		BotMUCHandler* myHandler = new BotMUCHandler;
-		JID roomJID( "dfwk@conference.jabber.ru/Ash-04" );
+		JID roomJID( "dfwk@conference.jabber.ru/LEMONGRAB" );
 		m_room = new MUCRoom( j, roomJID, myHandler, 0 );
 		m_room->join();
 	}
+
+private:
 
 private:
 	bool flag;
