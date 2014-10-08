@@ -10,6 +10,8 @@
 #include <gloox/mucroom.h>
 #include <gloox/mucroomhandler.h>
 
+#include "settings.h"
+
 using namespace gloox;
 
 class Bot : public MessageHandler
@@ -49,11 +51,17 @@ private:
 
 public:
 
-	Bot(std::string password)
+	Bot(const Settings &settings)
+		: m_Settings(settings)
+	{
+
+	}
+
+	void Init()
 	{
 		flag = true;
-		JID jid( "lemongrab@gnoll.ru/LEMONGRAB" );
-		j = new Client( jid, password );
+		JID jid(GetSettings().GetUserJID());
+		j = new Client(jid, GetSettings().GetPassword());
 		j->registerMessageHandler( this );
 		if (!j->connect())
 			std::cout << "Can't connect";
@@ -65,8 +73,8 @@ public:
 		if (flag)
 		{
 			flag = false;
-			/*			Message msg (Message::Chat, stanza.from(), "hello world" );
-			j->send( msg );*/
+						Message msg (Message::Chat, stanza.from(), "hello world" );
+			j->send( msg );
 
 			joinroom();
 		}
@@ -81,7 +89,7 @@ public:
 	void joinroom()
 	{
 		BotMUCHandler* myHandler = new BotMUCHandler;
-		JID roomJID( "dfwk@conference.jabber.ru/LEMONGRAB" );
+		JID roomJID( GetSettings().GetMUC() );
 		m_room = new MUCRoom( j, roomJID, myHandler, 0 );
 		m_room->join();
 	}
@@ -92,10 +100,25 @@ private:
 	bool flag;
 	MUCRoom* m_room;
 	Client* j;
+
+	const Settings &m_Settings;
+
+	const Settings &GetSettings() const
+	{
+		return m_Settings;
+	}
 };
 
-int main( int argc, char* argv[] )
+int main()
 {
-	std::string passwd(argv[1]);
-	Bot b(passwd);
+	Settings settings;
+	if (!settings.Open("config.ini"))
+	{
+		std::cout << "Failed to read config file" << std::endl;
+		return 1;
+	}
+
+	Bot bot(settings);
+	bot.Init();
+	return 0;
 }

@@ -7,9 +7,13 @@ OBJ=$(SRC:.cpp=.o)
 EXE=lemongrab
 
 all: $(SRC) $(EXE)
+
 clean:
 	rm $(EXE)
 	rm $(OBJ)
+
+install:
+	cp config.ini.default config.ini
 
 $(EXE): $(OBJ)
 	$(CC) $(LDFLAGS) $(OBJ) -o $@
