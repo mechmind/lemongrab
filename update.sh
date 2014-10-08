@@ -1,7 +1,6 @@
 #!/bin/bash
 
 git pull
-#qmake lemon
 make clean
 make
 
