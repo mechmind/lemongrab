@@ -4,3 +4,6 @@ Password=secret123
 
 [MUC]
 MUC=dfwk@conference.jabber.ru/LEMONGRAB
+
+[LOL]
+RiotApiKey=secret234
