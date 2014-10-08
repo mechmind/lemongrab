@@ -31,20 +31,25 @@ bool DiceRoller::HandleMessage(const std::string &from, const std::string &body)
 	if (X > 50 || Y > 1000)
 	{
 		std::stringstream reply;
-		reply << from << ": Now try that again";
+		reply << from << ": UNACCEPTABLE";
 		SendMessage(reply.str());
 		return true;
 	}
 
 	std::uniform_int_distribution<int> dis(1, Y);
 
+	long total(0);
 	std::stringstream reply;
-	reply << from << ": { ";
+	reply << from << ": "
+		  << X << "d" << Y
+		  << " { ";
 	for (int i = 0; i < X; ++i)
 	{
-		reply << dis(m_gen) << " ";
+		long die = dis(m_gen);
+		total += die;
+		reply << die << " ";
 	}
-	reply << "}";
+	reply << "} = " << total;
 
 	SendMessage(reply.str());
 	return true;

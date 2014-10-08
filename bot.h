@@ -64,6 +64,7 @@ public:
 	bool onTLSConnect(const CertInfo &info);
 
 	const std::string GetVersion() const;
+	const std::string GetRawConfigValue(const std::string &name) const;
 private:
 
 private:

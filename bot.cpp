@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "handlers/diceroller.h"
+#include "handlers/leaguelookup.h"
 
 void Bot::BotMUCHandler::handleMUCParticipantPresence(MUCRoom *room, const MUCRoomParticipant participant, const Presence &presence)
 {
@@ -12,7 +13,7 @@ void Bot::BotMUCHandler::handleMUCParticipantPresence(MUCRoom *room, const MUCRo
 
 void Bot::BotMUCHandler::handleMUCMessage(MUCRoom *room, const Message &msg, bool priv)
 {
-	std::cout << msg.body() << std::endl;
+	std::cout << "###" << msg.body() << std::endl;
 	m_Parent->MUCMessage(msg.from().resource(), msg.body());
 }
 
@@ -54,6 +55,7 @@ void Bot::Init()
 	j->registerConnectionListener( this );
 
 	m_MessageHandlers.push_back(std::make_shared<DiceRoller>((LemonBot*)this));
+	m_MessageHandlers.push_back(std::make_shared<LeagueLookup>((LemonBot*)this));
 //	m_MessageHandlers.push_back(std::make_shared<StatusReporter>((LemonBot*)this));
 
 	if (!j->connect())
@@ -118,4 +120,9 @@ const std::string Bot::GetVersion() const
 		version.append(handler->GetVersion());
 	}
 	return version;
+}
+
+const std::string Bot::GetRawConfigValue(const std::string &name) const
+{
+	return m_Settings.GetRawString(name);
 }

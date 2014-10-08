@@ -26,6 +26,15 @@ public:
 		return m_Password;
 	}
 
+	const std::string GetRawString(const std::string &name) const
+	{
+		auto it = m_RawSettings.find(name);
+		if (it == m_RawSettings.end())
+			return "";
+
+		return it->second;
+	}
+
 private:
 	std::string m_UserJID;
 	std::string m_MUC;

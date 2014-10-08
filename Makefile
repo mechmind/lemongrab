@@ -1,6 +1,6 @@
 CC=g++
 CFLAGS=-c -Wall -std=c++11 -I. -g
-LDFLAGS=-lgloox -lpthread
+LDFLAGS=-lgloox -lpthread -lcurl -ljsoncpp
 
 SRC=$(shell find . -name '*.cpp')
 OBJ=$(SRC:.cpp=.o)
