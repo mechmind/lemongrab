@@ -5,4 +5,4 @@ make clean
 make
 
 killall lemongrab
-./lemongrab &
+nohup ./lemongrab >lemongrab.out 2>lemongrab.err &

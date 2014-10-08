@@ -1,8 +1,8 @@
 CC=g++
-CFLAGS=-c -Wall -std=c++11
+CFLAGS=-c -Wall -std=c++11 -I. -g
 LDFLAGS=-lgloox -lpthread
 
-SRC=$(wildcard *.cpp)
+SRC=$(shell find . -name '*.cpp')
 OBJ=$(SRC:.cpp=.o)
 EXE=lemongrab
 

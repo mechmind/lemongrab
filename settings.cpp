@@ -15,7 +15,7 @@ bool Settings::Open(const std::string &path)
 	std::string line;
 	while (std::getline(ini, line))
 	{
-		int loc = line.find_first_of('=');
+		unsigned int loc = line.find_first_of('=');
 		if (loc != line.npos)
 		{
 			auto name = line.substr(0, loc);

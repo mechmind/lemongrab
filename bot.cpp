@@ -3,6 +3,8 @@
 #include <sstream>
 #include <iostream>
 
+#include "handlers/diceroller.h"
+
 void Bot::BotMUCHandler::handleMUCParticipantPresence(MUCRoom *room, const MUCRoomParticipant participant, const Presence &presence)
 {
 
@@ -11,9 +13,7 @@ void Bot::BotMUCHandler::handleMUCParticipantPresence(MUCRoom *room, const MUCRo
 void Bot::BotMUCHandler::handleMUCMessage(MUCRoom *room, const Message &msg, bool priv)
 {
 	std::cout << msg.body() << std::endl;
-	std::stringstream Command(msg.body());
-
-	std::string word;
+	m_Parent->MUCMessage(msg.from().resource(), msg.body());
 }
 
 void Bot::BotMUCHandler::handleMUCError(MUCRoom *room, StanzaError error) {
@@ -52,6 +52,10 @@ void Bot::Init()
 	j = new Client(jid, GetSettings().GetPassword());
 	j->registerMessageHandler( this );
 	j->registerConnectionListener( this );
+
+	m_MessageHandlers.push_back(std::make_shared<DiceRoller>((LemonBot*)this));
+//	m_MessageHandlers.push_back(std::make_shared<StatusReporter>((LemonBot*)this));
+
 	if (!j->connect())
 		std::cout << "Can't connect";
 }
@@ -63,10 +67,30 @@ void Bot::handleMessage( const Message& stanza,	MessageSession* session)
 
 void Bot::joinroom()
 {
-	BotMUCHandler* myHandler = new BotMUCHandler;
+	BotMUCHandler* myHandler = new BotMUCHandler(this);
 	JID roomJID( GetSettings().GetMUC() );
 	m_room = new MUCRoom( j, roomJID, myHandler, 0 );
 	m_room->join();
+}
+
+void Bot::SendMessage(const std::string &text) const
+{
+	m_room->send(text);
+}
+
+void Bot::MUCMessage(const std::string &from, const std::string &body) const
+{
+	if (body == "getversion")
+	{
+		SendMessage(GetVersion());
+		return;
+	}
+
+	for (auto handler : m_MessageHandlers)
+	{
+		if (handler->HandleMessage(from, body))
+			break;
+	}
 }
 
 void Bot::onConnect()
@@ -82,4 +106,16 @@ void Bot::onDisconnect(ConnectionError e)
 bool Bot::onTLSConnect(const CertInfo &info)
 {
 	return true;
+}
+
+const std::string Bot::GetVersion() const
+{
+	std::string version;
+	version.append("Core: 0.1");
+	for (auto handler : m_MessageHandlers)
+	{
+		version.append(" ");
+		version.append(handler->GetVersion());
+	}
+	return version;
 }
