@@ -5,6 +5,7 @@
 
 #include "handlers/diceroller.h"
 #include "handlers/leaguelookup.h"
+#include "handlers/urlpreview.h"
 
 void Bot::BotMUCHandler::handleMUCParticipantPresence(MUCRoom *room, const MUCRoomParticipant participant, const Presence &presence)
 {
@@ -56,6 +57,7 @@ void Bot::Init()
 
 	m_MessageHandlers.push_back(std::make_shared<DiceRoller>((LemonBot*)this));
 	m_MessageHandlers.push_back(std::make_shared<LeagueLookup>((LemonBot*)this));
+	m_MessageHandlers.push_back(std::make_shared<UrlPreview>((LemonBot*)this));
 //	m_MessageHandlers.push_back(std::make_shared<StatusReporter>((LemonBot*)this));
 
 	if (!j->connect())
