@@ -13,19 +13,19 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
 	return size * nmemb;
 }
 
-std::string CurlRequest(std::string url)
+static std::string CurlRequest(std::string url)
 {
 	CURL* curl = NULL;
 	curl = curl_easy_init();
 	if (!curl)
 		return "curl Fail";
 
+	// TODO handle return codes
 	std::string readBuffer;
-	int res;
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-	res = curl_easy_perform(curl);
+	curl_easy_perform(curl);
 	curl_easy_cleanup(curl);
 
 	return readBuffer;
@@ -135,7 +135,7 @@ public:
 
 		Json::Value participants = root["participantIdentities"];
 
-		for (int i = 0; i<participants.size(); ++i)
+		for (unsigned int i = 0; i<participants.size(); ++i)
 		{
 			Json::Value player = participants[i];
 			Player playerOBJ;
@@ -163,7 +163,7 @@ public:
 
 		std::map<std::string, League> leagues;
 
-		for (int i = 0; i < player.size(); ++i)
+		for (unsigned int i = 0; i < player.size(); ++i)
 		{
 			League league;
 			league.Tier = player[i]["tier"].asString();
