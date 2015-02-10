@@ -3,8 +3,12 @@
 #include "bot.h"
 #include "settings.h"
 
+#include "datastorage.h"
+
 int main()
 {
+	DataStorage data;
+
 	Settings settings;
 	if (!settings.Open("config.ini"))
 	{

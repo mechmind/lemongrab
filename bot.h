@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include <list>
+#include <chrono>
 
 #include <gloox/client.h>
 #include <gloox/message.h>
@@ -80,5 +81,6 @@ private:
 	}
 
 	std::list<std::shared_ptr<LemonHandler>> m_MessageHandlers;
+	std::chrono::system_clock::time_point m_Start;
 };
 #endif // BOT_H

@@ -4,8 +4,8 @@
 #include <iostream>
 
 #include "handlers/diceroller.h"
-#include "handlers/leaguelookup.h"
 #include "handlers/urlpreview.h"
+#include "handlers/lastseen.h"
 
 void Bot::BotMUCHandler::handleMUCParticipantPresence(MUCRoom *room, const MUCRoomParticipant participant, const Presence &presence)
 {
@@ -56,8 +56,8 @@ void Bot::Init()
 	j->registerConnectionListener( this );
 
 	m_MessageHandlers.push_back(std::make_shared<DiceRoller>((LemonBot*)this));
-	m_MessageHandlers.push_back(std::make_shared<LeagueLookup>((LemonBot*)this));
 	m_MessageHandlers.push_back(std::make_shared<UrlPreview>((LemonBot*)this));
+	m_MessageHandlers.push_back(std::make_shared<LastSeen>((LemonBot*)this));
 //	m_MessageHandlers.push_back(std::make_shared<StatusReporter>((LemonBot*)this));
 
 	if (!j->connect())
@@ -71,6 +71,7 @@ void Bot::handleMessage( const Message& stanza,	MessageSession* session)
 
 void Bot::joinroom()
 {
+	m_Start = std::chrono::system_clock::now();
 	BotMUCHandler* myHandler = new BotMUCHandler(this);
 	JID roomJID( GetSettings().GetMUC() );
 	m_room = new MUCRoom( j, roomJID, myHandler, 0 );
@@ -84,9 +85,18 @@ void Bot::SendMessage(const std::string &text) const
 
 void Bot::MUCMessage(const std::string &from, const std::string &body) const
 {
-	if (body == "getversion")
+	if (body == "!getversion")
 	{
 		SendMessage(GetVersion());
+		return;
+	}
+	else if (body == "!uptime")
+	{
+		auto CurrentTime = std::chrono::system_clock::now();
+		std::string uptime("Uptime: ");
+		// FIXME There must be a way to make this line shorter
+		uptime.append(std::to_string(std::chrono::duration_cast<std::chrono::duration<int, std::ratio<3600*24>>>(CurrentTime - m_Start).count()));
+		SendMessage(uptime);
 		return;
 	}
 
