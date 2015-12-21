@@ -1,7 +1,6 @@
 #include "urlpreview.h"
 
 #include <iostream>
-
 #include <curl/curl.h>
 
 // Curl support
@@ -33,32 +32,23 @@ static std::string CurlRequest(std::string url)
 bool UrlPreview::HandleMessage(const std::string &from, const std::string &body)
 {
 	auto loc = body.find("http://");
-	std::cout << "Loc: " << loc << " " << body.npos << std::endl;
 
 	if (loc == body.npos)
 		loc = body.find("https://");
 
-	std::cout << "Loc: " << loc << std::endl;
-
 	if (loc == body.npos)
 		return false;
 
-	std::string url;
+	auto url = body.substr(loc, body.find(" ", loc));
 	std::string site;
 	try {
-		std::cout << "Parsing..." << std::endl;
-		url = body.substr(loc, body.find(" ", loc));
 		site = url.substr(url.find("//") + 2, url.find("/", 9) - 2 - url.find("//")); // FIXME magic number
-
-		std::cout << url << std::endl;
-		std::cout << site << std::endl;
-	} catch (...)
-	{
+	} catch (...) {
 		return false;
 	}
 
 	// FIXME make a whitelist
-	if (site != "www.youtube.com" && site != "youtube.com")
+	if (site != "www.youtube.com" && site != "youtube.com" && site != "youtu.be")
 		return false;
 
 	std::string siteContent = CurlRequest(url);
