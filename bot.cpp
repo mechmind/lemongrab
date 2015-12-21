@@ -15,6 +15,8 @@ void Bot::BotMUCHandler::handleMUCParticipantPresence(MUCRoom *room, const MUCRo
 void Bot::BotMUCHandler::handleMUCMessage(MUCRoom *room, const Message &msg, bool priv)
 {
 	std::cout << "###" << msg.body() << std::endl;
+	if (msg.when()) // Probably part of room history
+		return;
 	m_Parent->MUCMessage(msg.from().resource(), msg.body());
 }
 
