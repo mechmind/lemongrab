@@ -5,7 +5,7 @@ compiler:
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y gcc g++-4.8 cmake libcurl-ssl-dev libgloox-dev
+  - sudo apt-get install -y gcc g++-4.8 cmake libcurl4-ssl-dev libgloox-dev
   - wget "http://www.cmake.org/files/v3.2/cmake-3.2.0.tar.gz"
   - tar xf "cmake-3.2.0.tar.gz"
   - cd "cmake-3.2.0"
