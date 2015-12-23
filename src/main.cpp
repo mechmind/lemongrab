@@ -5,8 +5,17 @@
 
 #include "datastorage.h"
 
-int main()
+#include "gtest/gtest.h"
+
+int main(int argc, char **argv)
 {
+	// FIXME: add actual option, like --test
+	if (argc > 1)
+	{
+		::testing::InitGoogleTest(&argc, argv);
+		return RUN_ALL_TESTS();
+	}
+
 	DataStorage data;
 
 	Settings settings;
