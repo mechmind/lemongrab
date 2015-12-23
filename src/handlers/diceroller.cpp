@@ -24,7 +24,8 @@ public:
 			_result += roll;
 			_resultDescription.append(i == 0 ? std::to_string(roll) : " " + std::to_string(roll));
 		}
-		_resultDescription.append(" : " + std::to_string(_result) + "}");
+
+		_resultDescription.append(_numberOfRolls > 1 ? " : " + std::to_string(_result) + "}" : "}");
 	}
 
 	const std::string &GetDescription() const
@@ -100,7 +101,7 @@ bool ParseSingleToken(const std::string &token, std::string &resultDescription, 
 		}
 	} else {
 		try {
-			auto numberOfRolls = std::stoi(token.substr(negative ? 1 : 0, diceSeparatorPosition));
+			auto numberOfRolls = diceSeparatorPosition > 0 ? std::stoi(token.substr(negative ? 1 : 0, diceSeparatorPosition)) : 1;
 			auto dice = std::stoi(token.substr(diceSeparatorPosition + 1));
 
 			if (numberOfRolls > 100)
@@ -126,17 +127,18 @@ bool DiceRoller::HandleMessage(const std::string &from, const std::string &body)
 
 	std::string resultDescription;
 	long result = 0;
+	bool success = true;
 	for (auto token : diceTokens)
 	{
 		if (!ParseSingleToken(token, resultDescription, result))
 		{
 			resultDescription = "Failed to parse token: " + token;
-			result = 0;
+			success = false;
 			break;
 		}
 	}
 
-	if (result != 0)
+	if (success && diceTokens.size() > 1)
 		resultDescription.append(" = " + std::to_string(result));
 
 	SendMessage(from + ": " + resultDescription);
