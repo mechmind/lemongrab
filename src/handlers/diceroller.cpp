@@ -132,7 +132,7 @@ bool DiceRoller::HandleMessage(const std::string &from, const std::string &body)
 	{
 		if (!ParseSingleToken(token, resultDescription, result))
 		{
-			resultDescription = "Failed to parse token: " + token;
+			// resultDescription = "Failed to parse token: " + token;
 			success = false;
 			break;
 		}
@@ -141,7 +141,8 @@ bool DiceRoller::HandleMessage(const std::string &from, const std::string &body)
 	if (success && diceTokens.size() > 1)
 		resultDescription.append(" = " + std::to_string(result));
 
-	SendMessage(from + ": " + resultDescription);
+	if (success)
+		SendMessage(from + ": " + resultDescription);
 
 	return true;
 }
