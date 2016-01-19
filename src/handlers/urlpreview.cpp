@@ -39,7 +39,7 @@ bool UrlPreview::HandleMessage(const std::string &from, const std::string &body)
 	if (loc == body.npos)
 		return false;
 
-	auto url = body.substr(loc, body.find(" ", loc));
+	auto url = body.substr(loc, body.find_first_of(" \n;)", loc) - loc);
 	std::string site;
 	try {
 		site = url.substr(url.find("//") + 2, url.find("/", 9) - 2 - url.find("//")); // FIXME magic number
