@@ -48,7 +48,10 @@ bool UrlPreview::HandleMessage(const std::string &from, const std::string &body)
 	}
 
 	// FIXME make a whitelist
-	if (site != "www.youtube.com" && site != "youtube.com" && site != "youtu.be")
+	if (site != "www.youtube.com"
+			&& site != "youtube.com"
+			&& site != "youtu.be"
+			&& site != "store.steampowered.com")
 		return false;
 
 	std::string siteContent = CurlRequest(url);
