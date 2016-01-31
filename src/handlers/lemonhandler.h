@@ -28,6 +28,7 @@ public:
 	 * @return True if message shoud not be passed to another handler
 	 */
 	virtual bool HandleMessage(const std::string &from, const std::string &body) = 0;
+	virtual bool HandlePresence(const std::string &from, bool connected) { return false; }
 
 	/**
 	 * @brief Get module version

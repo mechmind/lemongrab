@@ -9,7 +9,9 @@
 
 void Bot::BotMUCHandler::handleMUCParticipantPresence(MUCRoom *room, const MUCRoomParticipant participant, const Presence &presence)
 {
-
+	// FIXME Handle this better
+	m_Parent->MUCPresence(participant.nick->resource(), presence.presence() < Presence::Unavailable);
+	std::cout << "!!!" << participant.nick->resource() << " -> " << presence.presence() << std::endl;
 }
 
 void Bot::BotMUCHandler::handleMUCMessage(MUCRoom *room, const Message &msg, bool priv)
@@ -109,6 +111,15 @@ void Bot::MUCMessage(const std::string &from, const std::string &body) const
 	}
 }
 
+void Bot::MUCPresence(const std::string &from, bool connected) const
+{
+	for (auto handler : m_MessageHandlers)
+	{
+		if (handler->HandlePresence(from, connected))
+			break;
+	}
+}
+
 void Bot::onConnect()
 {
 	joinroom();
@@ -116,7 +127,7 @@ void Bot::onConnect()
 
 void Bot::onDisconnect(ConnectionError e)
 {
-
+	std::cout << "ConnectionError: " << e << std::endl;
 }
 
 bool Bot::onTLSConnect(const CertInfo &info)
@@ -126,8 +137,7 @@ bool Bot::onTLSConnect(const CertInfo &info)
 
 const std::string Bot::GetVersion() const
 {
-	std::string version;
-	version.append("Core: 0.1");
+	std::string version = "Core: 0.1 (" + std::string(__DATE__) + ")";
 	for (auto handler : m_MessageHandlers)
 	{
 		version.append(" ");

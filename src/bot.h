@@ -59,6 +59,7 @@ public:
 	void joinroom();
 
 	void MUCMessage(const std::string &from, const std::string &body) const;
+	void MUCPresence(const std::string &from, bool connected) const;
 
 	void onConnect();
 	void onDisconnect(ConnectionError e);
