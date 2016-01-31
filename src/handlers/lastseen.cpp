@@ -19,13 +19,12 @@ std::string CustomTimeFormat(time_t input)
 
 	input/=60;
 	if (input == 0) return output;
-	int hours = input % 60;
+	int hours = input % 24;
 	output = std::to_string(hours) + "h " + output;
 
-	input/=60;
+	input/=24;
 	if (input == 0) return output;
-	int days = input % 24;
-	output = std::to_string(days) + "d " + output;
+	output = std::to_string(input) + "d " + output;
 
 	return output;
 }
@@ -66,18 +65,20 @@ bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 	std::string record = "0";
 	db->Get(leveldb::ReadOptions(), input, &record);
 
-	long seconds = 0;
+	long lastSeenDiff = 0;
+	long lastSeenTime = 0;
 	try {
 		time_t now;
 		std::time(&now);
-		seconds = now - std::stol(record);
+		lastSeenTime = std::stol(record);
+		lastSeenDiff = now - lastSeenTime;
 	} catch (std::exception e) {
 		SendMessage("Something broke");
 		return false;
 	}
 
-	if (seconds > 0)
-		SendMessage(input + " last seen " + CustomTimeFormat(seconds) + " ago");
+	if (lastSeenTime > 0)
+		SendMessage(input + " last seen " + CustomTimeFormat(lastSeenDiff) + " ago");
 	else
 		SendMessage(input + "? Who's that?");
 
