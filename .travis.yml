@@ -14,7 +14,7 @@ before_install:
   - sudo make
   - sudo mv libg* /usr/lib/
   - cd $TRAVIS_BUILD_DIR
-make
+
 script:
   - mkdir build
   - cd build
