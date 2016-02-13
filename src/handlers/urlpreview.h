@@ -1,5 +1,4 @@
-#ifndef URLPREVIEW_H
-#define URLPREVIEW_H
+#pragma once
 
 #include "lemonhandler.h"
 
@@ -10,5 +9,3 @@ public:
 	bool HandleMessage(const std::string &from, const std::string &body);
 	const std::string GetVersion() const;
 };
-
-#endif // URLPREVIEW_H

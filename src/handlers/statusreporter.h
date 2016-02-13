@@ -1,5 +1,4 @@
-#ifndef STATUSREPORTER_H
-#define STATUSREPORTER_H
+#pragma once
 
 #include "lemonhandler.h"
 
@@ -10,5 +9,3 @@ public:
 	bool HandleMessage(const std::string &from, const std::string &body);
 	const std::string GetVersion() const;
 };
-
-#endif // STATUSREPORTER_H

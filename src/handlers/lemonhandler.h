@@ -1,5 +1,4 @@
-#ifndef LEMONHANDLER_H
-#define LEMONHANDLER_H
+#pragma once
 
 #include <string>
 
@@ -28,7 +27,7 @@ public:
 	 * @return True if message shoud not be passed to another handler
 	 */
 	virtual bool HandleMessage(const std::string &from, const std::string &body) = 0;
-	virtual bool HandlePresence(const std::string &from, bool connected) { return false; }
+	virtual bool HandlePresence(const std::string &from, const std::string &jid, bool connected) { return false; }
 
 	/**
 	 * @brief Get module version
@@ -45,5 +44,3 @@ protected:
 	const std::string GetRawConfigValue(const std::string &name) const;
 	LemonBot *m_Bot;
 };
-
-#endif // LEMONHANDLER_H

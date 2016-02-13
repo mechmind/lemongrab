@@ -1,5 +1,4 @@
-#ifndef DICEROLLER_H
-#define DICEROLLER_H
+#pragma once
 
 /*
  * DiceRoller module
@@ -20,5 +19,3 @@ public:
 	bool HandleMessage(const std::string &from, const std::string &body);
 	const std::string GetVersion() const;
 };
-
-#endif // DICEROLLER_H

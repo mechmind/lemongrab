@@ -10,8 +10,8 @@
 void Bot::BotMUCHandler::handleMUCParticipantPresence(MUCRoom *room, const MUCRoomParticipant participant, const Presence &presence)
 {
 	// FIXME Handle this better
-	m_Parent->MUCPresence(participant.nick->resource(), presence.presence() < Presence::Unavailable);
-	std::cout << "!!!" << participant.nick->resource() << " -> " << presence.presence() << std::endl;
+	m_Parent->MUCPresence(participant.nick->resource(), participant.jid->bare(), presence.presence() < Presence::Unavailable);
+	std::cout << "!!!" << participant.nick->resource() << " | " << participant.jid->bare() << " -> " << presence.presence() << std::endl;
 }
 
 void Bot::BotMUCHandler::handleMUCMessage(MUCRoom *room, const Message &msg, bool priv)
@@ -105,17 +105,15 @@ void Bot::MUCMessage(const std::string &from, const std::string &body) const
 	}
 
 	for (auto handler : m_MessageHandlers)
-	{
 		if (handler->HandleMessage(from, body))
 			break;
-	}
 }
 
-void Bot::MUCPresence(const std::string &from, bool connected) const
+void Bot::MUCPresence(const std::string &from, const std::string &jid, bool connected) const
 {
 	for (auto handler : m_MessageHandlers)
 	{
-		if (handler->HandlePresence(from, connected))
+		if (handler->HandlePresence(from, jid, connected))
 			break;
 	}
 }

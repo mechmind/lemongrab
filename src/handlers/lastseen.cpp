@@ -35,8 +35,11 @@ LastSeen::LastSeen(LemonBot *bot)
 	leveldb::Options options;
 	options.create_if_missing = true;
 
-	leveldb::Status status = leveldb::DB::Open(options, "db/lastseen", &db);
+	leveldb::Status status = leveldb::DB::Open(options, "db/lastseen", &_lastSeenDB);
+	if (!status.ok())
+		std::cerr << status.ToString() << std::endl;
 
+	status = leveldb::DB::Open(options, "db/nick2jid", &_nick2jidDB);
 	if (!status.ok())
 		std::cerr << status.ToString() << std::endl;
 }
@@ -55,44 +58,68 @@ bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 		return false;
 	}
 
-	if (_currentConnections.find(input) != _currentConnections.end()
-			&& _currentConnections.at(input)) // FIXME two searches but should be fast enough for chatroom
+	std::string lastSeenRecord = "0";
+	std::string jidRecord = input;
+	leveldb::Status getLastSeenByJID = _lastSeenDB->Get(leveldb::ReadOptions(), input, &lastSeenRecord);
+
+	if (getLastSeenByJID.IsNotFound())
 	{
-		SendMessage(input + " is still here");
-		return false;
+		leveldb::Status getJIDByNick = _nick2jidDB->Get(leveldb::ReadOptions(), input, &jidRecord);
+
+		if (getJIDByNick.IsNotFound())
+		{
+			SendMessage(input + "? Who's that?");
+			return false;
+		}
+
+		getLastSeenByJID = _lastSeenDB->Get(leveldb::ReadOptions(), jidRecord, &lastSeenRecord);
+
+		if (getLastSeenByJID.IsNotFound())
+		{
+			SendMessage("Well this is weird, " + input + " resolved to " + jidRecord + " but I have no record for this jid");
+			return false;
+		}
 	}
 
-	std::string record = "0";
-	db->Get(leveldb::ReadOptions(), input, &record);
+	auto currentNick = _currentConnections.find(jidRecord);
+	if (_currentConnections.find(jidRecord) != _currentConnections.end())
+	{
+		if (input != currentNick->second)
+			SendMessage(input + " (" + jidRecord + ") is still here as " + currentNick->second);
+		else
+			SendMessage(input + " is still here");
+		return false;
+	}
 
 	long lastSeenDiff = 0;
 	long lastSeenTime = 0;
 	try {
 		time_t now;
 		std::time(&now);
-		lastSeenTime = std::stol(record);
+		lastSeenTime = std::stol(lastSeenRecord);
 		lastSeenDiff = now - lastSeenTime;
 	} catch (std::exception e) {
 		SendMessage("Something broke");
 		return false;
 	}
 
-	if (lastSeenTime > 0)
-		SendMessage(input + " last seen " + CustomTimeFormat(lastSeenDiff) + " ago");
-	else
-		SendMessage(input + "? Who's that?");
-
+	SendMessage(input + " (" + jidRecord + ") last seen " + CustomTimeFormat(lastSeenDiff) + " ago");
 	return false;
 }
 
-bool LastSeen::HandlePresence(const std::string &from, bool connected)
+bool LastSeen::HandlePresence(const std::string &from, const std::string &jid, bool connected)
 {
 	// Use chrono here?
 	time_t now;
 	std::time(&now);
-	_currentConnections[from] = connected; // FIXME kinda leaky
 
-	db->Put(leveldb::WriteOptions(), from, std::to_string(now));
+	if (connected)
+		_currentConnections[jid] = from;
+	else
+		_currentConnections.erase(jid);
+
+	_nick2jidDB->Put(leveldb::WriteOptions(), from, jid);
+	_lastSeenDB->Put(leveldb::WriteOptions(), jid, std::to_string(now));
 	return false;
 }
 
