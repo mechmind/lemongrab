@@ -1,19 +1,23 @@
 #include <iostream>
 
+#include <gtest/gtest.h>
+
 #include "bot.h"
 #include "settings.h"
 
 #include "datastorage.h"
 
-#include "gtest/gtest.h"
-
 int main(int argc, char **argv)
 {
-	// FIXME: add actual option, like --test
-	if (argc > 1)
+	if (argc > 1 && std::string(argv[1]) == "--test")
 	{
+#ifdef _BUILD_TESTS
 		::testing::InitGoogleTest(&argc, argv);
 		return RUN_ALL_TESTS();
+#else
+		std::cout << "Tests are not built" << std::endl;
+		return 1;
+#endif
 	}
 
 	DataStorage data;

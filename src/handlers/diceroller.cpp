@@ -152,6 +152,8 @@ const std::string DiceRoller::GetVersion() const
 	return "Dice: 0.2";
 }
 
+#ifdef _BUILD_TESTS
+
 #include "gtest/gtest.h"
 
 TEST(DiceTest, TokenizerTest)
@@ -191,3 +193,5 @@ TEST(DiceTest, NonDiceTokens)
 	EXPECT_EQ(6, result);
 	EXPECT_EQ("5 + 4 - 3", resultS);
 }
+
+#endif

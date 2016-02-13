@@ -4,19 +4,26 @@ cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb3 -O0 -Wall")
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pthread" )
 
+option(BUILD_TESTS "Build tests." OFF)
+
 find_package(PkgConfig)
-INCLUDE(FindCURL)
+include(FindCURL)
 pkg_search_module(GLOOX gloox)
 
-find_package(GTest REQUIRED)
+include_directories(. ${CURL_INCLUDE_DIR} ${GLOOX_INCLUDE_DIR})
 
-INCLUDE_DIRECTORIES(. ${CURL_INCLUDE_DIR} ${GLOOX_INCLUDE_DIR} ${GTEST_INCLUDE_DIRS})
-
-FILE(GLOB_RECURSE SRC_LIST "${CMAKE_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE SRC_LIST "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${CURL_LIBRARY} ${GLOOX_LDFLAGS} -lleveldb ${GTEST_BOTH_LIBRARIES})
+if(BUILD_TESTS)
+    add_definitions(-D_BUILD_TESTS)
+    find_package(GTest REQUIRED)
+    include_directories(${GTEST_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} ${GTEST_BOTH_LIBRARIES})
+endif(BUILD_TESTS)
+
+target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${GLOOX_LDFLAGS} -lleveldb)
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)

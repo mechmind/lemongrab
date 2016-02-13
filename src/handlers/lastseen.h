@@ -19,6 +19,8 @@ public:
 	const std::string GetVersion() const;
 
 private:
+	static const std::string _command;
+
 	std::map<std::string, std::string> _currentConnections;
 	leveldb::DB *_lastSeenDB;
 	leveldb::DB *_nick2jidDB;

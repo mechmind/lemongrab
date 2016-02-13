@@ -6,6 +6,8 @@
 #include <iostream>
 #include <ctime>
 
+const std::string LastSeen::_command = "!seen";
+
 std::string CustomTimeFormat(time_t input)
 {
 	std::string output;
@@ -46,17 +48,16 @@ LastSeen::LastSeen(LemonBot *bot)
 
 bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 {
-	if (body.substr(0, 5) != "!seen")
+	if (body.length() < _command.length() + 2 || body.substr(0, _command.length()) != _command)
 		return true;
 
-	std::string input;
-	try
+	if (!_nick2jidDB || !_lastSeenDB)
 	{
-		input = body.substr(body.find(' ', 0) + 1, body.npos);
-	} catch (std::exception e) {
-		SendMessage("Usage: !seen <nick> or !seen <jid>");
+		SendMessage("Database connection error");
 		return false;
 	}
+
+	std::string input = body.substr(_command.length() + 1, body.npos);
 
 	std::string lastSeenRecord = "0";
 	std::string jidRecord = input;
@@ -118,8 +119,12 @@ bool LastSeen::HandlePresence(const std::string &from, const std::string &jid, b
 	else
 		_currentConnections.erase(jid);
 
-	_nick2jidDB->Put(leveldb::WriteOptions(), from, jid);
-	_lastSeenDB->Put(leveldb::WriteOptions(), jid, std::to_string(now));
+	if (_nick2jidDB)
+		_nick2jidDB->Put(leveldb::WriteOptions(), from, jid);
+
+	if (_lastSeenDB)
+		_lastSeenDB->Put(leveldb::WriteOptions(), jid, std::to_string(now));
+
 	return false;
 }
 
