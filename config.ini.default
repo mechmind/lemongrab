@@ -1,7 +1,7 @@
 [General]
-JID=lemongrab@gnoll.ru/LEMONGRAB
+JID=bot@bothost.com/BotResource
 Password=secret123
 URLwhitelist=youtube.com;youtu.be;store.steampowered.com;
 
 [MUC]
-MUC=dfwk@conference.jabber.ru/LEMONGRAB
+MUC=muc@muchost.com/BotNickname
