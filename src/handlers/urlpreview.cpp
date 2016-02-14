@@ -52,7 +52,7 @@ bool UrlPreview::HandleMessage(const std::string &from, const std::string &body)
 	std::string title = "Can't get page title";
 	getTitle(siteContent, title);
 
-	SendMessage(title);
+	SendMessage(formatHTMLchars(title));
 	return true;
 }
 
