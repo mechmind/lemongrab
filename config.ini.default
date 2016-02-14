@@ -1,9 +1,7 @@
 [General]
 JID=lemongrab@gnoll.ru/LEMONGRAB
 Password=secret123
+URLwhitelist=youtube.com;youtu.be;store.steampowered.com;
 
 [MUC]
 MUC=dfwk@conference.jabber.ru/LEMONGRAB
-
-[LOL]
-RiotApiKey=secret234

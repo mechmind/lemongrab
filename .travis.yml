@@ -20,6 +20,7 @@ script:
   - cd build
   - cmake .. -DBUILD_TESTS=ON
   - make
+  - ln -s ../test test
   - ./lemongrab --test
 
 os:
