@@ -10,14 +10,15 @@
 void Bot::BotMUCHandler::handleMUCParticipantPresence(MUCRoom *room, const MUCRoomParticipant participant, const Presence &presence)
 {
 	// FIXME Handle this better
-	m_Parent->MUCPresence(participant.nick->resource(), participant.jid->bare(), presence.presence() < Presence::Unavailable);
-	std::cout << "!!!" << participant.nick->resource() << " | " << participant.jid->bare() << " -> " << presence.presence() << std::endl;
+	std::string jid = participant.jid ? participant.jid->bare() : "unknown@unknown";
+	m_Parent->MUCPresence(participant.nick->resource(), jid, presence.presence() < Presence::Unavailable);
+	std::cout << "!!!" << participant.nick->resource() << " | " << jid << " -> " << presence.presence() << std::endl;
 }
 
 void Bot::BotMUCHandler::handleMUCMessage(MUCRoom *room, const Message &msg, bool priv)
 {
 	std::cout << "###" << msg.body() << std::endl;
-	if (msg.when()) // Probably part of room history
+	if (msg.when() || priv) // Probably part of room history or private
 		return;
 	m_Parent->MUCMessage(msg.from().resource(), msg.body());
 }
@@ -77,7 +78,10 @@ void Bot::joinroom()
 {
 	m_Start = std::chrono::system_clock::now();
 	BotMUCHandler* myHandler = new BotMUCHandler(this);
-	JID roomJID( GetSettings().GetMUC() );
+
+	const auto &muc = GetSettings().GetMUC();
+	JID roomJID(muc);
+	_nick = muc.substr(muc.find_first_of('/') + 1);
 	m_room = new MUCRoom( j, roomJID, myHandler, 0 );
 	m_room->join();
 }
@@ -89,6 +93,9 @@ void Bot::SendMessage(const std::string &text) const
 
 void Bot::MUCMessage(const std::string &from, const std::string &body) const
 {
+	if (from.empty() || from == _nick)
+		return;
+
 	if (body == "!getversion")
 	{
 		SendMessage(GetVersion());

@@ -73,6 +73,7 @@ private:
 	bool flag;
 	MUCRoom* m_room;
 	Client* j;
+	std::string _nick;
 
 	const Settings &m_Settings;
 
