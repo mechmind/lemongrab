@@ -1,5 +1,4 @@
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#pragma once
 
 #include <string>
 #include <unordered_map>
@@ -13,34 +12,32 @@ public:
 public:
 	const std::string &GetUserJID() const
 	{
-		return m_UserJID;
+		return _JID;
 	}
 
 	const std::string &GetMUC() const
 	{
-		return m_MUC;
+		return _MUC;
 	}
 
 	const std::string &GetPassword() const
 	{
-		return m_Password;
+		return _password;
 	}
 
 	const std::string GetRawString(const std::string &name) const
 	{
-		auto it = m_RawSettings.find(name);
-		if (it == m_RawSettings.end())
+		auto it = _rawSettings.find(name);
+		if (it == _rawSettings.end())
 			return "";
 
 		return it->second;
 	}
 
 private:
-	std::string m_UserJID;
-	std::string m_MUC;
-	std::string m_Password;
+	std::string _JID;
+	std::string _MUC;
+	std::string _password;
 
-	std::unordered_map<std::string, std::string> m_RawSettings;
+	std::unordered_map<std::string, std::string> _rawSettings;
 };
-
-#endif // SETTINGS_H

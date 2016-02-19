@@ -16,7 +16,7 @@ public:
 	/**
 	 * Delegate this constructor in your message handler
 	 */
-	LemonHandler(LemonBot *bot);
+	LemonHandler(const std::string &moduleName, LemonBot *bot);
 	virtual ~LemonHandler();
 
 public:
@@ -35,6 +35,14 @@ public:
 	 */
 	virtual const std::string GetVersion() const = 0;
 
+	/**
+	 * @brief Get help string
+	 * @return List of module commands and their description
+	 */
+	virtual const std::string GetHelp() const = 0;
+
+	const std::string &GetName() const;
+
 protected:
 	/**
 	 * @brief Send reply to MUC
@@ -42,5 +50,6 @@ protected:
 	 */
 	void SendMessage(const std::string &text);
 	const std::string GetRawConfigValue(const std::string &name) const;
-	LemonBot *m_Bot;
+	std::string _moduleName;
+	LemonBot *_botPtr;
 };

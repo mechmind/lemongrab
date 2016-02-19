@@ -34,7 +34,7 @@ static std::string CurlRequest(std::string url)
 }
 
 UrlPreview::UrlPreview(LemonBot *bot)
-	: LemonHandler(bot)
+	: LemonHandler("url", bot)
 {
 	readConfig(bot);
 }
@@ -59,6 +59,11 @@ bool UrlPreview::HandleMessage(const std::string &from, const std::string &body)
 const std::string UrlPreview::GetVersion() const
 {
 	return "UrlPreview: 0.2";
+}
+
+const std::string UrlPreview::GetHelp() const
+{
+	return "This module has no commands";
 }
 
 void UrlPreview::readConfig(LemonBot *bot)

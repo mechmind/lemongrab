@@ -21,21 +21,21 @@ bool Settings::Open(const std::string &path)
 			auto name = line.substr(0, loc);
 			auto value = line.substr(loc + 1, line.npos);
 			std::cout << "Reading config: " << name << " is set to " << value << std::endl;
-			m_RawSettings[name] = value;
+			_rawSettings[name] = value;
 		}
 	}
 
 	// Parsing config
-	m_UserJID = m_RawSettings["JID"];
-	if (m_UserJID.empty())
+	_JID = _rawSettings["JID"];
+	if (_JID.empty())
 		return false;
 
-	m_Password = m_RawSettings["Password"];
-	if (m_Password.empty())
+	_password = _rawSettings["Password"];
+	if (_password.empty())
 		return false;
 
-	m_MUC = m_RawSettings["MUC"];
-	if (m_MUC.empty())
+	_MUC = _rawSettings["MUC"];
+	if (_MUC.empty())
 		return false;
 
 	return true;

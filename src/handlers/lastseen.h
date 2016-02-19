@@ -17,6 +17,7 @@ public:
 	bool HandleMessage(const std::string &from, const std::string &body);
 	bool HandlePresence(const std::string &from, const std::string &jid, bool connected);
 	const std::string GetVersion() const;
+	const std::string GetHelp() const;
 
 private:
 	static const std::string _command;

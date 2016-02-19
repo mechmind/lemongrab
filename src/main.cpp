@@ -1,11 +1,11 @@
 #include <iostream>
 
-#include <gtest/gtest.h>
+#ifdef _BUILD_TESTS
+	#include <gtest/gtest.h>
+#endif
 
 #include "bot.h"
 #include "settings.h"
-
-#include "datastorage.h"
 
 int main(int argc, char **argv)
 {
@@ -20,8 +20,6 @@ int main(int argc, char **argv)
 #endif
 	}
 
-	DataStorage data;
-
 	Settings settings;
 	if (!settings.Open("config.ini"))
 	{
@@ -29,7 +27,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	Bot bot(settings);
-	bot.Init();
+	NewBot bot(settings);
+	bot.Run();
 	return 0;
 }

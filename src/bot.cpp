@@ -1,157 +1,103 @@
 #include "bot.h"
 
-#include <sstream>
-#include <iostream>
-
 #include "handlers/diceroller.h"
 #include "handlers/urlpreview.h"
 #include "handlers/lastseen.h"
 
-void Bot::BotMUCHandler::handleMUCParticipantPresence(MUCRoom *room, const MUCRoomParticipant participant, const Presence &presence)
+#include "glooxclient.h"
+
+NewBot::NewBot(Settings &settings)
+	: _settings(settings)
 {
-	// FIXME Handle this better
-	std::string jid = participant.jid ? participant.jid->bare() : "unknown@unknown";
-	m_Parent->MUCPresence(participant.nick->resource(), jid, presence.presence() < Presence::Unavailable);
-	std::cout << "!!!" << participant.nick->resource() << " | " << jid << " -> " << presence.presence() << std::endl;
+	_gloox = std::make_shared<GlooxClient>(this);
 }
 
-void Bot::BotMUCHandler::handleMUCMessage(MUCRoom *room, const Message &msg, bool priv)
+void NewBot::Run()
 {
-	std::cout << "###" << msg.body() << std::endl;
-	if (msg.when() || priv) // Probably part of room history or private
-		return;
-	m_Parent->MUCMessage(msg.from().resource(), msg.body());
+	_startTime = std::chrono::system_clock::now();
+	RegisterHandler<DiceRoller>();
+	RegisterHandler<UrlPreview>();
+	RegisterHandler<LastSeen>();
+
+	_gloox->Connect(_settings.GetUserJID(), _settings.GetPassword());
 }
 
-void Bot::BotMUCHandler::handleMUCError(MUCRoom *room, StanzaError error) {
-	std::cout << "MUC Error " << error << std::endl;
+void NewBot::OnConnect()
+{
+	const auto &muc = _settings.GetMUC();
+	_gloox->JoinRoom(muc);
 }
 
-void Bot::BotMUCHandler::handleMUCInviteDecline(MUCRoom *room, const JID &invitee, const std::string &reason)
+void NewBot::OnMessage(const std::string &nick, const std::string &text)
 {
+	if (text == "!getversion")
+		return SendMessage(GetVersion());
 
-}
-
-bool Bot::BotMUCHandler::handleMUCRoomCreation(MUCRoom *room)
-{
-	return true;
-}
-
-void Bot::BotMUCHandler::handleMUCSubject(MUCRoom *room, const std::string &nick, const std::string &subject)
-{
-
-}
-
-void Bot::BotMUCHandler::handleMUCInfo(MUCRoom *room, int features, const std::string &name, const DataForm *infoForm)
-{
-
-}
-
-void Bot::BotMUCHandler::handleMUCItems(MUCRoom *room, const Disco::ItemList &items)
-{
-
-}
-
-void Bot::Init()
-{
-	flag = true;
-	JID jid(GetSettings().GetUserJID());
-	j = new Client(jid, GetSettings().GetPassword());
-	j->registerMessageHandler( this );
-	j->registerConnectionListener( this );
-
-	m_MessageHandlers.push_back(std::make_shared<DiceRoller>((LemonBot*)this));
-	m_MessageHandlers.push_back(std::make_shared<UrlPreview>((LemonBot*)this));
-	m_MessageHandlers.push_back(std::make_shared<LastSeen>((LemonBot*)this));
-//	m_MessageHandlers.push_back(std::make_shared<StatusReporter>((LemonBot*)this));
-
-	if (!j->connect())
-		std::cout << "Can't connect";
-}
-
-void Bot::handleMessage( const Message& stanza,	MessageSession* session)
-{
-	std::cout << stanza.body() << std::endl;
-}
-
-void Bot::joinroom()
-{
-	m_Start = std::chrono::system_clock::now();
-	BotMUCHandler* myHandler = new BotMUCHandler(this);
-
-	const auto &muc = GetSettings().GetMUC();
-	JID roomJID(muc);
-	_nick = muc.substr(muc.find_first_of('/') + 1);
-	m_room = new MUCRoom( j, roomJID, myHandler, 0 );
-	m_room->join();
-}
-
-void Bot::SendMessage(const std::string &text) const
-{
-	m_room->send(text);
-}
-
-void Bot::MUCMessage(const std::string &from, const std::string &body) const
-{
-	if (from.empty() || from == _nick)
-		return;
-
-	if (body == "!getversion")
-	{
-		SendMessage(GetVersion());
-		return;
-	}
-	else if (body == "!uptime")
+	if (text == "!uptime")
 	{
 		auto CurrentTime = std::chrono::system_clock::now();
 		std::string uptime("Uptime: ");
 		// FIXME There must be a way to make this line shorter
-		uptime.append(std::to_string(std::chrono::duration_cast<std::chrono::duration<int, std::ratio<3600*24>>>(CurrentTime - m_Start).count()));
-		SendMessage(uptime);
-		return;
+		uptime.append(std::to_string(std::chrono::duration_cast<std::chrono::duration<int, std::ratio<3600*24>>>
+									 (CurrentTime - _startTime).count()));
+		return SendMessage(uptime);
 	}
 
-	for (auto handler : m_MessageHandlers)
-		if (handler->HandleMessage(from, body))
+	if (text.length() >= 5 && text.substr(0, 5) == "!help")
+	{
+		std::string module = "";
+		if (text.length() > 6)
+			module = text.substr(6);
+		return SendMessage(GetHelp(module));
+	}
+
+	for (auto handler : _messageHandlers)
+		if (handler->HandleMessage(nick, text))
 			break;
 }
 
-void Bot::MUCPresence(const std::string &from, const std::string &jid, bool connected) const
+void NewBot::OnPresence(const std::string &nick, const std::string &jid, bool connected)
 {
-	for (auto handler : m_MessageHandlers)
+	for (auto handler : _messageHandlers)
 	{
-		if (handler->HandlePresence(from, jid, connected))
+		if (handler->HandlePresence(nick, jid, connected))
 			break;
 	}
 }
 
-void Bot::onConnect()
+void NewBot::SendMessage(const std::string &text) const
 {
-	joinroom();
+	_gloox->SendMessage(text);
 }
 
-void Bot::onDisconnect(ConnectionError e)
+const std::string NewBot::GetRawConfigValue(const std::string &name) const
 {
-	std::cout << "ConnectionError: " << e << std::endl;
+	return _settings.GetRawString(name);
 }
 
-bool Bot::onTLSConnect(const CertInfo &info)
+const std::string NewBot::GetVersion() const
 {
-	return true;
-}
-
-const std::string Bot::GetVersion() const
-{
-	std::string version = "Core: 0.1 (" + std::string(__DATE__) + ")";
-	for (auto handler : m_MessageHandlers)
+	std::string version = "Core: 0.1 (" + std::string(__DATE__) + ") | Modules:";
+	for (auto handler : _messageHandlers)
 	{
-		version.append(" ");
-		version.append(handler->GetVersion());
+		version.append(" " + handler->GetVersion());
 	}
 	return version;
 }
 
-const std::string Bot::GetRawConfigValue(const std::string &name) const
+const std::string NewBot::GetHelp(const std::string &module) const
 {
-	return m_Settings.GetRawString(name);
+	auto handler = _handlersByName.find(module);
+
+	if (handler == _handlersByName.end())
+	{
+		std::string help = "Use !help %module_name%, where module_name is one of:";
+		for (auto handlerPtr : _messageHandlers)
+		{
+			help.append(" " + handlerPtr->GetName());
+		}
+		return help;
+	} else {
+		return handler->second->GetHelp();
+	}
 }

@@ -152,6 +152,12 @@ const std::string DiceRoller::GetVersion() const
 	return "Dice: 0.2";
 }
 
+const std::string DiceRoller::GetHelp() const
+{
+	return "Start your message with . (dot) and write an expression using integer numbers, dice"
+			" in format XdY, and operators + or -";
+}
+
 #ifdef _BUILD_TESTS
 
 #include "gtest/gtest.h"

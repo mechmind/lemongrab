@@ -1,88 +1,50 @@
-#ifndef BOT_H
-#define BOT_H
+#pragma once
 
 #include <string>
+#include <chrono>
 #include <memory>
 #include <list>
-#include <chrono>
+#include <unordered_map>
 
-#include <gloox/client.h>
-#include <gloox/message.h>
-#include <gloox/messagehandler.h>
-#include <gloox/connectionlistener.h>
-#include <gloox/mucroom.h>
-#include <gloox/mucroomhandler.h>
-
-#include "handlers/lemonhandler.h"
+#include "xmpphandler.h"
 #include "settings.h"
+#include "handlers/lemonhandler.h"
 
-using namespace gloox;
+class GlooxClient;
 
-class Bot : public LemonBot, public MessageHandler, public ConnectionListener
+class NewBot
+		: public XMPPHandler
+		, public LemonBot
 {
-private:
-	class BotMUCHandler : public MUCRoomHandler
-	{
-	public:
-		BotMUCHandler(Bot *parent)
-			: m_Parent(parent)
-		{
-
-		}
-
-		void handleMUCParticipantPresence(MUCRoom *room, const MUCRoomParticipant participant, const Presence &presence);
-		void handleMUCMessage(MUCRoom *room, const Message &msg, bool priv);
-		void handleMUCError(MUCRoom *room, StanzaError error);
-		void handleMUCInviteDecline(MUCRoom *room, const JID &invitee, const std::string &reason);
-		bool handleMUCRoomCreation(MUCRoom *room);
-		void handleMUCSubject(MUCRoom *room, const std::string &nick, const std::string &subject);
-		void handleMUCInfo(MUCRoom *room, int features, const std::string &name, const DataForm *infoForm);
-		void handleMUCItems(MUCRoom *room, const Disco::ItemList &items);
-
-	private:
-		Bot *m_Parent;
-	};
-
 public:
+	NewBot(Settings &settings);
 
-	Bot(const Settings &settings)
-		: m_Settings(settings)
-	{
+	void Run(); // Locks thread
 
-	}
+	// XMPPHandler interface
+	void OnConnect();
+	void OnMessage(const std::string &nick, const std::string &text);
+	void OnPresence(const std::string &nick, const std::string &jid, bool connected);
 
+	// LemonBot interface
 	void SendMessage(const std::string &text) const;
+	const std::string GetRawConfigValue(const std::string &name) const;
 
-	void Init();
-	virtual void handleMessage( const Message& stanza,
-								MessageSession* session);
-	void joinroom();
-
-	void MUCMessage(const std::string &from, const std::string &body) const;
-	void MUCPresence(const std::string &from, const std::string &jid, bool connected) const;
-
-	void onConnect();
-	void onDisconnect(ConnectionError e);
-	bool onTLSConnect(const CertInfo &info);
+private:
+	template <class LemonHandler> void RegisterHandler()
+	{
+		_messageHandlers.push_back(std::make_shared<LemonHandler>(this));
+		_handlersByName[_messageHandlers.back()->GetName()] = _messageHandlers.back();
+	}
 
 	const std::string GetVersion() const;
-	const std::string GetRawConfigValue(const std::string &name) const;
-private:
+	const std::string GetHelp(const std::string &module) const;
 
 private:
-	bool flag;
-	MUCRoom* m_room;
-	Client* j;
-	std::string _nick;
+	std::shared_ptr<GlooxClient> _gloox;
+	Settings &_settings;
 
-	const Settings &m_Settings;
-
-	const Settings &GetSettings() const
-	{
-		return m_Settings;
-	}
-
-	std::list<std::shared_ptr<LemonHandler>> m_MessageHandlers;
-	std::chrono::system_clock::time_point m_Start;
+	std::list<std::shared_ptr<LemonHandler>> _messageHandlers;
+	std::unordered_map<std::string, std::shared_ptr<LemonHandler>> _handlersByName;
+	std::chrono::system_clock::time_point _startTime;
 };
-#endif // BOT_H

@@ -32,7 +32,7 @@ std::string CustomTimeFormat(time_t input)
 }
 
 LastSeen::LastSeen(LemonBot *bot)
-	: LemonHandler(bot)
+	: LemonHandler("seen", bot)
 {
 	leveldb::Options options;
 	options.create_if_missing = true;
@@ -131,4 +131,9 @@ bool LastSeen::HandlePresence(const std::string &from, const std::string &jid, b
 const std::string LastSeen::GetVersion() const
 {
 	return "LastSeen 0.1";
+}
+
+const std::string LastSeen::GetHelp() const
+{
+	return "Use !seen %nickname% or !seen %jid%";
 }
