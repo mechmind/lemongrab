@@ -1,5 +1,6 @@
 #include "diceroller.h"
 
+#include <random>
 #include <vector>
 #include <algorithm>
 #include <cctype>
@@ -149,7 +150,7 @@ bool DiceRoller::HandleMessage(const std::string &from, const std::string &body)
 
 const std::string DiceRoller::GetVersion() const
 {
-	return "Dice: 0.2";
+	return GetName() + ": 0.2";
 }
 
 const std::string DiceRoller::GetHelp() const

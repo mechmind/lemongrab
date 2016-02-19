@@ -49,7 +49,7 @@ LastSeen::LastSeen(LemonBot *bot)
 bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 {
 	if (body.length() < _command.length() + 2 || body.substr(0, _command.length()) != _command)
-		return true;
+		return false;
 
 	if (!_nick2jidDB || !_lastSeenDB)
 	{
@@ -130,7 +130,7 @@ bool LastSeen::HandlePresence(const std::string &from, const std::string &jid, b
 
 const std::string LastSeen::GetVersion() const
 {
-	return "LastSeen 0.1";
+	return GetName() + ": 0.1";
 }
 
 const std::string LastSeen::GetHelp() const

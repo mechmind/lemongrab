@@ -12,6 +12,11 @@ LemonHandler::~LemonHandler()
 
 }
 
+const std::string LemonHandler::GetHelp() const
+{
+	return "This module has no commands";
+}
+
 const std::string &LemonHandler::GetName() const
 {
 	return _moduleName;

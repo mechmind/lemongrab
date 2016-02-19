@@ -58,12 +58,7 @@ bool UrlPreview::HandleMessage(const std::string &from, const std::string &body)
 
 const std::string UrlPreview::GetVersion() const
 {
-	return "UrlPreview: 0.2";
-}
-
-const std::string UrlPreview::GetHelp() const
-{
-	return "This module has no commands";
+	return GetName() + ": 0.2";
 }
 
 void UrlPreview::readConfig(LemonBot *bot)

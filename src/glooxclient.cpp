@@ -83,6 +83,7 @@ void GlooxClient::handleMUCParticipantPresence(gloox::MUCRoom *room, const gloox
 void GlooxClient::handleMUCMessage(gloox::MUCRoom *room, const gloox::Message &msg, bool priv)
 {
 	if (msg.from().resource() == _room->nick()
+			|| msg.from().resource() == ""
 			|| msg.when()
 			|| priv)
 		return;

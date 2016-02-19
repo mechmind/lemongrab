@@ -3,6 +3,7 @@
 #include "handlers/diceroller.h"
 #include "handlers/urlpreview.h"
 #include "handlers/lastseen.h"
+#include "handlers/pager.h"
 
 #include "glooxclient.h"
 
@@ -18,6 +19,7 @@ void NewBot::Run()
 	RegisterHandler<DiceRoller>();
 	RegisterHandler<UrlPreview>();
 	RegisterHandler<LastSeen>();
+	RegisterHandler<Pager>();
 
 	_gloox->Connect(_settings.GetUserJID(), _settings.GetPassword());
 }

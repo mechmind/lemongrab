@@ -1,15 +1,5 @@
 #pragma once
 
-/*
- * DiceRoller module
- *
- * Syntax:
- * .XdY
- *
- */
-
-#include <random>
-
 #include "lemonhandler.h"
 
 class DiceRoller : public LemonHandler
