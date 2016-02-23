@@ -4,6 +4,7 @@
 #include "handlers/urlpreview.h"
 #include "handlers/lastseen.h"
 #include "handlers/pager.h"
+#include "handlers/githubwebhooks.h"
 
 #include "glooxclient.h"
 
@@ -20,6 +21,7 @@ void NewBot::Run()
 	RegisterHandler<UrlPreview>();
 	RegisterHandler<LastSeen>();
 	RegisterHandler<Pager>();
+	RegisterHandler<GithubWebhooks>();
 
 	_gloox->Connect(_settings.GetUserJID(), _settings.GetPassword());
 }
