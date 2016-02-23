@@ -161,8 +161,9 @@ std::string LastSeen::FindSimilar(const std::string &input)
 
 		std::smatch regexMatch;
 		bool doesMatch = false;
+		std::string nick = it->key().ToString();
 		try {
-			doesMatch = std::regex_search(it->key().ToString(), regexMatch, inputRegex);
+			doesMatch = std::regex_search(nick, regexMatch, inputRegex);
 		} catch (std::regex_error e) {
 			std::cout << "Regex exception thrown" << e.what() << std::endl;
 		}
