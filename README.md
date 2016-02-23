@@ -11,7 +11,7 @@ List of features:
 * Dice roller
 * Last seen - check when specific user last time visited the conference (bot must see user JIDs for this to work)
 * Pager - leave a public message to a currently absent user
-* Github Webhooks - notify chat about GitHub events
+* Github Webhooks - notify chat about GitHub events (issues, stars, forks & pull requests)
 
 Dependencies:
 

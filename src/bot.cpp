@@ -8,13 +8,13 @@
 
 #include "glooxclient.h"
 
-NewBot::NewBot(Settings &settings)
+Bot::Bot(Settings &settings)
 	: _settings(settings)
 {
 	_gloox = std::make_shared<GlooxClient>(this);
 }
 
-void NewBot::Run()
+void Bot::Run()
 {
 	_startTime = std::chrono::system_clock::now();
 	RegisterHandler<DiceRoller>();
@@ -26,13 +26,13 @@ void NewBot::Run()
 	_gloox->Connect(_settings.GetUserJID(), _settings.GetPassword());
 }
 
-void NewBot::OnConnect()
+void Bot::OnConnect()
 {
 	const auto &muc = _settings.GetMUC();
 	_gloox->JoinRoom(muc);
 }
 
-void NewBot::OnMessage(const std::string &nick, const std::string &text)
+void Bot::OnMessage(const std::string &nick, const std::string &text)
 {
 	if (text == "!getversion")
 		return SendMessage(GetVersion());
@@ -60,7 +60,7 @@ void NewBot::OnMessage(const std::string &nick, const std::string &text)
 			break;
 }
 
-void NewBot::OnPresence(const std::string &nick, const std::string &jid, bool connected)
+void Bot::OnPresence(const std::string &nick, const std::string &jid, bool connected)
 {
 	for (auto handler : _messageHandlers)
 	{
@@ -69,17 +69,17 @@ void NewBot::OnPresence(const std::string &nick, const std::string &jid, bool co
 	}
 }
 
-void NewBot::SendMessage(const std::string &text) const
+void Bot::SendMessage(const std::string &text) const
 {
 	_gloox->SendMessage(text);
 }
 
-const std::string NewBot::GetRawConfigValue(const std::string &name) const
+const std::string Bot::GetRawConfigValue(const std::string &name) const
 {
 	return _settings.GetRawString(name);
 }
 
-const std::string NewBot::GetVersion() const
+const std::string Bot::GetVersion() const
 {
 	std::string version = "Core: 0.1 (" + std::string(__DATE__) + ") | Modules:";
 	for (auto handler : _messageHandlers)
@@ -89,7 +89,7 @@ const std::string NewBot::GetVersion() const
 	return version;
 }
 
-const std::string NewBot::GetHelp(const std::string &module) const
+const std::string Bot::GetHelp(const std::string &module) const
 {
 	auto handler = _handlersByName.find(module);
 

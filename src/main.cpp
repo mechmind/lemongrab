@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	NewBot bot(settings);
+	Bot bot(settings);
 	bot.Run();
 	return 0;
 }

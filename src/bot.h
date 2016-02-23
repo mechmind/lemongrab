@@ -12,12 +12,12 @@
 
 class GlooxClient;
 
-class NewBot
+class Bot
 		: public XMPPHandler
 		, public LemonBot
 {
 public:
-	NewBot(Settings &settings);
+	Bot(Settings &settings);
 
 	void Run(); // Locks thread
 

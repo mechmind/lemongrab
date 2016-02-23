@@ -1,7 +1,8 @@
 [General]
 JID=bot@bothost.com/BotResource
 Password=secret123
+MUC=muc@muchost.com/BotNickname
+
 URLwhitelist=youtube.com;youtu.be;store.steampowered.com;
 
-[MUC]
-MUC=muc@muchost.com/BotNickname
+#GithubWebhookPort=5555

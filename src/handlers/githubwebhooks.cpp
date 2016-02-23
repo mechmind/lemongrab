@@ -8,6 +8,8 @@
 #include <event.h>
 #include <event2/http.h>
 
+#include "util/github_webhook_formatter.h"
+
 #include <jsoncpp/json/reader.h>
 
 GithubWebhooks::GithubWebhooks(LemonBot *bot)
@@ -27,12 +29,10 @@ const std::string GithubWebhooks::GetVersion() const
 }
 
 void httpHandler(evhttp_request *request, void *arg) {
-	// FIXME: look up valid responses
-	// FIXME: clean this mess up
+	// TODO: look up valid responses
 	GithubWebhooks * parent = static_cast<GithubWebhooks*>(arg);
 	std::string githubHeader;
 
-	// anno domini 2016, let's enjoy bare linked lists in a C library
 	auto *inputHeader = evhttp_request_get_input_headers(request);
 	for (auto header = inputHeader->tqh_first; header; header = header->next.tqe_next)
 	{
@@ -51,52 +51,56 @@ void httpHandler(evhttp_request *request, void *arg) {
 	}
 
 	auto *input = evhttp_request_get_input_buffer(request);
+	auto *output = evhttp_request_get_output_buffer(request);
 	size_t length = evbuffer_get_length(input);
 
 	std::vector<char> buffer;
 	buffer.resize(length);
 	evbuffer_remove(input, buffer.data(), length);
 
-	Json::Value root;
-	Json::Reader reader;
+	std::string textResponse;
+	auto formatStatus = GithubWebhookFormatter::FormatWebhookMessage(githubHeader, buffer, textResponse);
 
-	bool success = reader.parse(buffer.data(), buffer.data() + length, root);
-
-	if (!success)
+	switch (formatStatus)
 	{
+	case GithubWebhookFormatter::FormatResult::JSONParseError:
 		std::cout << "Can't parse json payload" << std::endl;
-		auto *output = evhttp_request_get_output_buffer(request);
 		evhttp_send_reply(request, HTTP_BADREQUEST, "Can't parse json payload", output);
 		evbuffer_add_printf(output, "Can't parse json");
 		return;
+
+	case GithubWebhookFormatter::FormatResult::OK:
+		parent->SendMessage(textResponse);
+
+	case GithubWebhookFormatter::FormatResult::IgnoredHook:
+		evhttp_send_reply(request, HTTP_OK, "OK", output);
 	}
-
-	if (githubHeader == "issues")
-	{
-		auto action = root["action"].asString();
-		auto sender = root["sender"]["login"].asString();
-		auto repository = root["repository"]["full_name"].asString();
-		auto title =  root["issue"]["title"].asString();
-
-		parent->SendMessage("Issue " + action + " \"" + title + "\" by " + sender + " in " + repository);
-	}
-
-	auto *output = evhttp_request_get_output_buffer(request);
-	evhttp_send_reply(request, HTTP_OK, "OK", output);
 }
 
-void httpServerThread(GithubWebhooks * parent)
+void httpServerThread(GithubWebhooks * parent, std::uint16_t port)
 {
 	auto _eventBase = event_base_new();
 	auto _httpServer = evhttp_new(_eventBase);
-	evhttp_bind_socket(_httpServer, "0.0.0.0", 5555);
+	evhttp_bind_socket(_httpServer, "0.0.0.0", port);
 	evhttp_set_gencb(_httpServer, httpHandler, parent);
 	event_base_dispatch(_eventBase);
 }
 
 bool GithubWebhooks::InitLibeventServer()
 {
-	_httpServer = std::thread (&httpServerThread, this);
+	auto portFromOptions = GetRawConfigValue("GithubWebhookPort");
+
+	std::uint16_t port = 5555;
+	if (!portFromOptions.empty())
+	{
+		try {
+			port = std::stol(portFromOptions);
+		} catch (...) {
+			std::cout << "Invalid GithubWebhookPort in config.ini" << std::endl;
+		}
+	}
+
+	_httpServer = std::thread (&httpServerThread, this, port);
 	return true;
 }
 
