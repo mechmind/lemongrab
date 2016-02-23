@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <ctime>
+#include <regex>
 
 const std::string LastSeen::_command = "!seen";
 
@@ -69,7 +70,12 @@ bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 
 		if (getJIDByNick.IsNotFound())
 		{
-			SendMessage(input + "? Who's that?");
+			auto similarUsers = FindSimilar(input);
+			if (similarUsers.empty())
+				SendMessage(input + "? Who's that?");
+			else
+				SendMessage("Users similar to " + input + ":" + similarUsers);
+
 			return false;
 		}
 
@@ -136,4 +142,46 @@ const std::string LastSeen::GetVersion() const
 const std::string LastSeen::GetHelp() const
 {
 	return "Use !seen %nickname% or !seen %jid%";
+}
+
+std::string LastSeen::FindSimilar(const std::string &input)
+{
+	std::regex inputRegex;
+	std::string matchingRecords;
+	try {
+		inputRegex = std::regex(input);
+	} catch (std::regex_error e) {
+		SendMessage("Can't do deep search, regex error: " + std::string(e.what()));
+	}
+
+	int matches = 0;
+
+	std::shared_ptr<leveldb::Iterator> it(_nick2jidDB->NewIterator(leveldb::ReadOptions()));
+	for (it->SeekToFirst(); it->Valid(); it->Next()) {
+
+		std::smatch regexMatch;
+		bool doesMatch = false;
+		try {
+			doesMatch = std::regex_search(it->key().ToString(), regexMatch, inputRegex);
+		} catch (std::regex_error e) {
+			std::cout << "Regex exception thrown" << e.what() << std::endl;
+		}
+
+		if (doesMatch)
+		{
+			if (matches >= 10)
+			{
+				matchingRecords.append("... (too many matches)");
+				return matchingRecords;
+			}
+
+			matches++;
+			matchingRecords.append(" " + it->key().ToString() + " (" + it->value().ToString() + ")");
+		}
+	}
+
+	if (!it->status().ok())
+		SendMessage("Something bad happened during search");
+
+	return matchingRecords;
 }

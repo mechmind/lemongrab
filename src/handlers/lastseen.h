@@ -20,6 +20,9 @@ public:
 	const std::string GetHelp() const;
 
 private:
+	std::string FindSimilar(const std::string &input);
+
+private:
 	static const std::string _command;
 
 	std::map<std::string, std::string> _currentConnections;

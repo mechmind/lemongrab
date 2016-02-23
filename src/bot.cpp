@@ -9,9 +9,10 @@
 #include "glooxclient.h"
 
 Bot::Bot(Settings &settings)
-	: _settings(settings)
+	: _gloox(new GlooxClient(this))
+	, _settings(settings)
 {
-	_gloox = std::make_shared<GlooxClient>(this);
+
 }
 
 void Bot::Run()
