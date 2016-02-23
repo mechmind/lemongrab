@@ -43,7 +43,7 @@ void httpHandler(evhttp_request *request, void *arg) {
 	{
 		auto *output = evhttp_request_get_output_buffer(request);
 		evhttp_send_reply(request, HTTP_BADREQUEST, "Not a github webhook", output);
-		evbuffer_add_printf(buf, "X-Github-Event is missing", evhttp_request_uri(req));
+		evbuffer_add_printf(output, "X-Github-Event is missing");
 		return;
 	}
 
@@ -64,7 +64,7 @@ void httpHandler(evhttp_request *request, void *arg) {
 		std::cout << "Can't parse json payload" << std::endl;
 		auto *output = evhttp_request_get_output_buffer(request);
 		evhttp_send_reply(request, HTTP_BADREQUEST, "Can't parse json payload", output);
-		evbuffer_add_printf(buf, "Can't parse json", evhttp_request_uri(req));
+		evbuffer_add_printf(output, "Can't parse json");
 		return;
 	}
 
