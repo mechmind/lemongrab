@@ -3,6 +3,7 @@
 #include <memory>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 #include <event.h>
 #include <event2/http.h>
@@ -35,7 +36,9 @@ void httpHandler(evhttp_request *request, void *arg) {
 	auto *inputHeader = evhttp_request_get_input_headers(request);
 	for (auto header = inputHeader->tqh_first; header; header = header->next.tqe_next)
 	{
-		if (std::string(header->key) == "X-Github-Event")
+		auto headerName = std::string(header->key);
+		std::transform(headerName.begin(), headerName.end(), headerName.begin(), ::tolower);
+		if (headerName == "x-github-event")
 			githubHeader = std::string(header->value);
 	}
 
@@ -43,7 +46,7 @@ void httpHandler(evhttp_request *request, void *arg) {
 	{
 		auto *output = evhttp_request_get_output_buffer(request);
 		evhttp_send_reply(request, HTTP_BADREQUEST, "Not a github webhook", output);
-		evbuffer_add_printf(output, "X-Github-Event is missing");
+		evbuffer_add_printf(output, "X-GitHub-Event is missing");
 		return;
 	}
 
