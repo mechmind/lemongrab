@@ -3,6 +3,7 @@
 #include <leveldb/db.h>
 #include <leveldb/options.h>
 
+#include <algorithm>
 #include <iostream>
 #include <ctime>
 #include <regex>
@@ -144,11 +145,12 @@ const std::string LastSeen::GetHelp() const
 	return "Use !seen %nickname% or !seen %jid%";
 }
 
-std::string LastSeen::FindSimilar(const std::string &input)
+std::string LastSeen::FindSimilar(std::string input)
 {
 	std::regex inputRegex;
 	std::string matchingRecords;
 	try {
+		std::transform(input.begin(), input.end(), input.begin(), ::tolower);
 		inputRegex = std::regex(input);
 	} catch (std::regex_error e) {
 		SendMessage("Can't do deep search, regex error: " + std::string(e.what()));
@@ -162,6 +164,7 @@ std::string LastSeen::FindSimilar(const std::string &input)
 		std::smatch regexMatch;
 		bool doesMatch = false;
 		std::string nick = it->key().ToString();
+		std::transform(nick.begin(), nick.end(), nick.begin(), ::tolower);
 		try {
 			doesMatch = std::regex_search(nick, regexMatch, inputRegex);
 		} catch (std::regex_error e) {

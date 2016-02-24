@@ -20,7 +20,7 @@ public:
 	const std::string GetHelp() const;
 
 private:
-	std::string FindSimilar(const std::string &input);
+	std::string FindSimilar(std::string input);
 
 private:
 	static const std::string _command;
