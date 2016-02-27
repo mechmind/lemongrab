@@ -19,6 +19,8 @@ Bot::Bot(Settings &settings)
 void Bot::Run()
 {
 	_startTime = std::chrono::system_clock::now();
+	_lastMessage = std::chrono::system_clock::now();
+
 	RegisterHandler<DiceRoller>();
 	RegisterHandler<UrlPreview>();
 	RegisterHandler<LastSeen>();
@@ -72,9 +74,20 @@ void Bot::OnPresence(const std::string &nick, const std::string &jid, bool conne
 	}
 }
 
-void Bot::SendMessage(const std::string &text) const
+void Bot::SendMessage(const std::string &text)
 {
+	std::lock_guard<std::mutex> lock(_sendMessageMutex);
+	auto currentTime = std::chrono::system_clock::now();
+	if (_lastMessage + std::chrono::seconds(_sendMessageThrottle) > currentTime)
+	{
+		_sendMessageThrottle++;
+		std::this_thread::sleep_for(std::chrono::seconds(_sendMessageThrottle));
+	} else {
+		_sendMessageThrottle = 1;
+	}
+
 	_gloox->SendMessage(text);
+	_lastMessage = std::chrono::system_clock::now();
 }
 
 const std::string Bot::GetRawConfigValue(const std::string &name) const

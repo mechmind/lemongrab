@@ -154,7 +154,7 @@ std::string formatHTMLchars(std::string input)
 class TestBot : public LemonBot
 {
 public:
-	void SendMessage(const std::string &text) const
+	void SendMessage(const std::string &text)
 	{
 		_lastMessage = text;
 	}
@@ -167,7 +167,7 @@ public:
 			return "";
 	}
 
-	mutable std::string _lastMessage;
+	std::string _lastMessage;
 };
 
 TEST(URLPreview, HTMLSpecialChars)

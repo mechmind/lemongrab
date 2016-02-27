@@ -2,6 +2,7 @@
 
 #include <string>
 #include <chrono>
+#include <mutex>
 #include <memory>
 #include <list>
 #include <unordered_map>
@@ -27,7 +28,7 @@ public:
 	void OnPresence(const std::string &nick, const std::string &jid, bool connected);
 
 	// LemonBot interface
-	void SendMessage(const std::string &text) const;
+	void SendMessage(const std::string &text);
 	const std::string GetRawConfigValue(const std::string &name) const;
 
 private:
@@ -47,4 +48,8 @@ private:
 	std::list<std::shared_ptr<LemonHandler>> _messageHandlers;
 	std::unordered_map<std::string, std::shared_ptr<LemonHandler>> _handlersByName;
 	std::chrono::system_clock::time_point _startTime;
+	std::chrono::system_clock::time_point _lastMessage;
+
+	std::mutex _sendMessageMutex;
+	int _sendMessageThrottle = 1;
 };
