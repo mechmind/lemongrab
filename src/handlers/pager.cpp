@@ -34,7 +34,8 @@ bool Pager::HandlePresence(const std::string &from, const std::string &jid, bool
 		auto message = _messages.begin();
 		while (message != _messages.end())
 		{
-			if (message->_recepient == from || message->_recepient == jid)
+			if (message->_recepient == jid
+					|| (from.find('@') == from.npos || message->_recepient == from))
 			{
 				SendMessage(from + "! You have a message >> " + message->_text);
 				_messages.erase(message++);
