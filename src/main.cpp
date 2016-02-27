@@ -6,9 +6,12 @@
 
 #include "bot.h"
 #include "settings.h"
+#include "handlers/util/stringops.h"
 
 int main(int argc, char **argv)
 {
+	initLocale();
+
 	if (argc > 1 && std::string(argv[1]) == "--test")
 	{
 #ifdef _BUILD_TESTS

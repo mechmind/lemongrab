@@ -5,6 +5,7 @@
 #include "handlers/lastseen.h"
 #include "handlers/pager.h"
 #include "handlers/githubwebhooks.h"
+#include "handlers/goodenough.h"
 
 #include "glooxclient.h"
 
@@ -23,6 +24,7 @@ void Bot::Run()
 	RegisterHandler<LastSeen>();
 	RegisterHandler<Pager>();
 	RegisterHandler<GithubWebhooks>();
+	RegisterHandler<GoodEnough>();
 
 	_gloox->Connect(_settings.GetUserJID(), _settings.GetPassword());
 }
@@ -85,7 +87,7 @@ const std::string Bot::GetVersion() const
 	std::string version = "Core: 0.1 (" + std::string(__DATE__) + ") | Modules:";
 	for (auto handler : _messageHandlers)
 	{
-		version.append(" " + handler->GetVersion());
+		version.append(" [" + handler->GetVersion() + "]");
 	}
 	return version;
 }

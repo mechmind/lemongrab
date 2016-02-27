@@ -20,4 +20,5 @@ Dependencies:
 * leveldb
 * libevent
 * jsoncpp
+* boost_locale
 * gtest

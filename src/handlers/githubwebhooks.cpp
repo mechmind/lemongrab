@@ -9,6 +9,7 @@
 #include <event2/http.h>
 
 #include "util/github_webhook_formatter.h"
+#include "util/stringops.h"
 
 #include <jsoncpp/json/reader.h>
 
@@ -20,7 +21,7 @@ GithubWebhooks::GithubWebhooks(LemonBot *bot)
 
 bool GithubWebhooks::HandleMessage(const std::string &from, const std::string &body)
 {
-	return true;
+	return false;
 }
 
 const std::string GithubWebhooks::GetVersion() const
@@ -36,8 +37,7 @@ void httpHandler(evhttp_request *request, void *arg) {
 	auto *inputHeader = evhttp_request_get_input_headers(request);
 	for (auto header = inputHeader->tqh_first; header; header = header->next.tqe_next)
 	{
-		auto headerName = std::string(header->key);
-		std::transform(headerName.begin(), headerName.end(), headerName.begin(), ::tolower);
+		auto headerName = toLower(std::string(header->key));
 		if (headerName == "x-github-event")
 			githubHeader = std::string(header->value);
 	}

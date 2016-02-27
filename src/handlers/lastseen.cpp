@@ -8,6 +8,8 @@
 #include <ctime>
 #include <regex>
 
+#include "util/stringops.h"
+
 const std::string LastSeen::_command = "!seen";
 
 std::string CustomTimeFormat(time_t input)
@@ -150,8 +152,7 @@ std::string LastSeen::FindSimilar(std::string input)
 	std::regex inputRegex;
 	std::string matchingRecords;
 	try {
-		std::transform(input.begin(), input.end(), input.begin(), ::tolower);
-		inputRegex = std::regex(input);
+		inputRegex = std::regex(toLower(input));
 	} catch (std::regex_error e) {
 		SendMessage("Can't do deep search, regex error: " + std::string(e.what()));
 	}
@@ -163,8 +164,7 @@ std::string LastSeen::FindSimilar(std::string input)
 
 		std::smatch regexMatch;
 		bool doesMatch = false;
-		std::string nick = it->key().ToString();
-		std::transform(nick.begin(), nick.end(), nick.begin(), ::tolower);
+		std::string nick = toLower(it->key().ToString());
 		try {
 			doesMatch = std::regex_search(nick, regexMatch, inputRegex);
 		} catch (std::regex_error e) {
