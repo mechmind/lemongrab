@@ -87,7 +87,7 @@ const std::string Bot::GetVersion() const
 	std::string version = "Core: 0.1 (" + std::string(__DATE__) + ") | Modules:";
 	for (auto handler : _messageHandlers)
 	{
-		version.append(" [" + handler->GetVersion() + "]");
+		version.append(" [" + handler->GetName() + ": " + handler->GetVersion() + "]");
 	}
 	return version;
 }

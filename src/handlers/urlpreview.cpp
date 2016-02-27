@@ -58,7 +58,7 @@ bool UrlPreview::HandleMessage(const std::string &from, const std::string &body)
 
 const std::string UrlPreview::GetVersion() const
 {
-	return GetName() + ": 0.2";
+	return "0.2";
 }
 
 void UrlPreview::readConfig(LemonBot *bot)

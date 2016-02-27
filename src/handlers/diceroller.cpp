@@ -150,7 +150,7 @@ bool DiceRoller::HandleMessage(const std::string &from, const std::string &body)
 
 const std::string DiceRoller::GetVersion() const
 {
-	return GetName() + ": 0.2";
+	return "0.2";
 }
 
 const std::string DiceRoller::GetHelp() const

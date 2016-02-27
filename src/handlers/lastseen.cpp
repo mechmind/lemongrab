@@ -139,7 +139,7 @@ bool LastSeen::HandlePresence(const std::string &from, const std::string &jid, b
 
 const std::string LastSeen::GetVersion() const
 {
-	return GetName() + ": 0.1";
+	return "0.1";
 }
 
 const std::string LastSeen::GetHelp() const

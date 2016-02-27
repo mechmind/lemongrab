@@ -51,7 +51,7 @@ bool Pager::HandlePresence(const std::string &from, const std::string &jid, bool
 
 const std::string Pager::GetVersion() const
 {
-	return GetName() + ": 0.1";
+	return "0.1";
 }
 
 const std::string Pager::GetHelp() const

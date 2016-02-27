@@ -34,5 +34,5 @@ bool GoodEnough::HandleMessage(const std::string &from, const std::string &body)
 
 const std::string GoodEnough::GetVersion() const
 {
-	return GetName() + ": good enough";
+	return "good enough";
 }
