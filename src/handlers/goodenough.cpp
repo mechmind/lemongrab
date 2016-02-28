@@ -5,6 +5,10 @@
 #include <list>
 #include <algorithm>
 
+namespace {
+	std::string response = "https://youtu.be/WgYhYw-lS_s";
+}
+
 bool GoodEnough::HandleMessage(const std::string &from, const std::string &body)
 {
 	static std::list<std::string> magicPhrases = {
@@ -14,8 +18,6 @@ bool GoodEnough::HandleMessage(const std::string &from, const std::string &body)
 		"потом поправлю",
 		"good enough"
 	};
-
-	static std::string response = "https://youtu.be/WgYhYw-lS_s";
 
 	auto lowercase = toLower(body);
 
@@ -36,3 +38,30 @@ const std::string GoodEnough::GetVersion() const
 {
 	return "good enough";
 }
+
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
+
+#include "gtest/gtest.h"
+
+class GoodEnoughBot : public LemonBot
+{
+public:
+	void SendMessage(const std::string &text)
+	{
+		_success = (text == "TestUser: " + response);
+	}
+
+	bool _success = false;
+};
+
+TEST(GoodEnoughTest, SimpleTrigger)
+{
+	GoodEnoughBot testbot;
+	GoodEnough test(&testbot);
+
+	test.HandleMessage("TestUser", "This test shoud be good enough");
+	EXPECT_TRUE(testbot._success);
+}
+
+#endif // LCOV_EXCL_STOP
+

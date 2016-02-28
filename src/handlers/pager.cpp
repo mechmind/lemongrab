@@ -92,12 +92,7 @@ class PagerTestBot : public LemonBot
 public:
 	void SendMessage(const std::string &text)
 	{
-		_recieved = true;
-	}
-
-	std::string GetRawConfigValue(const std::string &name) const
-	{
-		return "";
+		_recieved = (text == "Alice! You have a message >> Bob: test");
 	}
 
 	bool _recieved = false;

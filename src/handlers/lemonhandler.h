@@ -6,7 +6,7 @@ class LemonBot
 {
 public:
 	virtual void SendMessage(const std::string &text) = 0;
-	virtual std::string GetRawConfigValue(const std::string &name) const = 0;
+	virtual std::string GetRawConfigValue(const std::string &name) const { return ""; }
 	virtual std::string GetNickByJid(const std::string &jid)  const { return ""; }
 	virtual std::string GetJidByNick(const std::string &nick) const { return ""; }
 	virtual ~LemonBot() {}

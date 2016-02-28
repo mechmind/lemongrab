@@ -4,16 +4,16 @@
 #include <vector>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 
 namespace {
-	std::random_device randomDevice;
-	std::mt19937_64 randomGenerator;
+	std::shared_ptr<std::mt19937_64> rng;
 }
 
 class DiceRoll
 {
 public:
-	DiceRoll(int dice, int numberOfRolls)
+	DiceRoll(int dice, int numberOfRolls, std::mt19937_64 &generator)
 		: _dice(dice)
 		, _numberOfRolls(numberOfRolls)
 	{
@@ -22,7 +22,7 @@ public:
 		_resultDescription = std::to_string(_numberOfRolls) + "d" + std::to_string(_dice) + " {";
 		for (int i = 0; i < _numberOfRolls; ++i)
 		{
-			auto roll = dis(randomGenerator);
+			auto roll = dis(generator);
 			_result += roll;
 			_resultDescription.append(i == 0 ? std::to_string(roll) : " " + std::to_string(roll));
 		}
@@ -109,7 +109,7 @@ bool ParseSingleToken(const std::string &token, std::string &resultDescription, 
 			if (numberOfRolls > 100)
 				return false;
 
-			DiceRoll roll(dice, numberOfRolls);
+			DiceRoll roll(dice, numberOfRolls, *rng.get());
 
 			result = negative ? result - roll.GetResult() : result + roll.GetResult();
 			resultDescription.append(roll.GetDescription());
@@ -118,6 +118,12 @@ bool ParseSingleToken(const std::string &token, std::string &resultDescription, 
 		}
 	}
 	return true;
+}
+
+DiceRoller::DiceRoller(LemonBot *bot)
+	: LemonHandler("dice", bot)
+{
+	ResetRNG();
 }
 
 bool DiceRoller::HandleMessage(const std::string &from, const std::string &body)
@@ -157,12 +163,33 @@ const std::string DiceRoller::GetVersion() const
 const std::string DiceRoller::GetHelp() const
 {
 	return "Start your message with . (dot) and write an expression using integer numbers, dice"
-			" in format XdY, and operators + or -";
+		   " in format XdY, and operators + or -";
+}
+
+void DiceRoller::ResetRNG(int seed)
+{
+	rng.reset(new std::mt19937_64(seed !=0 ? seed : std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())));
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
 
 #include "gtest/gtest.h"
+
+#include <set>
+
+class DiceTestBot : public LemonBot
+{
+public:
+	void SendMessage(const std::string &text)
+	{
+		if (text.find('=') > text.find('}') && text.find('=') < text.npos)
+			_lastResult = std::stoi(text.substr(text.find_last_of('=') + 1));
+		else
+			_lastResult = std::stoi(text.substr(text.find('{') + 1, text.find('}') - text.find('{') - 1));
+	}
+
+	int _lastResult = 0;
+};
 
 TEST(DiceTest, TokenizerTest)
 {
@@ -200,6 +227,28 @@ TEST(DiceTest, NonDiceTokens)
 	ParseSingleToken("-3", resultS, result);
 	EXPECT_EQ(6, result);
 	EXPECT_EQ("5 + 4 - 3", resultS);
+}
+
+TEST(DiceTest, DiceRolls)
+{
+	DiceTestBot testbot;
+	DiceRoller r(&testbot);
+
+	r.HandleMessage("test", ".1d1");
+	EXPECT_EQ(1, testbot._lastResult);
+
+	r.HandleMessage("test", ".1d1 + 7 - 12 + 3d1");
+	EXPECT_EQ(1+7-12+3, testbot._lastResult);
+
+	r.ResetRNG(1);
+	r.HandleMessage("test", ".1d6");
+	EXPECT_EQ(1, testbot._lastResult);
+
+	r.HandleMessage("test", ".1d30");
+	EXPECT_EQ(5, testbot._lastResult);
+
+	r.HandleMessage("test", ".10d10 - 5d8 + 100d3");
+	EXPECT_EQ(228, testbot._lastResult);
 }
 
 #endif // LCOV_EXCL_STOP
