@@ -9,18 +9,20 @@
 
 #include <memory>
 
+#include "xmppclient.h"
+
 class XMPPHandler;
 
 class GlooxClient
-		: public gloox::ConnectionListener
+		: public XMPPClient
+		, public gloox::ConnectionListener
 		, public gloox::MessageHandler
 		, public gloox::MUCRoomHandler
 {
 public:
-	GlooxClient(XMPPHandler * handler);
+	// XMPPClient implementation
+	void SetXMPPHandler(XMPPHandler *handler);
 
-public:
-	// Connection handling
 	bool Connect(const std::string &jid, const std::string &password);
 	bool Disconnect();
 

@@ -9,11 +9,11 @@
 
 #include "glooxclient.h"
 
-Bot::Bot(Settings &settings)
-	: _gloox(new GlooxClient(this))
+Bot::Bot(XMPPClient *client, Settings &settings)
+	: _xmpp(client)
 	, _settings(settings)
 {
-
+	_xmpp->SetXMPPHandler(this);
 }
 
 void Bot::Run()
@@ -28,13 +28,13 @@ void Bot::Run()
 	RegisterHandler<GithubWebhooks>();
 	RegisterHandler<GoodEnough>();
 
-	_gloox->Connect(_settings.GetUserJID(), _settings.GetPassword());
+	_xmpp->Connect(_settings.GetUserJID(), _settings.GetPassword());
 }
 
 void Bot::OnConnect()
 {
 	const auto &muc = _settings.GetMUC();
-	_gloox->JoinRoom(muc);
+	_xmpp->JoinRoom(muc);
 }
 
 void Bot::OnMessage(const std::string &nick, const std::string &text)
@@ -50,6 +50,17 @@ void Bot::OnMessage(const std::string &nick, const std::string &text)
 		uptime.append(std::to_string(std::chrono::duration_cast<std::chrono::duration<int, std::ratio<3600*24>>>
 									 (CurrentTime - _startTime).count()));
 		return SendMessage(uptime);
+	}
+
+	if (text == "!die")
+	{
+		auto admin = GetRawConfigValue("admin");
+		if (!admin.empty() && GetJidByNick(nick) == admin)
+		{
+			_messageHandlers.clear();
+			_xmpp->Disconnect();
+		}
+		return;
 	}
 
 	if (text.length() >= 5 && text.substr(0, 5) == "!help")
@@ -116,7 +127,7 @@ void Bot::SendMessage(const std::string &text)
 		_sendMessageThrottle = 1;
 	}
 
-	_gloox->SendMessage(text);
+	_xmpp->SendMessage(text);
 	_lastMessage = std::chrono::system_clock::now();
 }
 

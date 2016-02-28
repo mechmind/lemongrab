@@ -11,14 +11,14 @@
 #include "settings.h"
 #include "handlers/lemonhandler.h"
 
-class GlooxClient;
+class XMPPClient;
 
 class Bot
 		: public XMPPHandler
 		, public LemonBot
 {
 public:
-	Bot(Settings &settings);
+	Bot(XMPPClient *client, Settings &settings);
 
 	void Run(); // Locks thread
 
@@ -46,7 +46,7 @@ private:
 	const std::string GetHelp(const std::string &module) const;
 
 private:
-	std::shared_ptr<GlooxClient> _gloox;
+	std::shared_ptr<XMPPClient> _xmpp;
 	Settings &_settings;
 	std::unordered_map<std::string, std::string> _nick2jid;
 	std::unordered_map<std::string, std::string> _jid2nick;

@@ -5,6 +5,7 @@
 #endif
 
 #include "bot.h"
+#include "glooxclient.h"
 #include "settings.h"
 #include "handlers/util/stringops.h"
 
@@ -30,7 +31,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	Bot bot(settings);
+	Bot bot(new GlooxClient(), settings);
 	bot.Run();
 	return 0;
 }

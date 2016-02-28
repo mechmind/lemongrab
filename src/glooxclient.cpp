@@ -5,7 +5,7 @@
 #include <gloox/presence.h>
 #include <iostream>
 
-GlooxClient::GlooxClient(XMPPHandler *handler)
+void GlooxClient::SetXMPPHandler(XMPPHandler *handler)
 {
 	_handler = handler;
 }
@@ -29,6 +29,11 @@ bool GlooxClient::Connect(const std::string &jid, const std::string &password)
 
 bool GlooxClient::Disconnect()
 {
+	if (_room)
+		_room->leave();
+
+	_room.reset();
+
 	if (_client)
 	{
 		_client->disconnect();

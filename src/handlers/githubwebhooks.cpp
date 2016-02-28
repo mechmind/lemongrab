@@ -7,6 +7,7 @@
 
 #include <event.h>
 #include <event2/http.h>
+#include <event2/thread.h>
 
 #include "util/github_webhook_formatter.h"
 #include "util/stringops.h"
@@ -17,6 +18,12 @@ GithubWebhooks::GithubWebhooks(LemonBot *bot)
 	: LemonHandler("github", bot)
 {
 	InitLibeventServer();
+}
+
+GithubWebhooks::~GithubWebhooks()
+{
+	event_active(_breakLoop, EV_READ, 0);
+	_httpServer.join();
 }
 
 bool GithubWebhooks::HandleMessage(const std::string &from, const std::string &body)
@@ -77,13 +84,26 @@ void httpHandler(evhttp_request *request, void *arg) {
 	}
 }
 
+void terminateServer(int, short int, void * arg)
+{
+	GithubWebhooks * parent = static_cast<GithubWebhooks*>(arg);
+	std::cout << "Terminating github webhooks listener..." << std::endl;
+	event_base_loopbreak(parent->_eventBase);
+}
+
 void httpServerThread(GithubWebhooks * parent, std::uint16_t port)
 {
-	auto _eventBase = event_base_new();
-	auto _httpServer = evhttp_new(_eventBase);
-	evhttp_bind_socket(_httpServer, "0.0.0.0", port);
-	evhttp_set_gencb(_httpServer, httpHandler, parent);
-	event_base_dispatch(_eventBase);
+	parent->_eventBase = event_base_new();
+	auto httpServer = evhttp_new(parent->_eventBase);
+	parent->_breakLoop = event_new(parent->_eventBase, -1, EV_READ, terminateServer, parent);
+	event_add(parent->_breakLoop, nullptr);
+	evhttp_bind_socket(httpServer, "0.0.0.0", port);
+	evhttp_set_gencb(httpServer, httpHandler, parent);
+
+	evthread_use_pthreads();
+	evthread_make_base_notifiable(parent->_eventBase);
+
+	event_base_dispatch(parent->_eventBase);
 }
 
 bool GithubWebhooks::InitLibeventServer()

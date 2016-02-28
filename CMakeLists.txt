@@ -10,7 +10,7 @@ option(BUILD_COVER "Generate test coverage" OFF)
 find_package(PkgConfig)
 include(FindCURL)
 pkg_search_module(GLOOX gloox)
-pkg_search_module(LIBEVENT libevent)
+pkg_search_module(LIBEVENT libevent_pthreads)
 # find_package(Boost 1.55 COMPONENTS locale)
 
 include_directories(. ${CURL_INCLUDE_DIR} ${GLOOX_INCLUDE_DIR} ${LIBEVENT_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
