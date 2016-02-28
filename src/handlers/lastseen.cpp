@@ -7,30 +7,19 @@
 #include <iostream>
 #include <ctime>
 #include <regex>
+#include <chrono>
 
 #include "util/stringops.h"
 
 const std::string LastSeen::_command = "!seen";
 
-std::string CustomTimeFormat(time_t input)
+std::string CustomTimeFormat(std::chrono::system_clock::duration input)
 {
 	std::string output;
-	int seconds = input % 60;
-	output = std::to_string(seconds) + "s";
-
-	input/=60;
-	if (input == 0) return output;
-	int minutes = input % 60;
-	output = std::to_string(minutes) + "m " + output;
-
-	input/=60;
-	if (input == 0) return output;
-	int hours = input % 24;
-	output = std::to_string(hours) + "h " + output;
-
-	input/=24;
-	if (input == 0) return output;
-	output = std::to_string(input) + "d " + output;
+	output += std::to_string(std::chrono::duration_cast<std::chrono::hours>  (input).count() / 24) + "d ";
+	output += std::to_string(std::chrono::duration_cast<std::chrono::hours>  (input).count() % 24) + "h ";
+	output += std::to_string(std::chrono::duration_cast<std::chrono::minutes>(input).count() % 60) + "m ";
+	output += std::to_string(std::chrono::duration_cast<std::chrono::seconds>(input).count() % 60) + "s";
 
 	return output;
 }
@@ -101,15 +90,13 @@ bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 		return false;
 	}
 
-	long lastSeenDiff = 0;
-	long lastSeenTime = 0;
+	std::chrono::system_clock::duration lastSeenDiff;
 	try {
-		time_t now;
-		std::time(&now);
-		lastSeenTime = std::stol(lastSeenRecord);
+		auto now = std::chrono::system_clock::now();
+		auto lastSeenTime = std::chrono::system_clock::from_time_t(std::stol(lastSeenRecord));
 		lastSeenDiff = now - lastSeenTime;
 	} catch (std::exception e) {
-		SendMessage("Something broke");
+		SendMessage("Something broke: " + std::string(e.what()));
 		return false;
 	}
 
@@ -119,15 +106,13 @@ bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 
 bool LastSeen::HandlePresence(const std::string &from, const std::string &jid, bool connected)
 {
-	// Use chrono here?
-	time_t now;
-	std::time(&now);
+	auto now = std::chrono::system_clock::now();
 
 	if (_nick2jidDB)
 		_nick2jidDB->Put(leveldb::WriteOptions(), from, jid);
 
 	if (_lastSeenDB)
-		_lastSeenDB->Put(leveldb::WriteOptions(), jid, std::to_string(now));
+		_lastSeenDB->Put(leveldb::WriteOptions(), jid, std::to_string(std::chrono::system_clock::to_time_t(now)));
 
 	return false;
 }
@@ -184,3 +169,16 @@ std::string LastSeen::FindSimilar(std::string input)
 
 	return matchingRecords;
 }
+
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
+
+#include "gtest/gtest.h"
+
+TEST(LastSeen, DurationFormat)
+{
+	time_t diff = 93784; // 1 day 2 hours 3 minutes 4 seconds
+	std::chrono::system_clock::duration dur = std::chrono::system_clock::from_time_t(diff) - std::chrono::system_clock::from_time_t(0);
+	EXPECT_EQ("1d 2h 3m 4s", CustomTimeFormat(dur));
+}
+
+#endif // LCOV_EXCL_STOP

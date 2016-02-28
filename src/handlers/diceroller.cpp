@@ -5,9 +5,10 @@
 #include <algorithm>
 #include <cctype>
 
-// Bad idea?
-std::random_device randomDevice;
-std::mt19937_64 randomGenerator;
+namespace {
+	std::random_device randomDevice;
+	std::mt19937_64 randomGenerator;
+}
 
 class DiceRoll
 {
