@@ -2,6 +2,7 @@
 
 #include "xmpphandler.h"
 
+#include <gloox/presence.h>
 #include <iostream>
 
 GlooxClient::GlooxClient(XMPPHandler *handler)
@@ -77,7 +78,7 @@ void GlooxClient::handleMessage(const gloox::Message &stanza, gloox::MessageSess
 void GlooxClient::handleMUCParticipantPresence(gloox::MUCRoom *room, const gloox::MUCRoomParticipant participant, const gloox::Presence &presence)
 {
 	std::string jid = participant.jid ? participant.jid->bare() : "unknown@unknown";
-	_handler->OnPresence(participant.nick->resource(), jid, presence.presence() < gloox::Presence::Unavailable);
+	_handler->OnPresence(participant.nick->resource(), jid, presence.presence() < gloox::Presence::Unavailable, participant.newNick);
 }
 
 void GlooxClient::handleMUCMessage(gloox::MUCRoom *room, const gloox::Message &msg, bool priv)

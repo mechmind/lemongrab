@@ -159,7 +159,7 @@ public:
 		_lastMessage = text;
 	}
 
-	const std::string GetRawConfigValue(const std::string &name) const
+	std::string GetRawConfigValue(const std::string &name) const
 	{
 		if (name == "URLwhitelist")
 			return "youtube.com;youtu.be;store.steampowered.com;";

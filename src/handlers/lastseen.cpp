@@ -91,11 +91,11 @@ bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 		}
 	}
 
-	auto currentNick = _currentConnections.find(jidRecord);
-	if (_currentConnections.find(jidRecord) != _currentConnections.end())
+	auto currentNick = _botPtr->GetNickByJid(jidRecord);
+	if (!currentNick.empty())
 	{
-		if (input != currentNick->second)
-			SendMessage(input + " (" + jidRecord + ") is still here as " + currentNick->second);
+		if (input != currentNick)
+			SendMessage(input + " (" + jidRecord + ") is still here as " + currentNick);
 		else
 			SendMessage(input + " is still here");
 		return false;
@@ -122,11 +122,6 @@ bool LastSeen::HandlePresence(const std::string &from, const std::string &jid, b
 	// Use chrono here?
 	time_t now;
 	std::time(&now);
-
-	if (connected)
-		_currentConnections[jid] = from;
-	else
-		_currentConnections.erase(jid);
 
 	if (_nick2jidDB)
 		_nick2jidDB->Put(leveldb::WriteOptions(), from, jid);

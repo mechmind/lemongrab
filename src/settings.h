@@ -25,7 +25,7 @@ public:
 		return _password;
 	}
 
-	const std::string GetRawString(const std::string &name) const
+	std::string GetRawString(const std::string &name) const
 	{
 		auto it = _rawSettings.find(name);
 		if (it == _rawSettings.end())

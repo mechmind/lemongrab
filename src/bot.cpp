@@ -65,13 +65,43 @@ void Bot::OnMessage(const std::string &nick, const std::string &text)
 			break;
 }
 
-void Bot::OnPresence(const std::string &nick, const std::string &jid, bool connected)
+void Bot::OnPresence(const std::string &nick, const std::string &jid, bool online, const std::string &newNick)
 {
+	bool newConnection = false;
+	if (online)
+	{
+		newConnection = _nick2jid.insert(std::pair<std::string, std::string>(nick, jid)).second;
+		_jid2nick[jid] = nick;
+	}
+	else
+	{
+		_nick2jid.erase(nick);
+		if (!newNick.empty())
+		{
+			_nick2jid[newNick] = jid;
+			_jid2nick[jid] = newNick;
+		} else {
+			_jid2nick.erase(jid);
+		}
+	}
+
 	for (auto handler : _messageHandlers)
 	{
-		if (handler->HandlePresence(nick, jid, connected))
+		if (handler->HandlePresence(nick, jid, newConnection))
 			break;
 	}
+}
+
+std::string Bot::GetNickByJid(const std::string &jid) const
+{
+	auto nick = _jid2nick.find(jid);
+	return nick != _jid2nick.end() ? nick->second : "";
+}
+
+std::string Bot::GetJidByNick(const std::string &nick) const
+{
+	auto jid = _nick2jid.find(nick);
+	return jid != _nick2jid.end() ? jid->second : "";
 }
 
 void Bot::SendMessage(const std::string &text)
@@ -90,7 +120,7 @@ void Bot::SendMessage(const std::string &text)
 	_lastMessage = std::chrono::system_clock::now();
 }
 
-const std::string Bot::GetRawConfigValue(const std::string &name) const
+std::string Bot::GetRawConfigValue(const std::string &name) const
 {
 	return _settings.GetRawString(name);
 }

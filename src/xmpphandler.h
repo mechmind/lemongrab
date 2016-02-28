@@ -11,5 +11,5 @@ public:
 	virtual void OnConnect() = 0;
 
 	virtual void OnMessage(const std::string &nick, const std::string &text) = 0;
-	virtual void OnPresence(const std::string &nick, const std::string &jid, bool connected) = 0;
+	virtual void OnPresence(const std::string &nick, const std::string &jid, bool online, const std::string &newNick) = 0;
 };
