@@ -26,7 +26,7 @@ bool GithubWebhooks::HandleMessage(const std::string &from, const std::string &b
 
 const std::string GithubWebhooks::GetVersion() const
 {
-	return "0.1";
+	return "0.2";
 }
 
 void httpHandler(evhttp_request *request, void *arg) {

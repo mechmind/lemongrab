@@ -14,7 +14,12 @@ std::string PrintIssue(const Json::Value &input)
 	auto title  = input["issue"]["title"].asString();
 	auto number = input["issue"]["number"].asString();
 
-	return "Issue #" + number + " \"" + title + "\" " + action + " by " + sender + " in " + repo;
+	if (action == "assigned")
+	{
+		auto assignee = input["assignee"]["login"].asString();
+		return "Issue #" + number + " \"" + title + "\" assigned for " + assignee + " by " + sender + " in " + repo;
+	} else
+		return "Issue #" + number + " \"" + title + "\" " + action + " by " + sender + " in " + repo;
 }
 
 std::string PrintFork(const Json::Value &input)
