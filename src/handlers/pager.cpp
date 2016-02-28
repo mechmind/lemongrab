@@ -22,7 +22,9 @@ bool Pager::HandleMessage(const std::string &from, const std::string &body)
 		return true;
 	}
 
-	_messages.emplace_back(input.substr(0, space), from + ": " + input.substr(space + 1));
+	auto to = input.substr(0, space);
+	auto text = input.substr(space + 1);
+	StoreMessage(to, from, text);
 
 	return true;
 }
@@ -35,7 +37,7 @@ bool Pager::HandlePresence(const std::string &from, const std::string &jid, bool
 		while (message != _messages.end())
 		{
 			if (message->_recepient == jid
-					|| (from.find('@') == from.npos || message->_recepient == from))
+					|| (from.find('@') == from.npos && message->_recepient == from))
 			{
 				SendMessage(from + "! You have a message >> " + message->_text);
 				_messages.erase(message++);
@@ -60,6 +62,11 @@ const std::string Pager::GetHelp() const
 	return "Use !pager %jid% %message% or !pager %nick% %message%. Paged messages are lost on bot restart or after 72 hours. Use !pager_stats to get number of paged messages";
 }
 
+void Pager::StoreMessage(const std::string &to, const std::string &from, const std::string &text)
+{
+	_messages.emplace_back(to, from + ": " + text);
+}
+
 void Pager::PrintPagerStats()
 {
 	std::map<std::string, int> messageStats;
@@ -75,3 +82,64 @@ void Pager::PrintPagerStats()
 
 	SendMessage("Paged messages:" + messageStatsString);
 }
+
+#ifdef _BUILD_TESTS
+
+#include <gtest/gtest.h>
+
+class PagerTestBot : public LemonBot
+{
+public:
+	void SendMessage(const std::string &text)
+	{
+		_recieved = true;
+	}
+
+	std::string GetRawConfigValue(const std::string &name) const
+	{
+		return "";
+	}
+
+	bool _recieved = false;
+};
+
+TEST(PagerTest, MsgByNickCheckPresenseHandling)
+{
+	PagerTestBot testbot;
+	Pager pager(&testbot);
+
+	pager.StoreMessage("Alice", "Bob", "test");
+	EXPECT_EQ(false, testbot._recieved);
+
+	pager.HandlePresence("Alice", "alice@jabber.com", false);
+	EXPECT_EQ(false, testbot._recieved);
+
+	pager.HandlePresence("Bob", "bob@jabber.com", true);
+	EXPECT_EQ(false, testbot._recieved);
+
+	pager.HandlePresence("Alice", "alice@jabber.com", true);
+	EXPECT_EQ(true, testbot._recieved);
+}
+
+TEST(PagerTest, MsgByJidCheckPresenseHandling)
+{
+	PagerTestBot testbot;
+	Pager pager(&testbot);
+
+	pager.StoreMessage("alice@jabber.com", "Bob", "test");
+	EXPECT_EQ(false, testbot._recieved);
+
+	pager.HandlePresence("Alice", "alice@jabber.com", false);
+	EXPECT_EQ(false, testbot._recieved);
+
+	pager.HandlePresence("Bob", "bob@jabber.com", true);
+	EXPECT_EQ(false, testbot._recieved);
+
+	pager.HandlePresence("alice@jabber.com", "john@jabber.com", true);
+	EXPECT_EQ(false, testbot._recieved);
+
+	pager.HandlePresence("Alice", "alice@jabber.com", true);
+	EXPECT_EQ(true, testbot._recieved);
+}
+
+#endif

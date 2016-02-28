@@ -151,7 +151,7 @@ std::string formatHTMLchars(std::string input)
 #include <gtest/gtest.h>
 #include <fstream>
 
-class TestBot : public LemonBot
+class UrlPreviewTestBot : public LemonBot
 {
 public:
 	void SendMessage(const std::string &text)
@@ -179,7 +179,7 @@ TEST(URLPreview, HTMLSpecialChars)
 
 TEST(URLPreview, GetTitle)
 {
-	TestBot testBot;
+	UrlPreviewTestBot testBot;
 	UrlPreview testUnit(&testBot);
 
 	{

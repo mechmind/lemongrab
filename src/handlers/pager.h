@@ -5,6 +5,10 @@
 #include <list>
 #include <chrono>
 
+#ifdef _BUILD_TESTS
+#include <gtest/gtest_prod.h>
+#endif
+
 class Pager : public LemonHandler
 {
 public:
@@ -15,6 +19,7 @@ public:
 	const std::string GetHelp() const;
 
 private:
+	void StoreMessage(const std::string &to, const std::string &from, const std::string &text);
 	void PrintPagerStats();
 
 private:
@@ -35,4 +40,9 @@ private:
 	};
 
 	std::list<Message> _messages;
+
+#ifdef _BUILD_TESTS
+	FRIEND_TEST(PagerTest, MsgByNickCheckPresenseHandling);
+	FRIEND_TEST(PagerTest, MsgByJidCheckPresenseHandling);
+#endif
 };
