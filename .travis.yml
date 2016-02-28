@@ -9,7 +9,8 @@ before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo add-apt-repository ppa:george-edison55/cmake-3.x -y
   - sudo apt-get update -qq
-  - sudo apt-get install -y g++-4.8 libcurl4-openssl-dev libgloox-dev libgtest-dev libleveldb-dev libevent-dev libjsoncpp-dev libboost-locale-dev
+  - sudo apt-get install -y g++-4.8 lcov libcurl4-openssl-dev libgloox-dev libgtest-dev libleveldb-dev libevent-dev libjsoncpp-dev libboost-locale-dev
+  - sudo gem install coveralls-lcov
   - cd /usr/src/gtest && sudo cmake .
   - sudo make
   - sudo mv libg* /usr/lib/
@@ -18,10 +19,13 @@ before_install:
 script:
   - mkdir build
   - cd build
-  - cmake .. -DBUILD_TESTS=ON
+  - cmake .. -DBUILD_TESTS=ON -DBUILD_COVER=ON
   - make
   - ln -s ../test test
   - ./lemongrab --test
+  - gcov `find . "*.gcda"`
+  - lcov -c -d . -o coverage.info
+  - coveralls-lcov --repo-token "${COVERALLS_REPO_TOKEN}" coverage.info
 
 os:
   - linux
