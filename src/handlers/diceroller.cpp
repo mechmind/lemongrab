@@ -229,6 +229,21 @@ TEST(DiceTest, NonDiceTokens)
 	EXPECT_EQ("5 + 4 - 3", resultS);
 }
 
+TEST(DiceTest, InvalidTokens)
+{
+	auto test1 = GetDiceTokens("not a token");
+	EXPECT_TRUE(test1.empty());
+
+	auto test2 = GetDiceTokens("");
+	EXPECT_TRUE(test2.empty());
+
+	auto test3 = GetDiceTokens(".invalid token");
+	std::string desc;
+	long int result = 0;
+	EXPECT_LT(0, test3.size());
+	EXPECT_FALSE(ParseSingleToken(*test3.begin(), desc, result));
+}
+
 TEST(DiceTest, DiceRolls)
 {
 	DiceTestBot testbot;

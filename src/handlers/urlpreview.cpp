@@ -5,6 +5,8 @@
 
 #include <curl/curl.h>
 
+#include "util/stringops.h"
+
 std::string formatHTMLchars(std::string input);
 
 // Curl support
@@ -64,16 +66,12 @@ const std::string UrlPreview::GetVersion() const
 void UrlPreview::readConfig(LemonBot *bot)
 {
 	auto unparsedWhitelist = bot->GetRawConfigValue("URLwhitelist");
-	size_t prevPos = 0;
-	for (size_t pos = 0; pos < unparsedWhitelist.length(); pos++)
+
+	auto urls = tokenize(unparsedWhitelist, ';');
+	for (auto url : urls)
 	{
-		if (unparsedWhitelist.at(pos) == ';')
-		{
-			auto url = unparsedWhitelist.substr(prevPos, pos - prevPos);
-			std::cout << "Whitelisted URL: " << url << std::endl;
-			_URLwhitelist.insert(url);
-			prevPos = pos + 1;
-		}
+		std::cout << "Whitelisted URL: " << url << std::endl;
+		_URLwhitelist.insert(url);
 	}
 }
 
@@ -162,7 +160,7 @@ public:
 	std::string GetRawConfigValue(const std::string &name) const
 	{
 		if (name == "URLwhitelist")
-			return "youtube.com;youtu.be;store.steampowered.com;";
+			return "youtube.com;youtu.be;store.steampowered.com";
 		else
 			return "";
 	}
@@ -175,6 +173,26 @@ TEST(URLPreview, HTMLSpecialChars)
 	std::string input = "&quot;&amp;&gt;&lt;";
 
 	EXPECT_EQ("\"&><", formatHTMLchars(input));
+}
+
+TEST(URLPreview, ConfigReader)
+{
+	UrlPreviewTestBot testBot;
+	UrlPreview testUnit(&testBot);
+
+	std::set<std::string> expectedWhitelist = {"youtube.com", "youtu.be", "store.steampowered.com"};
+
+	EXPECT_EQ(expectedWhitelist.size(), testUnit._URLwhitelist.size());
+
+	auto result = testUnit._URLwhitelist.begin();
+	auto expected = expectedWhitelist.begin();
+
+	while (result != testUnit._URLwhitelist.end())
+	{
+		EXPECT_EQ(*expected, *result);
+		++expected;
+		++result;
+	}
 }
 
 TEST(URLPreview, GetTitle)
@@ -199,6 +217,18 @@ TEST(URLPreview, GetTitle)
 		testUnit.getTitle(content, title);
 		EXPECT_EQ("Undertale on Steam", formatHTMLchars(title));
 	}
+}
+
+TEST(URLPreview, FindURL)
+{
+	UrlPreviewTestBot testBot;
+	UrlPreview testUnit(&testBot);
+
+	std::string site;
+	std::string url;
+	testUnit.findURL("123 https://example.com/test/ 345", site, url);
+	EXPECT_EQ("example.com", site);
+	EXPECT_EQ("https://example.com/test/", url);
 }
 
 #endif // LCOV_EXCL_STOP

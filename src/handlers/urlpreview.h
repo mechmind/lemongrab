@@ -25,5 +25,7 @@ private:
 
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(URLPreview, GetTitle);
+	FRIEND_TEST(URLPreview, ConfigReader);
+	FRIEND_TEST(URLPreview, FindURL);
 #endif
 };
