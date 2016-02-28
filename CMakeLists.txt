@@ -30,7 +30,7 @@ if(BUILD_COVER)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
 
-target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${GLOOX_LDFLAGS} ${LIBEVENT_LDFLAGS} ${Boost_LIBRARIES} -boost_locale -lleveldb -ljsoncpp)
+target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${GLOOX_LDFLAGS} ${LIBEVENT_LDFLAGS} ${Boost_LIBRARIES} -lboost_locale -lleveldb -ljsoncpp)
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
