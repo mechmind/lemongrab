@@ -14,7 +14,7 @@ std::string toLower(const std::string &input)
 	return boost::locale::to_lower(input);
 }
 
-#ifdef _BUILD_TESTS
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
 
 #include <gtest/gtest.h>
 
@@ -32,4 +32,4 @@ TEST(toLower, ruRU)
 	initLocale();
 }
 
-#endif
+#endif // LCOV_EXCL_STOP

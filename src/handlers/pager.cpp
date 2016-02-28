@@ -83,7 +83,7 @@ void Pager::PrintPagerStats()
 	SendMessage("Paged messages:" + messageStatsString);
 }
 
-#ifdef _BUILD_TESTS
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
 
 #include <gtest/gtest.h>
 
@@ -142,4 +142,4 @@ TEST(PagerTest, MsgByJidCheckPresenseHandling)
 	EXPECT_EQ(true, testbot._recieved);
 }
 
-#endif
+#endif // LCOV_EXCL_STOP

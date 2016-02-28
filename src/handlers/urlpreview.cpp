@@ -146,7 +146,7 @@ std::string formatHTMLchars(std::string input)
 	return input;
 }
 
-#ifdef _BUILD_TESTS
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
 
 #include <gtest/gtest.h>
 #include <fstream>
@@ -201,4 +201,4 @@ TEST(URLPreview, GetTitle)
 	}
 }
 
-#endif
+#endif // LCOV_EXCL_STOP

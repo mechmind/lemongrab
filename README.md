@@ -4,6 +4,7 @@ lemongrab
 Simple XMPP MUC bot, written in C++, made for private use
 
 [![Build Status](https://travis-ci.org/Chemrat/lemongrab.svg?branch=master)](https://travis-ci.org/Chemrat/lemongrab)
+[![Coverage Status](https://coveralls.io/repos/github/Chemrat/lemongrab/badge.svg?branch=master)](https://coveralls.io/github/Chemrat/lemongrab?branch=master)
 
 List of features:
 

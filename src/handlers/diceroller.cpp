@@ -159,7 +159,7 @@ const std::string DiceRoller::GetHelp() const
 			" in format XdY, and operators + or -";
 }
 
-#ifdef _BUILD_TESTS
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
 
 #include "gtest/gtest.h"
 
@@ -201,4 +201,4 @@ TEST(DiceTest, NonDiceTokens)
 	EXPECT_EQ("5 + 4 - 3", resultS);
 }
 
-#endif
+#endif // LCOV_EXCL_STOP
