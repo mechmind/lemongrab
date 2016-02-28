@@ -34,6 +34,23 @@ std::list<std::string> tokenize(const std::string &input, char separator)
 	return tokens;
 }
 
+#include <regex>
+
+std::list<URL> findURLs(const std::string &input)
+{
+	std::list<URL> output;
+
+	// FIXME doesn't match top-level urls, but it's good enough
+	std::regex trivial_url("(https?://(?:www.)?([^/]+?)/[^ ]+)[/#; )]");
+	std::smatch matches;
+
+	for (std::sregex_iterator i(input.begin(), input.end(), trivial_url);
+		 i != std::sregex_iterator(); ++i)
+		output.push_back(URL(i->str(1), i->str(2)));
+
+	return output;
+}
+
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
 
 #include <gtest/gtest.h>
@@ -50,6 +67,29 @@ TEST(toLower, ruRU)
 	EXPECT_EQ("тест test", lc);
 
 	initLocale();
+}
+
+TEST(findURLs, URLs)
+{
+	auto urls = findURLs("123 https://example.com/test/ 345 http://goo.gl/allo/this?is=a&test#thingy end https://www.youtube.com/watch?v=abcde test");
+
+	std::list<URL> expectedURLs = {
+		{"https://example.com/test/", "example.com"},
+		{"http://goo.gl/allo/this?is=a&test#thingy", "goo.gl"},
+		{"https://www.youtube.com/watch?v=abcde", "youtube.com"},
+	};
+	ASSERT_EQ(expectedURLs.size(), urls.size());
+
+	auto expected = expectedURLs.begin();
+	auto result = urls.begin();
+
+	while (expected != expectedURLs.end())
+	{
+		EXPECT_EQ(expected->url, result->url);
+		EXPECT_EQ(expected->hostname, result->hostname);
+		++expected;
+		++result;
+	}
 }
 
 #endif // LCOV_EXCL_STOP

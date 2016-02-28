@@ -17,7 +17,6 @@ public:
 
 private:
 	void readConfig(LemonBot *bot);
-	bool findURL(const std::string &input, std::string &site, std::string &url);
 	bool getTitle(const std::string &content, std::string &title);
 
 private:
@@ -26,6 +25,5 @@ private:
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(URLPreview, GetTitle);
 	FRIEND_TEST(URLPreview, ConfigReader);
-	FRIEND_TEST(URLPreview, FindURL);
 #endif
 };

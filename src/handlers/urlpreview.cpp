@@ -43,19 +43,23 @@ UrlPreview::UrlPreview(LemonBot *bot)
 
 bool UrlPreview::HandleMessage(const std::string &from, const std::string &body)
 {
-	std::string site, url;
-	if (!findURL(body, site, url))
+	auto sites = findURLs(body);
+	if (sites.empty())
 		return false;
 
-	if (_URLwhitelist.find(site) == _URLwhitelist.end())
-		return false;
+	for (auto &site : sites)
+	{
+		if (_URLwhitelist.find(site.hostname) == _URLwhitelist.end())
+			continue;
 
-	std::string siteContent = CurlRequest(url);
-	std::string title = "Can't get page title";
-	getTitle(siteContent, title);
+		std::string siteContent = CurlRequest(site.url);
+		std::string title = "Can't get page title";
+		getTitle(siteContent, title);
 
-	SendMessage(formatHTMLchars(title));
-	return true;
+		SendMessage(formatHTMLchars(title));
+	}
+
+	return false;
 }
 
 const std::string UrlPreview::GetVersion() const
@@ -73,30 +77,6 @@ void UrlPreview::readConfig(LemonBot *bot)
 		std::cout << "Whitelisted URL: " << url << std::endl;
 		_URLwhitelist.insert(url);
 	}
-}
-
-bool UrlPreview::findURL(const std::string &input, std::string &site, std::string &url)
-{
-	auto loc = input.find("http://");
-
-	if (loc == input.npos)
-		loc = input.find("https://");
-
-	if (loc == input.npos)
-		return false;
-
-	url = input.substr(loc, input.find_first_of(" \n;)", loc) - loc);
-
-	try {
-		site = url.substr(url.find("//") + 2, url.find("/", 9) - 2 - url.find("//")); // FIXME magic number
-	} catch (...) {
-		return false;
-	}
-
-	if (site.length() > 3 && site.substr(0, 4) == "www.")
-		site = site.substr(4);
-
-	return true;
 }
 
 bool UrlPreview::getTitle(const std::string &content, std::string &title)
@@ -217,18 +197,6 @@ TEST(URLPreview, GetTitle)
 		testUnit.getTitle(content, title);
 		EXPECT_EQ("Undertale on Steam", formatHTMLchars(title));
 	}
-}
-
-TEST(URLPreview, FindURL)
-{
-	UrlPreviewTestBot testBot;
-	UrlPreview testUnit(&testBot);
-
-	std::string site;
-	std::string url;
-	testUnit.findURL("123 https://example.com/test/ 345", site, url);
-	EXPECT_EQ("example.com", site);
-	EXPECT_EQ("https://example.com/test/", url);
 }
 
 #endif // LCOV_EXCL_STOP
