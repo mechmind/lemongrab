@@ -41,7 +41,7 @@ std::list<URL> findURLs(const std::string &input)
 	std::list<URL> output;
 
 	// FIXME doesn't match top-level urls, but it's good enough
-	std::regex trivial_url("(https?://(?:www.)?([^/]+?)/[^ ]+)[/#; )]");
+	std::regex trivial_url("(https?://(?:www.)?([^/]+?)/[^ ]+)(?:[/#; )]|$)");
 	std::smatch matches;
 
 	for (std::sregex_iterator i(input.begin(), input.end(), trivial_url);
@@ -90,6 +90,10 @@ TEST(findURLs, URLs)
 		++expected;
 		++result;
 	}
+
+	urls = findURLs("https://www.youtube.com/watch?v=lxQjwbUiM9w");
+	EXPECT_EQ("https://www.youtube.com/watch?v=lxQjwbUiM9w", urls.begin()->url);
+	EXPECT_EQ("youtube.com", urls.begin()->hostname);
 }
 
 #endif // LCOV_EXCL_STOP
