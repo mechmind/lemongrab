@@ -25,6 +25,6 @@ private:
 private:
 	static const std::string _command;
 
-	leveldb::DB *_lastSeenDB;
-	leveldb::DB *_nick2jidDB;
+	leveldb::DB *_lastSeenDB = nullptr;
+	leveldb::DB *_nick2jidDB = nullptr;
 };

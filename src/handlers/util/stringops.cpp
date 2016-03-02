@@ -1,5 +1,6 @@
 #include "stringops.h"
 
+#include <regex>
 #include <boost/locale.hpp>
 
 void initLocale()
@@ -33,8 +34,6 @@ std::list<std::string> tokenize(const std::string &input, char separator)
 
 	return tokens;
 }
-
-#include <regex>
 
 std::list<URL> findURLs(const std::string &input)
 {

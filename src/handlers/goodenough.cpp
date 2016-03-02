@@ -31,7 +31,7 @@ bool GoodEnough::HandleMessage(const std::string &from, const std::string &body)
 		}
 	}
 
-	return true;
+	return false;
 }
 
 const std::string GoodEnough::GetVersion() const

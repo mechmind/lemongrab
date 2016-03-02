@@ -6,6 +6,7 @@
 #include "handlers/pager.h"
 #include "handlers/githubwebhooks.h"
 #include "handlers/goodenough.h"
+#include "handlers/quotes.h"
 
 #include "glooxclient.h"
 
@@ -27,6 +28,7 @@ void Bot::Run()
 	RegisterHandler<Pager>();
 	RegisterHandler<GithubWebhooks>();
 	RegisterHandler<GoodEnough>();
+	RegisterHandler<Quotes>();
 
 	_xmpp->Connect(_settings.GetUserJID(), _settings.GetPassword());
 }

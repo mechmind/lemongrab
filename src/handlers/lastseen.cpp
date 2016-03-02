@@ -155,7 +155,7 @@ std::string LastSeen::FindSimilar(std::string input)
 		{
 			if (matches >= 10)
 			{
-				matchingRecords.append("... (too many matches)");
+				matchingRecords.append(" ... (too many matches)");
 				return matchingRecords;
 			}
 
