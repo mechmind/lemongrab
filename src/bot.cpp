@@ -7,6 +7,7 @@
 #include "handlers/githubwebhooks.h"
 #include "handlers/goodenough.h"
 #include "handlers/quotes.h"
+#include "handlers/lasturls.h"
 
 #include "glooxclient.h"
 
@@ -29,6 +30,7 @@ void Bot::Run()
 	RegisterHandler<GithubWebhooks>();
 	RegisterHandler<GoodEnough>();
 	RegisterHandler<Quotes>();
+	RegisterHandler<LastURLs>();
 
 	_xmpp->Connect(_settings.GetUserJID(), _settings.GetPassword());
 }

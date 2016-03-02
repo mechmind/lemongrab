@@ -5,8 +5,8 @@
 
 #include "lemonhandler.h"
 
-class evhttp_request;
 class event_base;
+class evhttp_request;
 class event;
 
 class GithubWebhooks : public LemonHandler
