@@ -40,8 +40,7 @@ std::list<URL> findURLs(const std::string &input)
 {
 	std::list<URL> output;
 
-	// FIXME doesn't match top-level urls, but it's good enough
-	std::regex trivial_url("(https?://(?:www.)?([^/]+?)/[^ ]+)(?:[/#; )]|$)");
+	std::regex trivial_url("(https?://(?:www.)?([a-z.]+)/?[a-zA-Z0-9\\-._~:/?#\\[\\]@!$&'()*+,;=%]*)");
 	std::smatch matches;
 
 	for (std::sregex_iterator i(input.begin(), input.end(), trivial_url);
@@ -71,10 +70,11 @@ TEST(toLower, ruRU)
 
 TEST(findURLs, URLs)
 {
-	auto urls = findURLs("123 https://example.com/test/ 345 http://goo.gl/allo/this?is=a&test#thingy end https://www.youtube.com/watch?v=abcde test");
+	auto urls = findURLs("123 https://example.com/test/ 34 http://ya.ru/ 5 http://goo.gl/allo/this?is=a&test#thingy end https://www.youtube.com/watch?v=abcde test");
 
 	std::list<URL> expectedURLs = {
 		{"https://example.com/test/", "example.com"},
+		{"http://ya.ru/", "ya.ru"},
 		{"http://goo.gl/allo/this?is=a&test#thingy", "goo.gl"},
 		{"https://www.youtube.com/watch?v=abcde", "youtube.com"},
 	};
