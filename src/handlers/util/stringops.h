@@ -1,13 +1,14 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <list>
 
 void initLocale();
 
 std::string toLower(const std::string &input);
 
-std::list<std::string> tokenize(const std::string &input, char separator);
+std::vector<std::string> tokenize(const std::string &input, char separator);
 
 class URL
 {

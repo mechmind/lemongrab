@@ -8,6 +8,7 @@
 #include "handlers/goodenough.h"
 #include "handlers/quotes.h"
 #include "handlers/lasturls.h"
+#include "handlers/ts3.h"
 
 #include "glooxclient.h"
 
@@ -31,6 +32,7 @@ void Bot::Run()
 	RegisterHandler<GoodEnough>();
 	RegisterHandler<Quotes>();
 	RegisterHandler<LastURLs>();
+	RegisterHandler<TS3>();
 
 	_xmpp->Connect(_settings.GetUserJID(), _settings.GetPassword());
 }
