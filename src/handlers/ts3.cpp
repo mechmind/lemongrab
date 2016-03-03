@@ -39,6 +39,11 @@ const std::string TS3::GetVersion() const
 	return "0.1";
 }
 
+const std::string TS3::GetHelp() const
+{
+	return "!ts - get online teamspeak users";
+}
+
 void eventcb(bufferevent *bev, short event, void *arg)
 {
 	if (event & BEV_EVENT_CONNECTED) {
@@ -77,8 +82,9 @@ void readcb(bufferevent *bev, void *arg)
 	switch (parent->_sqState)
 	{
 	case TS3::State::NotConnected:
+		// FIXME: very poor criteria for connection
 		static const std::string welcome = "Welcome to the TeamSpeak 3 ServerQuery interface";
-		if (s.find(welcome) == 0)
+		if (s.find(welcome) != s.npos)
 		{
 			parent->_sqState = TS3::State::ServerQueryConnected;
 			std::string loginString = "login " + parent->GetRawConfigValue("TS3QueryLogin")
