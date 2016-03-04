@@ -41,11 +41,11 @@ UrlPreview::UrlPreview(LemonBot *bot)
 	readConfig(bot);
 }
 
-bool UrlPreview::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from, const std::string &body)
 {
 	auto sites = findURLs(body);
 	if (sites.empty())
-		return false;
+		return ProcessingResult::KeepGoing;
 
 	for (auto &site : sites)
 	{
@@ -59,7 +59,7 @@ bool UrlPreview::HandleMessage(const std::string &from, const std::string &body)
 		SendMessage(formatHTMLchars(title));
 	}
 
-	return false;
+	return ProcessingResult::KeepGoing;
 }
 
 const std::string UrlPreview::GetVersion() const

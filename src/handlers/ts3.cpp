@@ -15,12 +15,12 @@ TS3::TS3(LemonBot *bot)
 	StartServerQueryClient();
 }
 
-bool TS3::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult TS3::HandleMessage(const std::string &from, const std::string &body)
 {
 	if (body == "!ts")
 	{
 		if (_clients.size() == 0)
-			SendMessage("So ronery");
+			SendMessage("TeamSpeak server is empty");
 		else
 		{
 			std::string online;
@@ -29,9 +29,9 @@ bool TS3::HandleMessage(const std::string &from, const std::string &body)
 
 			SendMessage("Current TeamSpeak users online:" + online);
 		}
-		return true;
+		return ProcessingResult::StopProcessing;
 	}
-	return false;
+	return ProcessingResult::KeepGoing;
 }
 
 const std::string TS3::GetVersion() const

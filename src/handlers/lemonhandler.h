@@ -22,14 +22,18 @@ public:
 	virtual ~LemonHandler();
 
 public:
+	enum class ProcessingResult {
+		KeepGoing,
+		StopProcessing,
+	};
 	/**
 	 * @brief Receives and handles MUC messages
 	 * @param from Sender nickname
 	 * @param body Message body
 	 * @return True if message shoud not be passed to another handler
 	 */
-	virtual bool HandleMessage(const std::string &from, const std::string &body) = 0;
-	virtual bool HandlePresence(const std::string &from, const std::string &jid, bool connected) { return false; }
+	virtual ProcessingResult HandleMessage(const std::string &from, const std::string &body) = 0;
+	virtual void HandlePresence(const std::string &from, const std::string &jid, bool connected) { }
 
 	/**
 	 * @brief Get module version

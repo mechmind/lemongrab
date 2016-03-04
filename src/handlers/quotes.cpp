@@ -20,10 +20,10 @@ Quotes::Quotes(LemonBot *bot)
 		std::cerr << status.ToString() << std::endl;
 }
 
-bool Quotes::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult Quotes::HandleMessage(const std::string &from, const std::string &body)
 {
 	if (body.length() < 3)
-		return false;
+		return ProcessingResult::KeepGoing;
 
 	auto command = body.substr(0, 3);
 
@@ -33,11 +33,11 @@ bool Quotes::HandleMessage(const std::string &from, const std::string &body)
 		if (body.length() > 4)
 			id = body.substr(4);
 		SendMessage(from + ": " + GetQuote(id));
-		return true;
+		return ProcessingResult::StopProcessing;
 	}
 
 	if (body.length() < 5)
-		return false;
+		return ProcessingResult::KeepGoing;
 
 	auto parameter = body.substr(4);
 
@@ -45,23 +45,23 @@ bool Quotes::HandleMessage(const std::string &from, const std::string &body)
 	{
 		auto id = AddQuote(parameter);
 		id.empty() ? SendMessage(from + ": can't add quote") : SendMessage(from + ": quote added with id " + id);
-		return true;
+		return ProcessingResult::StopProcessing;
 	}
 
 	if (command == "!dq")
 	{
 		DeleteQuote(parameter) ? SendMessage(from + ": quote deleted") : SendMessage(from + ": quote doesn't exist or access denied");
-		return true;
+		return ProcessingResult::StopProcessing;
 	}
 
 	if (command == "!fq")
 	{
 		auto searchResults = FindQuote(parameter);
 		SendMessage(from + ": " + searchResults);
-		return true;
+		return ProcessingResult::StopProcessing;
 	}
 
-	return false;
+	return ProcessingResult::KeepGoing;
 }
 
 const std::string Quotes::GetVersion() const

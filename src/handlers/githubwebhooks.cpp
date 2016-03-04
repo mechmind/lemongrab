@@ -26,9 +26,9 @@ GithubWebhooks::~GithubWebhooks()
 	_httpServer.join();
 }
 
-bool GithubWebhooks::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult GithubWebhooks::HandleMessage(const std::string &from, const std::string &body)
 {
-	return false;
+	return ProcessingResult::KeepGoing;
 }
 
 const std::string GithubWebhooks::GetVersion() const

@@ -20,7 +20,7 @@ LastURLs::~LastURLs()
 	_httpServer.join();
 }
 
-bool LastURLs::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult LastURLs::HandleMessage(const std::string &from, const std::string &body)
 {
 	auto sites = findURLs(body);
 
@@ -31,7 +31,7 @@ bool LastURLs::HandleMessage(const std::string &from, const std::string &body)
 			_urlHistory.pop_back();
 	}
 
-	return false;
+	return ProcessingResult::KeepGoing;
 }
 
 const std::string LastURLs::GetVersion() const

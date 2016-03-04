@@ -14,7 +14,7 @@ class LastURLs : public LemonHandler
 public:
 	LastURLs(LemonBot *bot);
 	~LastURLs();
-	bool HandleMessage(const std::string &from, const std::string &body);
+	ProcessingResult HandleMessage(const std::string &from, const std::string &body);
 	const std::string GetVersion() const;
 	const std::string GetHelp() const;
 

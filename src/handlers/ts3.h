@@ -14,7 +14,7 @@ class TS3 : public LemonHandler
 {
 public:
 	TS3(LemonBot *bot);
-	bool HandleMessage(const std::string &from, const std::string &body);
+	ProcessingResult HandleMessage(const std::string &from, const std::string &body);
 	const std::string GetVersion() const;
 	const std::string GetHelp() const;
 

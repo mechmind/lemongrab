@@ -2,34 +2,34 @@
 
 #include <map>
 
-bool Pager::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult Pager::HandleMessage(const std::string &from, const std::string &body)
 {
 	if (body.find("!pager_stats") == 0)
 	{
 		PrintPagerStats();
-		return true;
+		return ProcessingResult::StopProcessing;
 	}
 
 	// TODO: preserve messages between restarts via leveldb?
 	if (body.length() < 7 || body.substr(0, 6) != "!pager")
-		return false;
+		return ProcessingResult::KeepGoing;
 
 	auto input = body.substr(7);
 	size_t space = input.find(' ');
 	if (space == input.npos)
 	{
 		SendMessage(GetHelp());
-		return true;
+		return ProcessingResult::StopProcessing;
 	}
 
 	auto to = input.substr(0, space);
 	auto text = input.substr(space + 1);
 	StoreMessage(to, from, text);
 
-	return true;
+	return ProcessingResult::StopProcessing;
 }
 
-bool Pager::HandlePresence(const std::string &from, const std::string &jid, bool connected)
+void Pager::HandlePresence(const std::string &from, const std::string &jid, bool connected)
 {
 	if (connected && !_messages.empty())
 	{
@@ -49,7 +49,6 @@ bool Pager::HandlePresence(const std::string &from, const std::string &jid, bool
 			}
 		}
 	}
-	return false;
 }
 
 const std::string Pager::GetVersion() const

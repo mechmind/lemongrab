@@ -126,12 +126,12 @@ DiceRoller::DiceRoller(LemonBot *bot)
 	ResetRNG();
 }
 
-bool DiceRoller::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult DiceRoller::HandleMessage(const std::string &from, const std::string &body)
 {
 	auto diceTokens = GetDiceTokens(body);
 
 	if (diceTokens.empty())
-		return false;
+		return ProcessingResult::KeepGoing;
 
 	std::string resultDescription;
 	long result = 0;
@@ -152,7 +152,7 @@ bool DiceRoller::HandleMessage(const std::string &from, const std::string &body)
 	if (success)
 		SendMessage(from + ": " + resultDescription);
 
-	return true;
+	return ProcessingResult::StopProcessing;
 }
 
 const std::string DiceRoller::GetVersion() const

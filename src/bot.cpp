@@ -77,8 +77,8 @@ void Bot::OnMessage(const std::string &nick, const std::string &text)
 		return SendMessage(GetHelp(module));
 	}
 
-	for (auto handler : _messageHandlers)
-		if (handler->HandleMessage(nick, text))
+	for (auto &handler : _messageHandlers)
+		if (handler->HandleMessage(nick, text) == LemonHandler::ProcessingResult::StopProcessing)
 			break;
 }
 
@@ -102,11 +102,8 @@ void Bot::OnPresence(const std::string &nick, const std::string &jid, bool onlin
 		}
 	}
 
-	for (auto handler : _messageHandlers)
-	{
-		if (handler->HandlePresence(nick, jid, newConnection))
-			break;
-	}
+	for (auto &handler : _messageHandlers)
+		handler->HandlePresence(nick, jid, newConnection);
 }
 
 std::string Bot::GetNickByJid(const std::string &jid) const

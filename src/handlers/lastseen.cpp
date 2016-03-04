@@ -39,15 +39,15 @@ LastSeen::LastSeen(LemonBot *bot)
 		std::cerr << status.ToString() << std::endl;
 }
 
-bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, const std::string &body)
 {
 	if (body.length() < _command.length() + 2 || body.substr(0, _command.length()) != _command)
-		return false;
+		return ProcessingResult::KeepGoing;
 
 	if (!_nick2jidDB || !_lastSeenDB)
 	{
 		SendMessage("Database connection error");
-		return false;
+		return ProcessingResult::KeepGoing;
 	}
 
 	std::string input = body.substr(_command.length() + 1, body.npos);
@@ -68,7 +68,7 @@ bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 			else
 				SendMessage("Users similar to " + input + ":" + similarUsers);
 
-			return false;
+			return ProcessingResult::StopProcessing;
 		}
 
 		getLastSeenByJID = _lastSeenDB->Get(leveldb::ReadOptions(), jidRecord, &lastSeenRecord);
@@ -76,7 +76,7 @@ bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 		if (getLastSeenByJID.IsNotFound())
 		{
 			SendMessage("Well this is weird, " + input + " resolved to " + jidRecord + " but I have no record for this jid");
-			return false;
+			return ProcessingResult::StopProcessing;
 		}
 	}
 
@@ -87,7 +87,7 @@ bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 			SendMessage(input + " (" + jidRecord + ") is still here as " + currentNick);
 		else
 			SendMessage(input + " is still here");
-		return false;
+		return ProcessingResult::StopProcessing;
 	}
 
 	std::chrono::system_clock::duration lastSeenDiff;
@@ -97,14 +97,14 @@ bool LastSeen::HandleMessage(const std::string &from, const std::string &body)
 		lastSeenDiff = now - lastSeenTime;
 	} catch (std::exception e) {
 		SendMessage("Something broke: " + std::string(e.what()));
-		return false;
+		return ProcessingResult::StopProcessing;
 	}
 
 	SendMessage(input + " (" + jidRecord + ") last seen " + CustomTimeFormat(lastSeenDiff) + " ago");
-	return false;
+	return ProcessingResult::StopProcessing;
 }
 
-bool LastSeen::HandlePresence(const std::string &from, const std::string &jid, bool connected)
+void LastSeen::HandlePresence(const std::string &from, const std::string &jid, bool connected)
 {
 	auto now = std::chrono::system_clock::now();
 
@@ -113,8 +113,6 @@ bool LastSeen::HandlePresence(const std::string &from, const std::string &jid, b
 
 	if (_lastSeenDB)
 		_lastSeenDB->Put(leveldb::WriteOptions(), jid, std::to_string(std::chrono::system_clock::to_time_t(now)));
-
-	return false;
 }
 
 const std::string LastSeen::GetVersion() const

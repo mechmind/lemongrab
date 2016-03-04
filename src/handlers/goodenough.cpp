@@ -9,7 +9,7 @@ namespace {
 	std::string response = "https://youtu.be/WgYhYw-lS_s";
 }
 
-bool GoodEnough::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult GoodEnough::HandleMessage(const std::string &from, const std::string &body)
 {
 	static std::list<std::string> magicPhrases = {
 		"так сойдет",
@@ -27,11 +27,11 @@ bool GoodEnough::HandleMessage(const std::string &from, const std::string &body)
 		if (loc != lowercase.npos)
 		{
 			SendMessage(from + ": " + response);
-			return false;
+			return ProcessingResult::StopProcessing;
 		}
 	}
 
-	return false;
+	return ProcessingResult::KeepGoing;
 }
 
 const std::string GoodEnough::GetVersion() const
