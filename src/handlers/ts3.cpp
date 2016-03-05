@@ -9,6 +9,8 @@
 
 #include <iostream>
 
+#include "util/stringops.h"
+
 TS3::TS3(LemonBot *bot)
 	: LemonHandler("ts3", bot)
 {
@@ -17,21 +19,20 @@ TS3::TS3(LemonBot *bot)
 
 LemonHandler::ProcessingResult TS3::HandleMessage(const std::string &from, const std::string &body)
 {
-	if (body == "!ts")
-	{
-		if (_clients.size() == 0)
-			SendMessage("TeamSpeak server is empty");
-		else
-		{
-			std::string online;
-			for (auto &user : _clients)
-				online.append(" " + user.second);
+	if (body != "!ts")
+		return ProcessingResult::KeepGoing;
 
-			SendMessage("Current TeamSpeak users online:" + online);
-		}
-		return ProcessingResult::StopProcessing;
+	if (_clients.size() == 0)
+		SendMessage("TeamSpeak server is empty");
+	else
+	{
+		std::string online;
+		for (auto &user : _clients)
+			online.append(" " + user.second);
+
+		SendMessage("Current TeamSpeak users online:" + online);
 	}
-	return ProcessingResult::KeepGoing;
+	return ProcessingResult::StopProcessing;
 }
 
 const std::string TS3::GetVersion() const
@@ -49,7 +50,7 @@ void eventcb(bufferevent *bev, short event, void *arg)
 	if (event & BEV_EVENT_CONNECTED) {
 		std::cout << "[TS3] Connected" << std::endl;
 	} else if (event & BEV_EVENT_TIMEOUT) {
-		std::cout << "[TS3] Sending keepalive" << std::endl;
+		std::cout << "[TS3] Sending keepalive..." << std::endl;
 		bufferevent_enable(bev, EV_READ|EV_WRITE);
 		evbuffer_add_printf(bufferevent_get_output(bev), "whoami\n");
 	} else if (event & (BEV_EVENT_ERROR|BEV_EVENT_EOF)) {
@@ -77,7 +78,7 @@ void readcb(bufferevent *bev, void *arg)
 	while ((n = evbuffer_remove(input, buf, sizeof(buf))) > 0)
 		s.append(buf, n);
 
-	std::cout << "[TS3] >>> " << s << std::endl;
+	std::cout << "[TS3] >>> " << s;
 
 	switch (parent->_sqState)
 	{
@@ -94,8 +95,8 @@ void readcb(bufferevent *bev, void *arg)
 		break;
 
 	case TS3::State::ServerQueryConnected:
-		static const std::string ok = "error id=0 msg=ok";
-		if (s.find(ok) == 0)
+		static const std::string okMsg = "error id=0 msg=ok";
+		if (beginsWith(s, okMsg))
 		{
 			parent->_sqState = TS3::State::Authrozied;
 			evbuffer_add_printf(bufferevent_get_output(bev), "use port=9987\n");
@@ -103,7 +104,7 @@ void readcb(bufferevent *bev, void *arg)
 		break;
 
 	case TS3::State::Authrozied:
-		if (s.find(ok) == 0)
+		if (beginsWith(s, okMsg))
 		{
 			parent->_sqState = TS3::State::VirtualServerConnected;
 			evbuffer_add_printf(bufferevent_get_output(bev), "servernotifyregister event=server\n");
@@ -111,12 +112,12 @@ void readcb(bufferevent *bev, void *arg)
 		break;
 
 	case TS3::State::VirtualServerConnected:
-		if (s.find(ok) == 0)
+		if (beginsWith(s, okMsg))
 			parent->_sqState = TS3::State::Subscribed;
 		break;
 
 	case TS3::State::Subscribed:
-		if (s.find("notifycliententerview") == 0)
+		if (beginsWith(s, "notifycliententerview"))
 		{
 			// FIXME we need only 1-2 tokens, no need to tokenize whole thing?
 			auto tokens = tokenize(s, ' ');
@@ -128,7 +129,7 @@ void readcb(bufferevent *bev, void *arg)
 			break;
 		}
 
-		if (s.find("notifyclientleftview") == 0)
+		if (beginsWith(s, "notifyclientleftview") == 0)
 		{
 			auto tokens = tokenize(s, ' ');
 			try {
@@ -170,8 +171,13 @@ void TS3::StartServerQueryClient()
 
 void TS3::Connected(const std::string &clid, const std::string &nick)
 {
-	_clients[clid] = nick;
-	SendMessage("Teamspeak user connected: " + nick);
+	std::string formattedNick(nick);
+	auto fromIPpos = nick.find("\\sfrom\\s");
+	if (fromIPpos != nick.npos) // ServerQuery user
+		formattedNick = "ServerQuery<" + nick.substr(0, fromIPpos) + ">";
+
+	_clients[clid] = formattedNick;
+	SendMessage("Teamspeak user connected: " + formattedNick);
 }
 
 void TS3::Disconnected(const std::string &clid)

@@ -181,21 +181,13 @@ TEST(URLPreview, GetTitle)
 	UrlPreview testUnit(&testBot);
 
 	{
-		std::ifstream youtube("test/youtube.html");
-		std::string content((std::istreambuf_iterator<char>(youtube)), std::istreambuf_iterator<char>());
-		youtube.close();
+		std::string content("<html>\n"
+							"<head><title>This is a test title</title></head>\n"
+							"<body><p>Test</p></body>"
+							"</html>\n");
 		std::string title;
 		testUnit.getTitle(content, title);
-		EXPECT_EQ("\"Beach Cats\" (Ep. 3 & 4) - Bee and PuppyCat (Cartoon Hangover) - YouTube", formatHTMLchars(title));
-	}
-
-	{
-		std::ifstream steam("test/steam.html");
-		std::string content((std::istreambuf_iterator<char>(steam)), std::istreambuf_iterator<char>());
-		steam.close();
-		std::string title;
-		testUnit.getTitle(content, title);
-		EXPECT_EQ("Undertale on Steam", formatHTMLchars(title));
+		EXPECT_EQ("This is a test title", formatHTMLchars(title));
 	}
 }
 
