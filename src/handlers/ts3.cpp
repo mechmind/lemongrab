@@ -78,7 +78,10 @@ void readcb(bufferevent *bev, void *arg)
 	while ((n = evbuffer_remove(input, buf, sizeof(buf))) > 0)
 		s.append(buf, n);
 
-	std::cout << "[TS3] >>> " << s;
+	// trim CR LF
+	s.erase(s.size() - 2);
+
+	std::cout << "[TS3] >>> " << s << std::endl;
 
 	switch (parent->_sqState)
 	{
@@ -129,11 +132,11 @@ void readcb(bufferevent *bev, void *arg)
 			break;
 		}
 
-		if (beginsWith(s, "notifyclientleftview") == 0)
+		if (beginsWith(s, "notifyclientleftview"))
 		{
 			auto tokens = tokenize(s, ' ');
 			try {
-				parent->Disconnected(tokens.at(5).substr(5, tokens.at(5).size() - 7)); // FIXME: account for CR LF
+				parent->Disconnected(tokens.at(5).substr(5, tokens.at(5).size() - 5)); // FIXME: account for CR LF
 			} catch (std::exception &e) {
 				std::cout << "Something broke: " << e.what() << std::endl;
 			}
