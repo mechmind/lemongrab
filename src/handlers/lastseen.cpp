@@ -11,8 +11,6 @@
 
 #include "util/stringops.h"
 
-const std::string LastSeen::_command = "!seen";
-
 std::string CustomTimeFormat(std::chrono::system_clock::duration input)
 {
 	std::string output;
@@ -41,7 +39,8 @@ LastSeen::LastSeen(LemonBot *bot)
 
 LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, const std::string &body)
 {
-	if (body.length() < _command.length() + 2 || body.substr(0, _command.length()) != _command)
+	std::string wantedUser;
+	if (!getCommandArguments(body, "!seen", wantedUser));
 		return ProcessingResult::KeepGoing;
 
 	if (!_nick2jidDB || !_lastSeenDB)
@@ -50,23 +49,21 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 		return ProcessingResult::KeepGoing;
 	}
 
-	std::string input = body.substr(_command.length() + 1, body.npos);
-
 	std::string lastSeenRecord = "0";
-	std::string jidRecord = input;
-	leveldb::Status getLastSeenByJID = _lastSeenDB->Get(leveldb::ReadOptions(), input, &lastSeenRecord);
+	std::string jidRecord = wantedUser;
+	leveldb::Status getLastSeenByJID = _lastSeenDB->Get(leveldb::ReadOptions(), wantedUser, &lastSeenRecord);
 
 	if (getLastSeenByJID.IsNotFound())
 	{
-		leveldb::Status getJIDByNick = _nick2jidDB->Get(leveldb::ReadOptions(), input, &jidRecord);
+		leveldb::Status getJIDByNick = _nick2jidDB->Get(leveldb::ReadOptions(), wantedUser, &jidRecord);
 
 		if (getJIDByNick.IsNotFound())
 		{
-			auto similarUsers = FindSimilar(input);
+			auto similarUsers = FindSimilar(wantedUser);
 			if (similarUsers.empty())
-				SendMessage(input + "? Who's that?");
+				SendMessage(wantedUser + "? Who's that?");
 			else
-				SendMessage("Users similar to " + input + ":" + similarUsers);
+				SendMessage("Users similar to " + wantedUser + ":" + similarUsers);
 
 			return ProcessingResult::StopProcessing;
 		}
@@ -75,7 +72,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 
 		if (getLastSeenByJID.IsNotFound())
 		{
-			SendMessage("Well this is weird, " + input + " resolved to " + jidRecord + " but I have no record for this jid");
+			SendMessage("Well this is weird, " + wantedUser + " resolved to " + jidRecord + " but I have no record for this jid");
 			return ProcessingResult::StopProcessing;
 		}
 	}
@@ -83,10 +80,10 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 	auto currentNick = _botPtr->GetNickByJid(jidRecord);
 	if (!currentNick.empty())
 	{
-		if (input != currentNick)
-			SendMessage(input + " (" + jidRecord + ") is still here as " + currentNick);
+		if (wantedUser != currentNick)
+			SendMessage(wantedUser + " (" + jidRecord + ") is still here as " + currentNick);
 		else
-			SendMessage(input + " is still here");
+			SendMessage(wantedUser + " is still here");
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -95,12 +92,12 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 		auto now = std::chrono::system_clock::now();
 		auto lastSeenTime = std::chrono::system_clock::from_time_t(std::stol(lastSeenRecord));
 		lastSeenDiff = now - lastSeenTime;
-	} catch (std::exception e) {
+	} catch (std::exception &e) {
 		SendMessage("Something broke: " + std::string(e.what()));
 		return ProcessingResult::StopProcessing;
 	}
 
-	SendMessage(input + " (" + jidRecord + ") last seen " + CustomTimeFormat(lastSeenDiff) + " ago");
+	SendMessage(wantedUser + " (" + jidRecord + ") last seen " + CustomTimeFormat(lastSeenDiff) + " ago");
 	return ProcessingResult::StopProcessing;
 }
 
@@ -131,7 +128,7 @@ std::string LastSeen::FindSimilar(std::string input)
 	std::string matchingRecords;
 	try {
 		inputRegex = std::regex(toLower(input));
-	} catch (std::regex_error e) {
+	} catch (std::regex_error &e) {
 		SendMessage("Can't do deep search, regex error: " + std::string(e.what()));
 	}
 
@@ -145,7 +142,7 @@ std::string LastSeen::FindSimilar(std::string input)
 		std::string nick = toLower(it->key().ToString());
 		try {
 			doesMatch = std::regex_search(nick, regexMatch, inputRegex);
-		} catch (std::regex_error e) {
+		} catch (std::regex_error &e) {
 			std::cout << "Regex exception thrown" << e.what() << std::endl;
 		}
 

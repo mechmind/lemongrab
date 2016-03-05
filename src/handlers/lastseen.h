@@ -23,8 +23,6 @@ private:
 	std::string FindSimilar(std::string input);
 
 private:
-	static const std::string _command;
-
 	leveldb::DB *_lastSeenDB = nullptr;
 	leveldb::DB *_nick2jidDB = nullptr;
 };

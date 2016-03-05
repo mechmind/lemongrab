@@ -15,6 +15,26 @@ std::string toLower(const std::string &input)
 	return boost::locale::to_lower(input);
 }
 
+bool beginsWith(const std::string &input, const std::string &prefix)
+{
+	if (prefix.length() > input.length())
+		return false;
+
+	return input.compare(0, prefix.length(), prefix) == 0;
+}
+
+bool getCommandArguments(const std::string &input, const std::string &command, std::string &arguments)
+{
+	if (!beginsWith(input, command))
+		return false;
+
+	if (input.size() <= command.size() + 1 || input.at(command.size()) != ' ')
+		return true;
+
+	arguments = input.substr(command.size() + 1);
+	return true;
+}
+
 std::vector<std::string> tokenize(const std::string &input, char separator)
 {
 	std::vector<std::string> tokens;
@@ -40,7 +60,6 @@ std::list<URL> findURLs(const std::string &input)
 	std::list<URL> output;
 
 	std::regex trivial_url("(https?://(?:www.)?([a-z.]+)/?[a-zA-Z0-9\\-._~:/?#\\[\\]@!$&'()*+,;=%]*)");
-	std::smatch matches;
 
 	for (std::sregex_iterator i(input.begin(), input.end(), trivial_url);
 		 i != std::sregex_iterator(); ++i)
@@ -53,7 +72,7 @@ std::list<URL> findURLs(const std::string &input)
 
 #include <gtest/gtest.h>
 
-TEST(toLower, ruRU)
+TEST(StringOps, toLower_ruRU)
 {
 	boost::locale::generator gen;
 	std::locale local = gen.generate("ru_RU.utf8");
@@ -67,7 +86,7 @@ TEST(toLower, ruRU)
 	initLocale();
 }
 
-TEST(findURLs, URLs)
+TEST(StringOps, findURLs)
 {
 	auto urls = findURLs("123 https://example.com/test/ 34 http://ya.ru/ 5 http://goo.gl/allo/this?is=a&test#thingy end https://www.youtube.com/watch?v=abcde test");
 
@@ -93,6 +112,30 @@ TEST(findURLs, URLs)
 	urls = findURLs("https://www.youtube.com/watch?v=lxQjwbUiM9w");
 	EXPECT_EQ("https://www.youtube.com/watch?v=lxQjwbUiM9w", urls.begin()->url);
 	EXPECT_EQ("youtube.com", urls.begin()->hostname);
+}
+
+TEST(StringOps, beginsWith)
+{
+	EXPECT_TRUE(beginsWith("!test", "!test"));
+	//EXPECT_EQ(false, beginsWith("!testok", "!test"))
+
+	EXPECT_FALSE(beginsWith("!toost", "!test"));
+}
+
+TEST(StringOps, getArguments)
+{
+	std::string output;
+	EXPECT_FALSE(getCommandArguments("!toost this", "!test", output));
+	EXPECT_TRUE(output.empty());
+
+	EXPECT_TRUE(getCommandArguments("!test", "!test", output));
+	EXPECT_TRUE(output.empty());
+
+	EXPECT_TRUE(getCommandArguments("!test ", "!test", output));
+	EXPECT_TRUE(output.empty());
+
+	EXPECT_TRUE(getCommandArguments("!test args", "!test", output));
+	EXPECT_EQ("args", output);
 }
 
 #endif // LCOV_EXCL_STOP

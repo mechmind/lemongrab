@@ -122,7 +122,7 @@ void readcb(bufferevent *bev, void *arg)
 			auto tokens = tokenize(s, ' ');
 			try {
 				parent->Connected(tokens.at(4).substr(5), tokens.at(6).substr(16));
-			} catch (std::exception e) {
+			} catch (std::exception &e) {
 				std::cout << "Something broke: " << e.what() << std::endl;
 			}
 			break;
@@ -133,7 +133,7 @@ void readcb(bufferevent *bev, void *arg)
 			auto tokens = tokenize(s, ' ');
 			try {
 				parent->Disconnected(tokens.at(5).substr(5, tokens.at(5).size() - 7)); // FIXME: account for CR LF
-			} catch (std::exception e) {
+			} catch (std::exception &e) {
 				std::cout << "Something broke: " << e.what() << std::endl;
 			}
 			break;

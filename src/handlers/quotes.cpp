@@ -88,7 +88,7 @@ std::string Quotes::GetQuote(const std::string &id)
 		int nLastID = 1;
 		try {
 			nLastID = std::stoi(lastid);
-		} catch (std::exception e) {
+		} catch (std::exception &e) {
 			return "database is empty";
 		}
 		std::uniform_int_distribution<int> dis(1, nLastID);
@@ -121,7 +121,7 @@ std::string Quotes::AddQuote(const std::string &text)
 
 	try {
 		lastID = std::stoi(sLastID);
-	} catch (std::exception e) {
+	} catch (std::exception &e) {
 		std::cout << "Something broke: " << e.what() << std::endl;
 		return "";
 	}

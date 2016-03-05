@@ -8,6 +8,10 @@ void initLocale();
 
 std::string toLower(const std::string &input);
 
+bool beginsWith(const std::string &input, const std::string &prefix);
+
+bool getCommandArguments(const std::string &input, const std::string &command, std::string &arguments);
+
 std::vector<std::string> tokenize(const std::string &input, char separator);
 
 class URL

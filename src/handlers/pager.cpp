@@ -2,51 +2,56 @@
 
 #include <map>
 
+#include "util/stringops.h"
+
 LemonHandler::ProcessingResult Pager::HandleMessage(const std::string &from, const std::string &body)
 {
-	if (body.find("!pager_stats") == 0)
+	// TODO: preserve messages between restarts via leveldb?
+	if (body == "!pager_stats")
 	{
 		PrintPagerStats();
 		return ProcessingResult::StopProcessing;
 	}
 
-	// TODO: preserve messages between restarts via leveldb?
-	if (body.length() < 7 || body.substr(0, 6) != "!pager")
+	std::string args;
+	if (!getCommandArguments(body, "!pager", args))
 		return ProcessingResult::KeepGoing;
 
-	auto input = body.substr(7);
-	size_t space = input.find(' ');
-	if (space == input.npos)
+	size_t space = args.find(' ');
+	if (space == args.npos)
 	{
 		SendMessage(GetHelp());
 		return ProcessingResult::StopProcessing;
 	}
 
-	auto to = input.substr(0, space);
-	auto text = input.substr(space + 1);
-	StoreMessage(to, from, text);
+	auto recepient = args.substr(0, space);
+	auto pagerMessage = args.substr(space + 1);
+	StoreMessage(recepient, from, pagerMessage);
 
 	return ProcessingResult::StopProcessing;
 }
 
 void Pager::HandlePresence(const std::string &from, const std::string &jid, bool connected)
 {
-	if (connected && !_messages.empty())
+	if (_messages.empty())
+		return;
+
+	if (!connected)
+		return;
+
+	auto message = _messages.begin();
+	while (message != _messages.end())
 	{
-		auto message = _messages.begin();
-		while (message != _messages.end())
+		if (message->_recepient == jid
+				|| (from.find('@') == from.npos && message->_recepient == from))
 		{
-			if (message->_recepient == jid
-					|| (from.find('@') == from.npos && message->_recepient == from))
-			{
-				SendMessage(from + "! You have a message >> " + message->_text);
-				_messages.erase(message++);
-			} else if(message->_expiration < std::chrono::system_clock::now()) {
-				SendMessage("Message for " + message->_recepient + " (" + message->_text + ") has expired");
-				_messages.erase(message++);
-			} else {
-				++message;
-			}
+			SendMessage(from + "! You have a message >> " + message->_text);
+			_messages.erase(message++);
+		} else if(message->_expiration < std::chrono::system_clock::now()) {
+			SendMessage("Message for " + message->_recepient + " (" + message->_text + ") has expired");
+			_messages.erase(message++);
+		} else {
+			++message;
 		}
 	}
 }
@@ -91,10 +96,10 @@ class PagerTestBot : public LemonBot
 public:
 	void SendMessage(const std::string &text)
 	{
-		_recieved = (text == "Alice! You have a message >> Bob: test");
+		_received.push_back(text);
 	}
 
-	bool _recieved = false;
+	std::vector<std::string> _received;
 };
 
 TEST(PagerTest, MsgByNickCheckPresenseHandling)
@@ -102,17 +107,30 @@ TEST(PagerTest, MsgByNickCheckPresenseHandling)
 	PagerTestBot testbot;
 	Pager pager(&testbot);
 
-	pager.StoreMessage("Alice", "Bob", "test");
-	EXPECT_EQ(false, testbot._recieved);
+	pager.HandleMessage("Bob", "!pager_stats");
+	EXPECT_EQ(1, testbot._received.size());
+	EXPECT_EQ("Paged messages: none", testbot._received.at(0));
+
+	pager.HandleMessage("Bob", "!pager Alice test");
+	EXPECT_EQ(1, testbot._received.size());
 
 	pager.HandlePresence("Alice", "alice@jabber.com", false);
-	EXPECT_EQ(false, testbot._recieved);
+	EXPECT_EQ(1, testbot._received.size());
 
 	pager.HandlePresence("Bob", "bob@jabber.com", true);
-	EXPECT_EQ(false, testbot._recieved);
+	EXPECT_EQ(1, testbot._received.size());
+
+	pager.HandleMessage("Bob", "!pager_stats");
+	EXPECT_EQ(2, testbot._received.size());
+	EXPECT_EQ("Paged messages: Alice (1)", testbot._received.at(1));
 
 	pager.HandlePresence("Alice", "alice@jabber.com", true);
-	EXPECT_EQ(true, testbot._recieved);
+	EXPECT_EQ(3, testbot._received.size());
+	EXPECT_EQ("Alice! You have a message >> Bob: test", testbot._received.at(2));
+
+	pager.HandleMessage("Bob", "!pager_stats");
+	EXPECT_EQ(4, testbot._received.size());
+	EXPECT_EQ("Paged messages: none", testbot._received.at(3));
 }
 
 TEST(PagerTest, MsgByJidCheckPresenseHandling)
@@ -120,20 +138,30 @@ TEST(PagerTest, MsgByJidCheckPresenseHandling)
 	PagerTestBot testbot;
 	Pager pager(&testbot);
 
-	pager.StoreMessage("alice@jabber.com", "Bob", "test");
-	EXPECT_EQ(false, testbot._recieved);
+	pager.HandleMessage("Bob", "!pager_stats");
+	EXPECT_EQ(1, testbot._received.size());
+	EXPECT_EQ("Paged messages: none", testbot._received.at(0));
+
+	pager.HandleMessage("Bob", "!pager alice@jabber.com test");
+	EXPECT_EQ(1, testbot._received.size());
 
 	pager.HandlePresence("Alice", "alice@jabber.com", false);
-	EXPECT_EQ(false, testbot._recieved);
+	EXPECT_EQ(1, testbot._received.size());
 
 	pager.HandlePresence("Bob", "bob@jabber.com", true);
-	EXPECT_EQ(false, testbot._recieved);
+	EXPECT_EQ(1, testbot._received.size());
 
-	pager.HandlePresence("alice@jabber.com", "john@jabber.com", true);
-	EXPECT_EQ(false, testbot._recieved);
+	pager.HandleMessage("Bob", "!pager_stats");
+	EXPECT_EQ(2, testbot._received.size());
+	EXPECT_EQ("Paged messages: alice@jabber.com (1)", testbot._received.at(1));
 
 	pager.HandlePresence("Alice", "alice@jabber.com", true);
-	EXPECT_EQ(true, testbot._recieved);
+	EXPECT_EQ(3, testbot._received.size());
+	EXPECT_EQ("Alice! You have a message >> Bob: test", testbot._received.at(2));
+
+	pager.HandleMessage("Bob", "!pager_stats");
+	EXPECT_EQ(4, testbot._received.size());
+	EXPECT_EQ("Paged messages: none", testbot._received.at(3));
 }
 
 #endif // LCOV_EXCL_STOP
