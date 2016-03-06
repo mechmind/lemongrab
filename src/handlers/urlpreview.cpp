@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <map>
+#include <regex>
 
 #include <curl/curl.h>
 
@@ -12,13 +13,13 @@ std::string formatHTMLchars(std::string input);
 // Curl support
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
-	((std::string*)userp)->append((char*)contents, size * nmemb);
+	reinterpret_cast<std::string*>(userp)->append(reinterpret_cast<char*>(contents), size * nmemb);
 	return size * nmemb;
 }
 
 static std::string CurlRequest(std::string url)
 {
-	CURL* curl = NULL;
+	CURL *curl = nullptr;
 	curl = curl_easy_init();
 	if (!curl)
 		return "curl Fail";
@@ -72,7 +73,7 @@ void UrlPreview::readConfig(LemonBot *bot)
 	auto unparsedWhitelist = bot->GetRawConfigValue("URLwhitelist");
 
 	auto urls = tokenize(unparsedWhitelist, ';');
-	for (auto url : urls)
+	for (const auto &url : urls)
 	{
 		std::cout << "Whitelisted URL: " << url << std::endl;
 		_URLwhitelist.insert(url);
@@ -81,24 +82,23 @@ void UrlPreview::readConfig(LemonBot *bot)
 
 bool UrlPreview::getTitle(const std::string &content, std::string &title)
 {
-	auto titleStart = content.find("<title>");
-	if (titleStart == content.npos)
-		return false;
+	static const std::regex titleRegex("<title>(.*)</title>");
 
-	titleStart += 7;
-
-	auto titleEnd = content.find("</title>");
-	if (titleEnd == content.npos)
-		return false;
-
-	titleEnd -= titleStart;
+	std::smatch titleMatch;
+	bool titleFound = false;
 
 	try {
-		title = content.substr(titleStart, titleEnd);
-		return true;
-	} catch (...) {
+		titleFound = std::regex_search(content, titleMatch, titleRegex);
+	} catch (std::regex_error &e) {
+		std::cout << "Something broke: " << e.what() << std::endl;
 		return false;
 	}
+
+	if (!titleFound)
+		return false;
+
+	title = titleMatch.str(1);
+	return true;
 }
 
 std::string formatHTMLchars(std::string input)
@@ -107,7 +107,8 @@ std::string formatHTMLchars(std::string input)
 			= {{"&quot;", "\""},
 			   {"&amp;", "&"},
 			   {"&lt;", "<"},
-			   {"&gt;", ">"}};
+			   {"&gt;", ">"},
+			   {"&apos;", "'"}};
 
 	for (auto &specialCharPair : chars)
 	{

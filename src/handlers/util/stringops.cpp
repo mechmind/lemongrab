@@ -59,7 +59,7 @@ std::list<URL> findURLs(const std::string &input)
 {
 	std::list<URL> output;
 
-	std::regex trivial_url("(https?://(?:www.)?([[:alnum:].]+)/?[[:alnum:]\\-._~:/?#\\[\\]@!$&'()*+,;=%]*)");
+	static const std::regex trivial_url("(https?://(?:www.)?([[:alnum:].]+)/?[[:alnum:]\\-._~:/?#\\[\\]@!$&'()*+,;=%]*)");
 
 	for (std::sregex_iterator i(input.begin(), input.end(), trivial_url);
 		 i != std::sregex_iterator(); ++i)
