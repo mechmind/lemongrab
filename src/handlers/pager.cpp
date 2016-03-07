@@ -1,12 +1,111 @@
 #include "pager.h"
 
 #include <map>
+#include <iostream>
+#include <algorithm>
+#include <memory>
 
 #include "util/stringops.h"
 
+#include <leveldb/db.h>
+
+Pager::Message::Message(const std::string &serializedInput, long long id)
+{
+	auto tokens = tokenize(serializedInput, '\n');
+	if (tokens.size() != 3)
+		return;
+
+	_id = id;
+	_recepient = tokens.at(0);
+	_text = tokens.at(1);
+	std::string expirationStr = tokens.at(2);
+	try {
+		time_t expirationTime = std::stoull(expirationStr);
+		_expiration = std::chrono::system_clock::from_time_t(expirationTime);
+	} catch (std::exception &e) {
+		std::cout << "Something broke: " << e.what() << std::endl;
+		_recepient.clear();
+		return;
+	}
+}
+
+std::string Pager::Message::Serialize()
+{
+	time_t expiration = std::chrono::system_clock::to_time_t(_expiration);
+	return _recepient + "\n"
+			+ _text + "\n"
+			+ std::to_string(expiration);
+}
+
+
+Pager::Message::Message(std::string to, std::string text, long long id)
+	: _id(id)
+	, _recepient(to)
+	, _text(text)
+	, _expiration(std::chrono::system_clock::now() + std::chrono::hours(72))
+{
+	std::replace(_text.begin(), _text.end(), '\n', ' ');
+}
+
+bool Pager::Message::isValid()
+{
+	return !_recepient.empty();
+}
+
+bool Pager::Message::operator==(const Pager::Message &rhs)
+{
+	return _id == rhs._id
+			&& _text == rhs._text
+			&& _recepient == rhs._recepient
+			&& _expiration == rhs._expiration;
+}
+
+Pager::Pager(LemonBot *bot)
+	: LemonHandler("pager", bot)
+{
+	leveldb::Options options;
+	options.create_if_missing = true;
+
+	leveldb::DB *persistentMessages = nullptr;
+	leveldb::Status status = leveldb::DB::Open(options, "db/pager", &persistentMessages);
+	if (!status.ok())
+		std::cerr << status.ToString() << std::endl;
+	_persistentMessages.reset(persistentMessages);
+
+	if (!_persistentMessages)
+	{
+		std::cout << "Database connection error: pager" << std::endl;
+		return;
+	}
+
+	std::shared_ptr<leveldb::Iterator> it(_persistentMessages->NewIterator(leveldb::ReadOptions()));
+	int loadedMessages = 0;
+	for (it->SeekToFirst(); it->Valid(); it->Next()) {
+		try {
+			_lastId = std::stoll(it->key().ToString());
+		} catch (std::exception &e) {
+			std::cout << "Invalid pager id: " << it->key().ToString() << std::endl;
+			_persistentMessages->Delete(leveldb::WriteOptions(), it->key().ToString());
+			continue;
+		}
+
+		Message m(it->value().ToString(), _lastId);
+		if (!m.isValid())
+		{
+			std::cout << "Invalid message: " << it->value().ToString() << std::endl;
+			_persistentMessages->Delete(leveldb::WriteOptions(), it->key().ToString());
+		}
+		else
+		{
+			_messages.push_back(m);
+			loadedMessages++;
+		}
+	}
+	std::cout << "Loaded " << std::to_string(loadedMessages) << " message(s) for pager" << std::endl;
+}
+
 LemonHandler::ProcessingResult Pager::HandleMessage(const std::string &from, const std::string &body)
 {
-	// TODO: preserve messages between restarts via leveldb?
 	if (body == "!pager_stats")
 	{
 		PrintPagerStats();
@@ -46,9 +145,11 @@ void Pager::HandlePresence(const std::string &from, const std::string &jid, bool
 				|| (from.find('@') == from.npos && message->_recepient == from))
 		{
 			SendMessage(from + "! You have a message >> " + message->_text);
+			PurgeMessageFromDB(message->_id);
 			_messages.erase(message++);
 		} else if(message->_expiration < std::chrono::system_clock::now()) {
 			SendMessage("Message for " + message->_recepient + " (" + message->_text + ") has expired");
+			PurgeMessageFromDB(message->_id);
 			_messages.erase(message++);
 		} else {
 			++message;
@@ -63,12 +164,24 @@ const std::string Pager::GetVersion() const
 
 const std::string Pager::GetHelp() const
 {
-	return "Use !pager %jid% %message% or !pager %nick% %message%. Paged messages are lost on bot restart or after 72 hours. Use !pager_stats to get number of paged messages";
+	return "Use !pager %jid% %message% or !pager %nick% %message%. Paged messages are lost after 72 hours. Use !pager_stats to get number of paged messages";
 }
 
 void Pager::StoreMessage(const std::string &to, const std::string &from, const std::string &text)
 {
-	_messages.emplace_back(to, from + ": " + text);
+	_messages.emplace_back(to, from + ": " + text, ++_lastId);
+	if (_persistentMessages)
+		_persistentMessages->Put(leveldb::WriteOptions(), std::to_string(_lastId), _messages.back().Serialize());
+	else
+		std::cout << "Database connection error: pager" << std::endl;
+}
+
+void Pager::PurgeMessageFromDB(long long id)
+{
+	if (_persistentMessages)
+		_persistentMessages->Delete(leveldb::WriteOptions(), std::to_string(id));
+	else
+		std::cout << "Database connection error: pager" << std::endl;
 }
 
 void Pager::PrintPagerStats()
@@ -162,6 +275,19 @@ TEST(PagerTest, MsgByJidCheckPresenseHandling)
 	pager.HandleMessage("Bob", "!pager_stats");
 	EXPECT_EQ(4, testbot._received.size());
 	EXPECT_EQ("Paged messages: none", testbot._received.at(3));
+}
+
+TEST(PagerTest, MessageSerializer)
+{
+	Pager::Message m("Bob", "Hello!", 0);
+	m._expiration = std::chrono::system_clock::from_time_t(1234567);
+	auto m_s = m.Serialize();
+	Pager::Message m2(m_s, 0);
+	EXPECT_TRUE(m2.isValid());
+	EXPECT_TRUE(m2 == m);
+
+	Pager::Message m3("What\nis\nthis\nthing?", 1);
+	EXPECT_TRUE(!m3.isValid());
 }
 
 #endif // LCOV_EXCL_STOP

@@ -15,9 +15,12 @@ Quotes::Quotes(LemonBot *bot)
 	leveldb::Options options;
 	options.create_if_missing = true;
 
-	leveldb::Status status = leveldb::DB::Open(options, "db/quotes", &_quotesDB);
+	leveldb::DB *quotesDB = nullptr;
+	leveldb::Status status = leveldb::DB::Open(options, "db/quotes", &quotesDB);
 	if (!status.ok())
 		std::cerr << status.ToString() << std::endl;
+
+	_quotesDB.reset(quotesDB);
 }
 
 LemonHandler::ProcessingResult Quotes::HandleMessage(const std::string &from, const std::string &body)

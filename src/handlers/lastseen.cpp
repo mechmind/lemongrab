@@ -28,13 +28,19 @@ LastSeen::LastSeen(LemonBot *bot)
 	leveldb::Options options;
 	options.create_if_missing = true;
 
-	leveldb::Status status = leveldb::DB::Open(options, "db/lastseen", &_lastSeenDB);
+	leveldb::DB *lastSeenDB;
+	leveldb::Status status = leveldb::DB::Open(options, "db/lastseen", &lastSeenDB);
 	if (!status.ok())
 		std::cerr << status.ToString() << std::endl;
 
-	status = leveldb::DB::Open(options, "db/nick2jid", &_nick2jidDB);
+	_lastSeenDB.reset(lastSeenDB);
+
+	leveldb::DB *nick2jidDB;
+	status = leveldb::DB::Open(options, "db/nick2jid", &nick2jidDB);
 	if (!status.ok())
 		std::cerr << status.ToString() << std::endl;
+
+	_nick2jidDB.reset(nick2jidDB);
 }
 
 LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, const std::string &body)

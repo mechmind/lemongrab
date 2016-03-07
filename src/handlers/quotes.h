@@ -3,6 +3,7 @@
 #include "lemonhandler.h"
 
 #include <random>
+#include <memory>
 
 namespace leveldb
 {
@@ -24,7 +25,7 @@ private:
 	std::string FindQuote(const std::string &request);
 
 private:
-	leveldb::DB *_quotesDB = nullptr;
+	std::shared_ptr<leveldb::DB> _quotesDB;
 
 	std::mt19937_64 _generator;
 };

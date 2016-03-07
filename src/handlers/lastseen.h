@@ -4,6 +4,7 @@
 
 #include <map>
 #include <string>
+#include <memory>
 
 namespace leveldb
 {
@@ -23,6 +24,6 @@ private:
 	std::string FindSimilar(std::string input);
 
 private:
-	leveldb::DB *_lastSeenDB = nullptr;
-	leveldb::DB *_nick2jidDB = nullptr;
+	std::shared_ptr<leveldb::DB> _lastSeenDB;
+	std::shared_ptr<leveldb::DB> _nick2jidDB;
 };
