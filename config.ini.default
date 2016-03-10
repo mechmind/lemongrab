@@ -2,7 +2,18 @@
 JID=bot@bothost.com/BotResource
 Password=secret123
 MUC=muc@muchost.com/BotNickname
+admin=me@example.com
 
 URLwhitelist=youtube.com;youtu.be;store.steampowered.com;
 
-#GithubWebhookPort=5555
+[Github]
+GithubWebhookPort=5555
+
+[URLHistory]
+historyurl=example.com/history
+LastURLsPort=6666
+
+[TeamSpeak]
+ts3server=example.com
+TS3QueryLogin=sqlogin
+TS3QueryPassword=sqpassword
