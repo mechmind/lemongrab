@@ -44,10 +44,9 @@ const std::string LastURLs::GetHelp() const
 	return "URLs history is at: " + GetRawConfigValue("historyurl");
 }
 
-
-void httpHandlerUrls(evhttp_request *request, void *arg) {
-	auto *parent = static_cast<LastURLs*>(arg);
-	auto *output = evhttp_request_get_output_buffer(request);
+void LastURLs::httpHandlerUrls(evhttp_request *request, void *arg) {
+	auto parent = static_cast<LastURLs*>(arg);
+	auto output = evhttp_request_get_output_buffer(request);
 
 	evbuffer_add_printf(output, "<!DOCTYPE html><html><head><title>URL history</title></head><body>");
 	for (auto &site : parent->_urlHistory)
@@ -58,14 +57,14 @@ void httpHandlerUrls(evhttp_request *request, void *arg) {
 	evhttp_send_reply(request, HTTP_OK, "OK", output);
 }
 
-void terminateServerUrls(int, short int, void * arg)
+void LastURLs::terminateServerUrls(int, short int, void * parentPtr)
 {
-	auto *parent = static_cast<LastURLs*>(arg);
+	auto parent = static_cast<LastURLs*>(parentPtr);
 	std::cout << "Terminating url history listener..." << std::endl;
 	event_base_loopbreak(parent->_eventBase);
 }
 
-void httpServerThreadUrls(LastURLs * parent, std::uint16_t port)
+void LastURLs::httpServerThreadUrls(LastURLs * parent, std::uint16_t port)
 {
 	parent->_eventBase = event_base_new();
 	auto httpServer = evhttp_new(parent->_eventBase);

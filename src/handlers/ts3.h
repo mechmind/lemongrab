@@ -41,9 +41,9 @@ private:
 	evdns_base *dns_base = nullptr;
 	bufferevent *bev = nullptr;
 
-	friend void terminateClient(int, short int, void *arg);
-	friend void telnetClientThread(TS3 * parent, std::string server);
-	friend void eventcb(bufferevent *bev, short events, void *arg);
-	friend void readcb(bufferevent *bev, void *arg);
+	static void terminateClient(int, short int, void *arg);
+	static void telnetClientThread(TS3 * parent, std::string server);
+	static void telnetEvent(bufferevent *bev, short events, void *parentPtr);
+	static void telnetMessage(bufferevent *bev, void *parentPtr);
 };
 

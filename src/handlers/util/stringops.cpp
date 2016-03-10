@@ -68,6 +68,17 @@ std::list<URL> findURLs(const std::string &input)
 	return output;
 }
 
+std::string CustomTimeFormat(std::chrono::system_clock::duration input)
+{
+	std::string output;
+	output += std::to_string(std::chrono::duration_cast<std::chrono::hours>  (input).count() / 24) + "d ";
+	output += std::to_string(std::chrono::duration_cast<std::chrono::hours>  (input).count() % 24) + "h ";
+	output += std::to_string(std::chrono::duration_cast<std::chrono::minutes>(input).count() % 60) + "m ";
+	output += std::to_string(std::chrono::duration_cast<std::chrono::seconds>(input).count() % 60) + "s";
+
+	return output;
+}
+
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
 
 #include <gtest/gtest.h>

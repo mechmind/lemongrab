@@ -10,6 +10,8 @@
 #include "handlers/lasturls.h"
 #include "handlers/ts3.h"
 
+#include "handlers/util/stringops.h"
+
 #include "glooxclient.h"
 
 Bot::Bot(XMPPClient *client, Settings &settings)
@@ -51,10 +53,7 @@ void Bot::OnMessage(const std::string &nick, const std::string &text)
 	if (text == "!uptime")
 	{
 		auto CurrentTime = std::chrono::system_clock::now();
-		std::string uptime("Uptime: ");
-		// FIXME There must be a way to make this line shorter
-		uptime.append(std::to_string(std::chrono::duration_cast<std::chrono::duration<int, std::ratio<3600*24>>>
-									 (CurrentTime - _startTime).count()));
+		std::string uptime("Uptime: " + CustomTimeFormat(CurrentTime - _startTime));
 		return SendMessage(uptime);
 	}
 

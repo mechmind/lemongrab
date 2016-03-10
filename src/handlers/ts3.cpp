@@ -22,7 +22,7 @@ LemonHandler::ProcessingResult TS3::HandleMessage(const std::string &from, const
 	if (body != "!ts")
 		return ProcessingResult::KeepGoing;
 
-	if (_clients.size() == 0)
+	if (_clients.empty())
 		SendMessage("TeamSpeak server is empty");
 	else
 	{
@@ -45,7 +45,7 @@ const std::string TS3::GetHelp() const
 	return "!ts - get online teamspeak users";
 }
 
-void eventcb(bufferevent *bev, short event, void *arg)
+void TS3::telnetEvent(bufferevent *bev, short event, void *parentPtr)
 {
 	if (event & BEV_EVENT_CONNECTED) {
 		std::cout << "[TS3] Connected" << std::endl;
@@ -54,7 +54,7 @@ void eventcb(bufferevent *bev, short event, void *arg)
 		bufferevent_enable(bev, EV_READ|EV_WRITE);
 		evbuffer_add_printf(bufferevent_get_output(bev), "whoami\n");
 	} else if (event & (BEV_EVENT_ERROR|BEV_EVENT_EOF)) {
-		auto parent = static_cast<TS3*>(arg);
+		auto parent = static_cast<TS3*>(parentPtr);
 		if (event & BEV_EVENT_ERROR) {
 			int err = bufferevent_socket_get_dns_error(bev);
 			if (err)
@@ -68,9 +68,9 @@ void eventcb(bufferevent *bev, short event, void *arg)
 	}
 }
 
-void readcb(bufferevent *bev, void *arg)
+void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 {
-	auto parent = static_cast<TS3*>(arg);
+	auto parent = static_cast<TS3*>(parentPtr);
 	std::string s;
 	char buf[1024];
 	int n;
@@ -136,7 +136,7 @@ void readcb(bufferevent *bev, void *arg)
 		{
 			auto tokens = tokenize(s, ' ');
 			try {
-				parent->Disconnected(tokens.at(5).substr(5, tokens.at(5).size() - 5)); // FIXME: account for CR LF
+				parent->Disconnected(tokens.at(5).substr(5, tokens.at(5).size() - 5));
 			} catch (std::exception &e) {
 				std::cout << "Something broke: " << e.what() << std::endl;
 			}
@@ -147,14 +147,14 @@ void readcb(bufferevent *bev, void *arg)
 
 }
 
-void telnetClientThread(TS3 * parent, std::string server)
+void TS3::telnetClientThread(TS3 * parent, std::string server)
 {
 	int port = 10011;
 	parent->base = event_base_new();
 	parent->dns_base = evdns_base_new(parent->base, 1);
 
 	parent->bev = bufferevent_socket_new(parent->base, -1, BEV_OPT_CLOSE_ON_FREE);
-	bufferevent_setcb(parent->bev, readcb, nullptr, eventcb, parent);
+	bufferevent_setcb(parent->bev, telnetMessage, nullptr, telnetEvent, parent);
 	bufferevent_enable(parent->bev, EV_READ|EV_WRITE);
 	timeval t;
 	t.tv_sec = 60;

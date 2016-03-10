@@ -29,7 +29,7 @@ private:
 	event_base *_eventBase = nullptr;
 	event *_breakLoop = nullptr;
 
-	friend void terminateServerUrls(int, short int, void *arg);
-	friend void httpServerThreadUrls(LastURLs * parent, std::uint16_t port);
-	friend void httpHandlerUrls(evhttp_request *request, void *arg);
+	static void terminateServerUrls(int, short int, void *parentPtr);
+	static void httpServerThreadUrls(LastURLs * parent, std::uint16_t port);
+	static void httpHandlerUrls(evhttp_request *request, void *arg);
 };
