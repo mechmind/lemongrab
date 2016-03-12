@@ -9,6 +9,10 @@ class event_base;
 class evhttp_request;
 class event;
 
+#ifdef _BUILD_TESTS
+#include <gtest/gtest_prod.h>
+#endif
+
 class LastURLs : public LemonHandler
 {
 public:
@@ -32,4 +36,8 @@ private:
 	static void terminateServerUrls(int, short int, void *parentPtr);
 	static void httpServerThreadUrls(LastURLs * parent, std::uint16_t port);
 	static void httpHandlerUrls(evhttp_request *request, void *arg);
+
+#ifdef _BUILD_TESTS
+	FRIEND_TEST(LastURLs, GatherTest);
+#endif
 };

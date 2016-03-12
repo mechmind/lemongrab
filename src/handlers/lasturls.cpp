@@ -96,3 +96,24 @@ bool LastURLs::InitLibeventServer()
 	_httpServer = std::thread (&httpServerThreadUrls, this, port);
 	return true;
 }
+
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
+
+#include "gtest/gtest.h"
+
+TEST(LastURLs, GatherTest)
+{
+	LastURLs t(nullptr);
+	t.HandleMessage("Bob", "http://example.com/?test http://test.com/page#anchor");
+	t.HandleMessage("Alice", "http://test.ru/");
+
+	std::list<std::string> expectedHistory = {
+		"http://test.ru/",
+		"http://test.com/page#anchor",
+		"http://example.com/?test",
+	};
+	ASSERT_EQ(expectedHistory.size(), t._urlHistory.size());
+	EXPECT_TRUE(std::equal(expectedHistory.begin(), expectedHistory.end(), t._urlHistory.begin()));
+}
+
+#endif // LCOV_EXCL_STOP

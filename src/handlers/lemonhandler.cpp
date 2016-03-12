@@ -29,5 +29,5 @@ void LemonHandler::SendMessage(const std::string &text)
 
 const std::string LemonHandler::GetRawConfigValue(const std::string &name) const
 {
-	return _botPtr->GetRawConfigValue(name);
+	return _botPtr ? _botPtr->GetRawConfigValue(name) : "";
 }
