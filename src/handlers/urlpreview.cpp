@@ -108,7 +108,8 @@ std::string formatHTMLchars(std::string input)
 			   {"&amp;", "&"},
 			   {"&lt;", "<"},
 			   {"&gt;", ">"},
-			   {"&apos;", "'"}};
+			   {"&apos;", "'"},
+			   {"&#39;", "'"}};
 
 	for (auto &specialCharPair : chars)
 	{
