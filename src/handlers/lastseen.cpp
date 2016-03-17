@@ -35,7 +35,7 @@ LastSeen::LastSeen(LemonBot *bot)
 LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, const std::string &body)
 {
 	std::string wantedUser;
-	if (!getCommandArguments(body, "!seen", wantedUser));
+	if (!getCommandArguments(body, "!seen", wantedUser))
 		return ProcessingResult::KeepGoing;
 
 	if (!_nick2jidDB || !_lastSeenDB)
