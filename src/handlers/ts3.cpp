@@ -11,6 +11,8 @@
 
 #include "util/stringops.h"
 
+std::string FormatTS3Name(const std::string &raw);
+
 TS3::TS3(LemonBot *bot)
 	: LemonHandler("ts3", bot)
 {
@@ -174,11 +176,7 @@ void TS3::StartServerQueryClient()
 
 void TS3::Connected(const std::string &clid, const std::string &nick)
 {
-	std::string formattedNick(nick);
-	auto fromIPpos = nick.find("\\sfrom\\s");
-	if (fromIPpos != nick.npos) // ServerQuery user
-		formattedNick = "ServerQuery<" + nick.substr(0, fromIPpos) + ">";
-
+	std::string formattedNick = FormatTS3Name(nick);
 	_clients[clid] = formattedNick;
 	SendMessage("Teamspeak user connected: " + formattedNick);
 }
@@ -189,3 +187,35 @@ void TS3::Disconnected(const std::string &clid)
 	SendMessage("Teamspeak user disconnected: " + nick);
 	_clients.erase(clid);
 }
+
+std::string FormatTS3Name(const std::string &raw)
+{
+	std::string result;
+	auto fromIPpos = raw.find("\\sfrom\\s");
+	if (fromIPpos != raw.npos) // ServerQuery user
+		result = "ServerQuery<" + raw.substr(0, fromIPpos) + ">";
+	else
+		result = raw;
+
+	auto spacePos = result.find("\\s");
+	while (spacePos != result.npos)
+	{
+		result.replace(spacePos, 2, " ");
+		spacePos = result.find("\\s");
+	}
+
+	return result;
+}
+
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
+
+#include <gtest/gtest.h>
+
+TEST(TS3, NameFormatter)
+{
+	EXPECT_EQ("Bob", FormatTS3Name("Bob"));
+	EXPECT_EQ("Alice Bob", FormatTS3Name("Alice\\sBob"));
+	EXPECT_EQ("ServerQuery<Alice Bob>", FormatTS3Name("Alice\\sBob\\sfrom\\s127.0.0.1"));
+}
+
+#endif // LCOV_EXCL_STOP
