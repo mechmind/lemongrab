@@ -69,14 +69,21 @@ std::vector<std::string> GetDiceTokens(std::string rawInput)
 	bool prevOp = true;
 	while (pos != rawInput.npos && pos < rawInput.size())
 	{
-		pos = rawInput.find_first_of("+-*/\\^%", prevOp ? prevPos + 1 : prevPos);
+		pos = rawInput.find_first_of("+-*/\\^%()", prevPos);
+
+		if (pos == rawInput.npos)
+			break;
+
+		if (rawInput.at(pos) == '-' && prevOp)
+			pos = rawInput.find_first_of("+-*/\\^%()", prevPos + 1);
+
 		if (pos == prevPos)
 		{
 			output.push_back(std::string(1, rawInput.at(pos)));
 			prevPos = pos + 1;
 			prevOp = true;
 		}
-		else if (pos != rawInput.npos)
+		else
 		{
 			prevOp = false;
 			output.push_back(rawInput.substr(prevPos, pos - prevPos));
@@ -178,7 +185,7 @@ const std::string DiceRoller::GetVersion() const
 const std::string DiceRoller::GetHelp() const
 {
 	return "Start your message with . (dot) and write an expression using integer numbers, dice"
-		   " in format XdY, and operators +-*/\\%^";
+		   " in format XdY, parenthesis or operators +-*/\\%^";
 }
 
 void DiceRoller::ResetRNG(int seed)
