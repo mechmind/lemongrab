@@ -31,7 +31,7 @@ void Bot::Run()
 	RegisterHandler<LastSeen>();
 	RegisterHandler<Pager>();
 	RegisterHandler<GithubWebhooks>();
-	RegisterHandler<GoodEnough>();
+	//RegisterHandler<GoodEnough>();
 	RegisterHandler<Quotes>();
 	RegisterHandler<LastURLs>();
 	RegisterHandler<TS3>();

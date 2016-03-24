@@ -74,8 +74,14 @@ std::vector<std::string> GetDiceTokens(std::string rawInput)
 		if (pos == rawInput.npos)
 			break;
 
-		if (rawInput.at(pos) == '-' && prevOp)
-			pos = rawInput.find_first_of("+-*/\\^%()", prevPos + 1);
+		if (rawInput.at(pos) == '-')
+		{
+			// overly complex workaround for leading unary minus
+			if ((pos != 1 && prevOp) || (pos == 1 && rawInput.size() > 1 && rawInput.at(2) != '('))
+				pos = rawInput.find_first_of("+-*/\\^%()", prevPos + 1);
+			else if (pos == 1 && rawInput.size() > 1 && rawInput.at(2) == '(')
+				output.push_back("0");
+		}
 
 		if (pos == prevPos)
 		{
@@ -83,7 +89,7 @@ std::vector<std::string> GetDiceTokens(std::string rawInput)
 			prevPos = pos + 1;
 			prevOp = true;
 		}
-		else
+		else if (pos != rawInput.npos)
 		{
 			prevOp = false;
 			output.push_back(rawInput.substr(prevPos, pos - prevPos));
