@@ -34,7 +34,7 @@ void Bot::Run()
 	RegisterHandler<GoodEnough>();
 	RegisterHandler<Quotes>();
 	RegisterHandler<LastURLs>();
-	//RegisterHandler<TS3>();
+	RegisterHandler<TS3>();
 
 	_xmpp->Connect(_settings.GetUserJID(), _settings.GetPassword());
 }
