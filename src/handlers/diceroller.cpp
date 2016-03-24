@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <iostream>
+
+#include "util/calc.h"
 
 namespace {
 	std::shared_ptr<std::mt19937_64> rng;
@@ -62,62 +65,28 @@ std::vector<std::string> GetDiceTokens(std::string rawInput)
 
 	std::string token;
 	size_t prevPos = 1;
-	for (size_t pos = 1; pos < rawInput.size(); pos++)
+	size_t pos = 1;
+	bool prevOp = true;
+	while (pos != rawInput.npos && pos < rawInput.size())
 	{
-		if (rawInput.at(pos) == '+' || rawInput.at(pos) == '-')
+		pos = rawInput.find_first_of("+-*/\\^%", prevOp ? prevPos + 1 : prevPos);
+		if (pos == prevPos)
 		{
-			token = rawInput.substr(prevPos, pos - prevPos);
-			output.emplace_back(token);
-
-			prevPos = rawInput.at(pos) == '-' ? pos : pos + 1;
+			output.push_back(std::string(1, rawInput.at(pos)));
+			prevPos = pos + 1;
+			prevOp = true;
+		}
+		else if (pos != rawInput.npos)
+		{
+			prevOp = false;
+			output.push_back(rawInput.substr(prevPos, pos - prevPos));
+			prevPos = pos;
 		}
 	}
 	token = rawInput.substr(prevPos, rawInput.size() - prevPos);
 	output.emplace_back(token);
 
 	return output;
-}
-
-bool ParseSingleToken(const std::string &token, std::string &resultDescription, long &result)
-{
-	if (token.empty())
-		return false;
-
-	auto negative = token.at(0) == '-';
-
-	if (!negative && !resultDescription.empty())
-		resultDescription.append(" + ");
-	else if (negative)
-		resultDescription.append(" - ");
-
-	auto diceSeparatorPosition = token.find('d');
-
-	if (diceSeparatorPosition == token.npos)
-	{
-		try {
-			auto simpleNumber = std::stol(token);
-			result = result + simpleNumber;
-			resultDescription.append(negative ? std::to_string(-1*simpleNumber) : std::to_string(simpleNumber));
-		} catch (...) {
-			return false;
-		}
-	} else {
-		try {
-			auto numberOfRolls = diceSeparatorPosition > 0 ? std::stoi(token.substr(negative ? 1 : 0, diceSeparatorPosition)) : 1;
-			auto dice = std::stoi(token.substr(diceSeparatorPosition + 1));
-
-			if (numberOfRolls > 100)
-				return false;
-
-			DiceRoll roll(dice, numberOfRolls, *rng.get());
-
-			result = negative ? result - roll.GetResult() : result + roll.GetResult();
-			resultDescription.append(roll.GetDescription());
-		} catch (...) {
-			return false;
-		}
-	}
-	return true;
 }
 
 DiceRoller::DiceRoller(LemonBot *bot)
@@ -134,36 +103,82 @@ LemonHandler::ProcessingResult DiceRoller::HandleMessage(const std::string &from
 		return ProcessingResult::KeepGoing;
 
 	std::string resultDescription;
-	long result = 0;
-	bool success = true;
-	for (auto token : diceTokens)
+	double result = 0;
+
+	ShuntingYard sy;
+	for (const auto &token : diceTokens)
 	{
-		if (!ParseSingleToken(token, resultDescription, result))
+		auto dpos = token.find('d');
+		if (dpos == token.npos)
 		{
-			// resultDescription = "Failed to parse token: " + token;
-			success = false;
-			break;
+			resultDescription += token + " ";
+			if (!sy.PushToken(token))
+			{
+				std::cout << "Failed to push token to RPN: " << token << std::endl;
+				return ProcessingResult::KeepGoing;
+			}
+		} else {
+			long rollResult = 0;
+			try {
+				auto rolls = std::stoi(token.substr(0, dpos));
+				auto sides = std::stoi(token.substr(dpos + 1));
+
+				if (rolls < 1 || rolls > 100 || sides < 1 || sides > 10000)
+				{
+					std::cout << "Invalid dice " << token << std::endl;
+					return ProcessingResult::KeepGoing;
+				}
+
+				DiceRoll d(sides, rolls, *rng.get());
+				rollResult = d.GetResult();
+				resultDescription += d.GetDescription() + " ";
+			} catch (std::exception &e) {
+				std::cout << "Failed to parse dice token " << e.what() << std::endl;
+			}
+
+			if (rollResult == 0)
+			{
+				std::cout << "Invalid dice: " << token << std::endl;
+				return ProcessingResult::KeepGoing;
+			}
+
+			if (!sy.PushToken(std::to_string(rollResult)))
+			{
+				std::cout << "Failed to push token to RPN: " << rollResult << std::endl;
+				return ProcessingResult::KeepGoing;
+			}
 		}
 	}
 
-	if (success && diceTokens.size() > 1)
-		resultDescription.append(" = " + std::to_string(result));
+	if (!sy.Finalize())
+	{
+		std::cout << "Failed to finalize RPN, parenthesis mismatch?" << std::endl;
+		return ProcessingResult::KeepGoing;
+	}
 
-	if (success)
-		SendMessage(from + ": " + resultDescription);
+	if (!EvaluateRPN(sy.GetRPN(), result))
+	{
+		std::cout << "Failed to evaluate RPN" << std::endl;
+		return ProcessingResult::KeepGoing;
+	}
+
+	if (diceTokens.size() > 1)
+		resultDescription.append("= " + std::to_string(result));
+
+	SendMessage(from + ": " + resultDescription);
 
 	return ProcessingResult::StopProcessing;
 }
 
 const std::string DiceRoller::GetVersion() const
 {
-	return "0.2";
+	return "0.3";
 }
 
 const std::string DiceRoller::GetHelp() const
 {
 	return "Start your message with . (dot) and write an expression using integer numbers, dice"
-		   " in format XdY, and operators + or -";
+		   " in format XdY, and operators +-*/\\%^";
 }
 
 void DiceRoller::ResetRNG(int seed)
@@ -198,35 +213,29 @@ TEST(DiceTest, TokenizerTest)
 
 	auto test2 = GetDiceTokens(".1d5+2d8");
 	EXPECT_EQ("1d5", test2.at(0));
-	EXPECT_EQ("2d8", test2.at(1));
+	EXPECT_EQ("+", test2.at(1));
+	EXPECT_EQ("2d8", test2.at(2));
 
 	auto test3 = GetDiceTokens(".2d2 +  3d1-  5");
 	EXPECT_EQ("2d2", test3.at(0));
-	EXPECT_EQ("3d1", test3.at(1));
-	EXPECT_EQ("-5", test3.at(2));
+	EXPECT_EQ("+", test3.at(1));
+	EXPECT_EQ("3d1", test3.at(2));
+	EXPECT_EQ("-", test3.at(3));
+	EXPECT_EQ("5", test3.at(4));
 
 	auto test4 = GetDiceTokens(".4d3 -2d1+ 77d55 -  10");
 	EXPECT_EQ("4d3", test4.at(0));
-	EXPECT_EQ("-2d1", test4.at(1));
-	EXPECT_EQ("77d55", test4.at(2));
-	EXPECT_EQ("-10", test4.at(3));
-}
+	EXPECT_EQ("-", test4.at(1));
+	EXPECT_EQ("2d1", test4.at(2));
+	EXPECT_EQ("+", test4.at(3));
+	EXPECT_EQ("77d55", test4.at(4));
+	EXPECT_EQ("-", test4.at(5));
+	EXPECT_EQ("10", test4.at(6));
 
-TEST(DiceTest, NonDiceTokens)
-{
-	std::string resultS;
-	long result = 0;
-	ParseSingleToken("5", resultS, result);
-	EXPECT_EQ(5, result);
-	EXPECT_EQ("5", resultS);
-
-	ParseSingleToken("4", resultS, result);
-	EXPECT_EQ(9, result);
-	EXPECT_EQ("5 + 4", resultS);
-
-	ParseSingleToken("-3", resultS, result);
-	EXPECT_EQ(6, result);
-	EXPECT_EQ("5 + 4 - 3", resultS);
+	auto test5 = GetDiceTokens(".-5d2-4d1");
+	EXPECT_EQ("-5d2", test5.at(0));
+	EXPECT_EQ("-", test5.at(1));
+	EXPECT_EQ("4d1", test5.at(2));
 }
 
 TEST(DiceTest, InvalidTokens)
@@ -238,10 +247,7 @@ TEST(DiceTest, InvalidTokens)
 	EXPECT_TRUE(test2.empty());
 
 	auto test3 = GetDiceTokens(".invalid token");
-	std::string desc;
-	long int result = 0;
 	EXPECT_LT(0, test3.size());
-	EXPECT_FALSE(ParseSingleToken(*test3.begin(), desc, result));
 }
 
 TEST(DiceTest, DiceRolls)
