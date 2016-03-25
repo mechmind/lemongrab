@@ -23,6 +23,7 @@ script:
   - cmake .. -DBUILD_TESTS=ON -DBUILD_COVER=ON
   - make
   - ln -s ../test test
+  - mkdir db
   - ./lemongrab --test
   - gcov `find . "*.gcda"`
   - lcov -c -d . -o coverage.info
