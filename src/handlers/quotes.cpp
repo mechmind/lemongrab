@@ -102,8 +102,8 @@ std::string Quotes::GetQuote(const std::string &id)
 	}
 
 	std::string quote;
-	auto addResult = _quotesDB->Get(leveldb::ReadOptions(), selectedId, &quote);
-	if (!addResult.ok())
+	auto getResult = _quotesDB->Get(leveldb::ReadOptions(), selectedId, &quote);
+	if (!getResult.ok())
 		return "Quote not found or something exploded";
 
 	return "(" + selectedId + "/" + lastid + ") \"" + quote + "\"";
@@ -156,7 +156,8 @@ bool Quotes::DeleteQuote(const std::string &id)
 		return false;
 	}
 
-	auto checkQuote = _quotesDB->Get(leveldb::ReadOptions(), id, nullptr);
+	std::string tmp;
+	auto checkQuote = _quotesDB->Get(leveldb::ReadOptions(), id, &tmp);
 	if (!checkQuote.ok())
 		return false;
 
@@ -227,3 +228,61 @@ std::string Quotes::FindQuote(const std::string &request)
 
 	return searchResults;
 }
+
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
+
+#include <gtest/gtest.h>
+
+class QuoteTestBot : public LemonBot
+{
+public:
+	void SendMessage(const std::string &text)
+	{
+		_received.push_back(text);
+	}
+
+	std::vector<std::string> _received;
+};
+
+TEST(QuotesTest, General)
+{
+	QuoteTestBot tb;
+	Quotes q(&tb);
+
+	std::string testquote = "This is a test quote";
+	auto id = q.AddQuote(testquote);
+	ASSERT_FALSE(id.empty());
+
+	auto quote = q.GetQuote(id);
+	auto pos = quote.find(testquote);
+	EXPECT_NE(quote.npos, pos);
+	EXPECT_TRUE(q.DeleteQuote(id));
+	EXPECT_FALSE(q.DeleteQuote(id));
+}
+
+TEST(QuotesTest, Search)
+{
+	QuoteTestBot tb;
+	Quotes q(&tb);
+
+	auto id1 = q.AddQuote("testquote1");
+	ASSERT_FALSE(id1.empty());
+
+	auto quote = q.FindQuote("test");
+	auto pos = quote.find("testquote1");
+	EXPECT_NE(quote.npos, pos);
+
+	auto id2 = q.AddQuote("testquote2");
+	ASSERT_FALSE(id2.empty());
+
+	auto quoteids = q.FindQuote("test");
+	auto pos1 = quoteids.find(id1);
+	auto pos2 = quoteids.find(id2);
+	EXPECT_NE(quoteids.npos, pos1);
+	EXPECT_NE(quoteids.npos, pos2);
+
+	EXPECT_TRUE(q.DeleteQuote(id1));
+	EXPECT_TRUE(q.DeleteQuote(id2));
+}
+
+#endif // LCOV_EXCL_STOP

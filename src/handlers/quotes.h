@@ -5,6 +5,10 @@
 #include <random>
 #include <memory>
 
+#ifdef _BUILD_TESTS
+#include <gtest/gtest_prod.h>
+#endif
+
 namespace leveldb
 {
 	class DB;
@@ -28,4 +32,9 @@ private:
 	std::shared_ptr<leveldb::DB> _quotesDB;
 
 	std::mt19937_64 _generator;
+
+#ifdef _BUILD_TESTS
+	FRIEND_TEST(QuotesTest, General);
+	FRIEND_TEST(QuotesTest, Search);
+#endif
 };
