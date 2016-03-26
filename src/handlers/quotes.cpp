@@ -25,41 +25,29 @@ Quotes::Quotes(LemonBot *bot)
 
 LemonHandler::ProcessingResult Quotes::HandleMessage(const std::string &from, const std::string &body)
 {
-	if (body.length() < 3)
-		return ProcessingResult::KeepGoing;
-
-	auto command = body.substr(0, 3);
-
-	if (command == "!gq")
+	std::string arg;
+	if (getCommandArguments(body, "!gq", arg))
 	{
-		std::string id;
-		if (body.length() > 4)
-			id = body.substr(4);
-		SendMessage(from + ": " + GetQuote(id));
+		SendMessage(from + ": " + GetQuote(arg));
 		return ProcessingResult::StopProcessing;
 	}
 
-	if (body.length() < 5)
-		return ProcessingResult::KeepGoing;
-
-	auto parameter = body.substr(4);
-
-	if (command == "!aq")
+	if (getCommandArguments(body, "!aq", arg) && !arg.empty())
 	{
-		auto id = AddQuote(parameter);
+		auto id = AddQuote(arg);
 		id.empty() ? SendMessage(from + ": can't add quote") : SendMessage(from + ": quote added with id " + id);
 		return ProcessingResult::StopProcessing;
 	}
 
-	if (command == "!dq")
+	if (getCommandArguments(body, "!dq", arg) && !arg.empty())
 	{
-		DeleteQuote(parameter) ? SendMessage(from + ": quote deleted") : SendMessage(from + ": quote doesn't exist or access denied");
+		DeleteQuote(arg) ? SendMessage(from + ": quote deleted") : SendMessage(from + ": quote doesn't exist or access denied");
 		return ProcessingResult::StopProcessing;
 	}
 
-	if (command == "!fq")
+	if (getCommandArguments(body, "!fq", arg) && !arg.empty())
 	{
-		auto searchResults = FindQuote(parameter);
+		auto searchResults = FindQuote(arg);
 		SendMessage(from + ": " + searchResults);
 		return ProcessingResult::StopProcessing;
 	}
