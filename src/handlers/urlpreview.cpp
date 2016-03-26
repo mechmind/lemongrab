@@ -1,10 +1,10 @@
 #include "urlpreview.h"
 
-#include <iostream>
 #include <map>
 #include <regex>
 
 #include <curl/curl.h>
+#include <glog/logging.h>
 
 #include "util/stringops.h"
 
@@ -75,7 +75,7 @@ void UrlPreview::readConfig(LemonBot *bot)
 	auto urls = tokenize(unparsedWhitelist, ';');
 	for (const auto &url : urls)
 	{
-		std::cout << "Whitelisted URL: " << url << std::endl;
+		LOG(INFO) << "Whitelisted URL: " << url << std::endl;
 		_URLwhitelist.insert(url);
 	}
 }
@@ -90,7 +90,7 @@ bool UrlPreview::getTitle(const std::string &content, std::string &title)
 	try {
 		titleFound = std::regex_search(content, titleMatch, titleRegex);
 	} catch (std::regex_error &e) {
-		std::cout << "Something broke: " << e.what() << std::endl;
+		LOG(WARNING) << "Regex error: " << e.what();
 		return false;
 	}
 

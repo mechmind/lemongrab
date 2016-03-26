@@ -5,7 +5,8 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
-#include <iostream>
+
+#include <glog/logging.h>
 
 #include "util/calc.h"
 
@@ -127,7 +128,7 @@ LemonHandler::ProcessingResult DiceRoller::HandleMessage(const std::string &from
 			resultDescription += token + " ";
 			if (!sy.PushToken(token))
 			{
-				std::cout << "Failed to push token to RPN: " << token << std::endl;
+				LOG(WARNING) << "Failed to push token to RPN: " << token;
 				return ProcessingResult::KeepGoing;
 			}
 		} else {
@@ -138,7 +139,7 @@ LemonHandler::ProcessingResult DiceRoller::HandleMessage(const std::string &from
 
 				if (rolls < 1 || rolls > 100 || sides < 1 || sides > 10000)
 				{
-					std::cout << "Invalid dice " << token << std::endl;
+					LOG(WARNING) << "Invalid dice: " << token;
 					return ProcessingResult::KeepGoing;
 				}
 
@@ -146,18 +147,18 @@ LemonHandler::ProcessingResult DiceRoller::HandleMessage(const std::string &from
 				rollResult = d.GetResult();
 				resultDescription += d.GetDescription() + " ";
 			} catch (std::exception &e) {
-				std::cout << "Failed to parse dice token " << e.what() << std::endl;
+				LOG(WARNING) << "Failed to parse dice token " << token << ": " << e.what();
 			}
 
 			if (rollResult == 0)
 			{
-				std::cout << "Invalid dice: " << token << std::endl;
+				LOG(WARNING) << "Dice roll returned 0, invalid dice? " << token;
 				return ProcessingResult::KeepGoing;
 			}
 
 			if (!sy.PushToken(std::to_string(rollResult)))
 			{
-				std::cout << "Failed to push token to RPN: " << rollResult << std::endl;
+				LOG(WARNING) << "Failed to push token to RPN: " << rollResult;
 				return ProcessingResult::KeepGoing;
 			}
 		}
@@ -165,13 +166,13 @@ LemonHandler::ProcessingResult DiceRoller::HandleMessage(const std::string &from
 
 	if (!sy.Finalize())
 	{
-		std::cout << "Failed to finalize RPN, parenthesis mismatch?" << std::endl;
+		LOG(WARNING) << "Failed to finalize RPN, parenthesis mismatch? Lists: " << sy.GetDebugDescription();
 		return ProcessingResult::KeepGoing;
 	}
 
 	if (!EvaluateRPN(sy.GetRPN(), result))
 	{
-		std::cout << "Failed to evaluate RPN" << std::endl;
+		LOG(WARNING) << "Failed to evaluate RPN. Lists: " << sy.GetDebugDescription();
 		return ProcessingResult::KeepGoing;
 	}
 

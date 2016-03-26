@@ -3,7 +3,7 @@
 #include "xmpphandler.h"
 
 #include <gloox/presence.h>
-#include <iostream>
+#include <glog/logging.h>
 
 void GlooxClient::SetXMPPHandler(XMPPHandler *handler)
 {
@@ -20,7 +20,7 @@ bool GlooxClient::Connect(const std::string &jid, const std::string &password)
 
 	if (!_client->connect())
 	{
-		std::cout << "Can't connect" << std::endl;
+		LOG(ERROR) << "Can't connect to xmpp server";
 		return false;
 	}
 
@@ -67,7 +67,7 @@ void GlooxClient::onConnect()
 
 void GlooxClient::onDisconnect(gloox::ConnectionError e)
 {
-	std::cout << "Disconnected, error code: " << e << std::endl;
+	LOG(ERROR) << "Disconnected, error code: " << e;
 }
 
 bool GlooxClient::onTLSConnect(const gloox::CertInfo &info)
@@ -99,7 +99,7 @@ void GlooxClient::handleMUCMessage(gloox::MUCRoom *room, const gloox::Message &m
 
 void GlooxClient::handleMUCError(gloox::MUCRoom *room, gloox::StanzaError error)
 {
-	std::cout << "MUC Error: " << error << std::endl;
+	LOG(ERROR) << "MUC Error: " << error;
 }
 
 void GlooxClient::handleMUCInviteDecline(gloox::MUCRoom *room, const gloox::JID &invitee, const std::string &reason)

@@ -4,7 +4,7 @@
 #include <event2/http.h>
 #include <event2/thread.h>
 
-#include <iostream>
+#include <glog/logging.h>
 
 #include "util/stringops.h"
 
@@ -60,7 +60,7 @@ void LastURLs::httpHandlerUrls(evhttp_request *request, void *arg) {
 void LastURLs::terminateServerUrls(int, short int, void * parentPtr)
 {
 	auto parent = static_cast<LastURLs*>(parentPtr);
-	std::cout << "Terminating url history listener..." << std::endl;
+	LOG(INFO) << "Terminating url history listener...";
 	event_base_loopbreak(parent->_eventBase);
 }
 
@@ -88,8 +88,8 @@ bool LastURLs::InitLibeventServer()
 	{
 		try {
 			port = std::stol(portFromOptions);
-		} catch (...) {
-			std::cout << "Invalid LastURLsPort in config.ini" << std::endl;
+		} catch (std::exception &e) {
+			LOG(WARNING) << "Invalid LastURLsPort in config.ini (" << e.what() << ")";
 		}
 	}
 

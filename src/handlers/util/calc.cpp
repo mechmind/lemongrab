@@ -1,7 +1,8 @@
 #include "calc.h"
 
-#include <iostream>
 #include <cmath>
+
+#include <glog/logging.h>
 
 int GetPrecedence(const std::string &token);
 bool LeftAssoc(const std::string &token);
@@ -67,6 +68,19 @@ const std::list<std::string> &ShuntingYard::GetRPN()
 	return _rpn;
 }
 
+std::string ShuntingYard::GetDebugDescription()
+{
+	std::string desc = "RPN: ";
+	for (const auto &token : _rpn)
+		desc.append(token);
+
+	desc.append(" | Operators: ");
+	for (const auto &op : _operators)
+		desc.append(op);
+
+	return desc;
+}
+
 bool LeftAssoc(const std::string &token)
 {
 	return token != "^";
@@ -98,7 +112,7 @@ bool EvaluateRPN(const std::list<std::string> &rpn, double &output)
 				auto value = std::stod(token);
 				values.push_back(value);
 			} catch (std::exception &e) {
-				std::cout << "Something went wrong: " << e.what() << std::endl;
+				LOG(WARNING) << "Something went wrong: " << e.what();
 			}
 		} else {
 			if (values.size() < 2)

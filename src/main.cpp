@@ -4,10 +4,24 @@
 	#include <gtest/gtest.h>
 #endif
 
+#include <glog/logging.h>
+
 #include "bot.h"
 #include "glooxclient.h"
 #include "settings.h"
 #include "handlers/util/stringops.h"
+
+void InitGLOG(char **argv)
+{
+	std::cout << "Initializing glog..." << std::endl;
+
+	google::InitGoogleLogging(argv[0]);
+	google::SetLogDestination(google::INFO, "logs/info_");
+	google::SetLogDestination(google::WARNING, "logs/warning_");
+	google::SetLogDestination(google::ERROR, "logs/error_");
+	google::SetLogDestination(google::FATAL, "logs/fatal_");
+	google::InstallFailureSignalHandler();
+}
 
 int main(int argc, char **argv)
 {
@@ -24,14 +38,15 @@ int main(int argc, char **argv)
 #endif
 	}
 
+	InitGLOG(argv);
+
 	Settings settings;
 	if (!settings.Open("config.ini"))
-	{
-		std::cout << "Failed to read config file" << std::endl;
-		return 1;
-	}
+		LOG(FATAL) << "Failed to read config file";
 
 	Bot bot(new GlooxClient(), settings);
 	bot.Run();
+
+	LOG(INFO) << "Exiting...";
 	return 0;
 }

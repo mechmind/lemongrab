@@ -2,8 +2,9 @@
 
 #include <leveldb/db.h>
 
+#include <glog/logging.h>
+
 #include <regex>
-#include <iostream>
 #include <chrono>
 
 #include "util/stringops.h"
@@ -18,7 +19,7 @@ Quotes::Quotes(LemonBot *bot)
 	leveldb::DB *quotesDB = nullptr;
 	leveldb::Status status = leveldb::DB::Open(options, "db/quotes", &quotesDB);
 	if (!status.ok())
-		std::cerr << status.ToString() << std::endl;
+		LOG(ERROR) << "Failed to open database: " << status.ToString();
 
 	_quotesDB.reset(quotesDB);
 }
@@ -101,7 +102,7 @@ std::string Quotes::AddQuote(const std::string &text)
 {
 	if (!_quotesDB)
 	{
-		std::cout << "database connection error" << std::endl;
+		LOG(ERROR) << "Database pointer is null";
 		return "";
 	}
 
@@ -113,7 +114,7 @@ std::string Quotes::AddQuote(const std::string &text)
 	try {
 		lastID = std::stoi(sLastID);
 	} catch (std::exception &e) {
-		std::cout << "Something broke: " << e.what() << std::endl;
+		LOG(ERROR) << "Can't convert " << sLastID << " to integer: " << e.what();
 		return "";
 	}
 
@@ -122,14 +123,14 @@ std::string Quotes::AddQuote(const std::string &text)
 	auto addRecordStatus = _quotesDB->Put(leveldb::WriteOptions(), id, text);
 	if (!addRecordStatus.ok())
 	{
-		std::cout << "leveldb::Put for quote failed" << std::endl;
+		LOG(ERROR) << "leveldb::Put for quote failed: " << addRecordStatus.ToString();
 		return "";
 	}
 
 	addRecordStatus = _quotesDB->Put(leveldb::WriteOptions(), "lastid", id);
 	if (!addRecordStatus.ok())
 	{
-		std::cout << "leveldb::Put for lastid failed" << std::endl;
+		LOG(ERROR) << "leveldb::Put for lastid failed" << addRecordStatus.ToString();
 		return "";
 	}
 
@@ -140,7 +141,7 @@ bool Quotes::DeleteQuote(const std::string &id)
 {
 	if (!_quotesDB)
 	{
-		std::cout << "Database connection error" << std::endl;
+		LOG(ERROR) << "Database pointer is null";
 		return false;
 	}
 
@@ -156,7 +157,10 @@ bool Quotes::DeleteQuote(const std::string &id)
 std::string Quotes::FindQuote(const std::string &request)
 {
 	if (!_quotesDB)
+	{
+		LOG(ERROR) << "Database pointer is null";
 		return "database connection error";
+	}
 
 	// FIXME put similar code from lastseen and this into utils?
 	std::string searchResults("Matching quote IDs:");
@@ -165,6 +169,7 @@ std::string Quotes::FindQuote(const std::string &request)
 	try {
 		inputRegex = std::regex(toLower(request));
 	} catch (std::regex_error& e) {
+		LOG(WARNING) << "Input regex " << request << " is invalid: " << e.what();
 		return "Something broke: " + std::string(e.what());
 	}
 
@@ -187,7 +192,7 @@ std::string Quotes::FindQuote(const std::string &request)
 			auto quote = toLower(it->value().ToString());
 			doesMatch = std::regex_search(quote, regexMatch, inputRegex);
 		} catch (std::regex_error &e) {
-			std::cout << "Regex exception thrown" << e.what() << std::endl;
+			LOG(ERROR) << "Regex exception thrown" << e.what();
 		}
 
 		if (doesMatch)

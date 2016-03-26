@@ -1,13 +1,14 @@
 #include "githubwebhooks.h"
 
 #include <memory>
-#include <iostream>
 #include <vector>
 #include <algorithm>
 
 #include <event.h>
 #include <event2/http.h>
 #include <event2/thread.h>
+
+#include <glog/logging.h>
 
 #include "util/github_webhook_formatter.h"
 #include "util/stringops.h"
@@ -71,7 +72,7 @@ void httpHandler(evhttp_request *request, void *arg) {
 	switch (formatStatus)
 	{
 	case GithubWebhookFormatter::FormatResult::JSONParseError:
-		std::cout << "Can't parse json payload" << std::endl;
+		LOG(ERROR) << "Can't parse json payload";
 		evhttp_send_reply(request, HTTP_BADREQUEST, "Can't parse json payload", output);
 		evbuffer_add_printf(output, "Can't parse json");
 		return;
@@ -87,7 +88,7 @@ void httpHandler(evhttp_request *request, void *arg) {
 void terminateServer(int, short int, void * arg)
 {
 	GithubWebhooks * parent = static_cast<GithubWebhooks*>(arg);
-	std::cout << "Terminating github webhooks listener..." << std::endl;
+	LOG(INFO) << "Terminating github webhooks listener...";
 	event_base_loopbreak(parent->_eventBase);
 }
 
@@ -115,8 +116,8 @@ bool GithubWebhooks::InitLibeventServer()
 	{
 		try {
 			port = std::stol(portFromOptions);
-		} catch (...) {
-			std::cout << "Invalid GithubWebhookPort in config.ini" << std::endl;
+		} catch (std::exception &e) {
+			LOG(WARNING) << "Invalid GithubWebhookPort in config.ini (" << e.what() << ")";
 		}
 	}
 

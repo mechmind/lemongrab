@@ -10,6 +10,7 @@ public:
 	bool Finalize();
 	const std::list<std::string> &GetRPN();
 
+	std::string GetDebugDescription();
 private:
 	std::list<std::string> _operators;
 	std::list<std::string> _rpn;

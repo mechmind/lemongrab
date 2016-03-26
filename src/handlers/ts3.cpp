@@ -7,7 +7,7 @@
 #include <event2/buffer.h>
 #include <event2/event.h>
 
-#include <iostream>
+#include <glog/logging.h>
 
 #include "util/stringops.h"
 
@@ -50,9 +50,8 @@ const std::string TS3::GetHelp() const
 void TS3::telnetEvent(bufferevent *bev, short event, void *parentPtr)
 {
 	if (event & BEV_EVENT_CONNECTED) {
-		std::cout << "[TS3] Connected" << std::endl;
+		LOG(INFO) << "Connected to TeamSpeak server";
 	} else if (event & BEV_EVENT_TIMEOUT) {
-		std::cout << "[TS3] Sending keepalive..." << std::endl;
 		bufferevent_enable(bev, EV_READ|EV_WRITE);
 		evbuffer_add_printf(bufferevent_get_output(bev), "whoami\n");
 	} else if (event & (BEV_EVENT_ERROR|BEV_EVENT_EOF)) {
@@ -60,9 +59,9 @@ void TS3::telnetEvent(bufferevent *bev, short event, void *parentPtr)
 		if (event & BEV_EVENT_ERROR) {
 			int err = bufferevent_socket_get_dns_error(bev);
 			if (err)
-				std::cout << "[TS3] DNS error: " << evutil_gai_strerror(err) << std::endl;
+				LOG(ERROR) << "Can't connect to TeamSpeak server, DNS error: " << evutil_gai_strerror(err);
 		}
-		std::cout << "[TS3] Connection closed" << std::endl;
+		LOG(ERROR) << "TeamSpeak connection closed";
 		// FIXME needs a reliable restart mechanism, see thread
 		parent->SendMessage("TS3 ServerQuery connection closed, fix me please");
 		bufferevent_free(bev);
@@ -81,9 +80,10 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 		s.append(buf, n);
 
 	// trim CR LF
-	s.erase(s.size() - 2);
-
-	std::cout << "[TS3] >>> " << s << std::endl;
+	if (s.size() > 2)
+		s.erase(s.size() - 2);
+	else
+		LOG(ERROR) << "Received telnet line that is too short!";
 
 	switch (parent->_sqState)
 	{
@@ -129,7 +129,7 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 			try {
 				parent->Connected(tokens.at(4).substr(5), tokens.at(6).substr(16));
 			} catch (std::exception &e) {
-				std::cout << "Something broke: " << e.what() << std::endl;
+				LOG(ERROR) << "Can't parse message: \"" << s << "\" | Exception: " << e.what();
 			}
 			break;
 		}
@@ -140,7 +140,7 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 			try {
 				parent->Disconnected(tokens.at(5).substr(5, tokens.at(5).size() - 5));
 			} catch (std::exception &e) {
-				std::cout << "Something broke: " << e.what() << std::endl;
+				LOG(ERROR) << "Can't parse message: \"" << s << "\" | Exception: " << e.what();
 			}
 			break;
 		}

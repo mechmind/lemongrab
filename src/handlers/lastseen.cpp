@@ -3,8 +3,9 @@
 #include <leveldb/db.h>
 #include <leveldb/options.h>
 
+#include <glog/logging.h>
+
 #include <algorithm>
-#include <iostream>
 #include <ctime>
 #include <regex>
 #include <chrono>
@@ -20,14 +21,14 @@ LastSeen::LastSeen(LemonBot *bot)
 	leveldb::DB *lastSeenDB;
 	leveldb::Status status = leveldb::DB::Open(options, "db/lastseen", &lastSeenDB);
 	if (!status.ok())
-		std::cerr << status.ToString() << std::endl;
+		LOG(ERROR) << "Failed to open database: " << status.ToString();
 
 	_lastSeenDB.reset(lastSeenDB);
 
 	leveldb::DB *nick2jidDB;
 	status = leveldb::DB::Open(options, "db/nick2jid", &nick2jidDB);
 	if (!status.ok())
-		std::cerr << status.ToString() << std::endl;
+		LOG(ERROR) << "Failed to open database: " << status.ToString();
 
 	_nick2jidDB.reset(nick2jidDB);
 }
@@ -125,6 +126,7 @@ std::string LastSeen::FindSimilar(std::string input)
 		inputRegex = std::regex(toLower(input));
 	} catch (std::regex_error &e) {
 		SendMessage("Can't do deep search, regex error: " + std::string(e.what()));
+		LOG(WARNING) << "Regex exception: " << e.what();
 	}
 
 	int matches = 0;
@@ -138,7 +140,7 @@ std::string LastSeen::FindSimilar(std::string input)
 		try {
 			doesMatch = std::regex_search(nick, regexMatch, inputRegex);
 		} catch (std::regex_error &e) {
-			std::cout << "Regex exception thrown" << e.what() << std::endl;
+			LOG(WARNING) << "Regex exception: " << e.what();
 		}
 
 		if (doesMatch)

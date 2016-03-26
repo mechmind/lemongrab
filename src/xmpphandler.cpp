@@ -1,2 +1,0 @@
-#include "xmpphandler.h"
-

@@ -26,6 +26,7 @@ Dependencies:
 * libevent
 * jsoncpp
 * boost_locale
+* glog
 * gtest (if you're building tests)
 
 Build instructions:
@@ -38,6 +39,7 @@ make
 ```
 
 Rename config.ini.default to config.ini, edit according to your needs (config file should be self-explanatory) and put it in the work directory
+Create a `logs` folder in work directory
 Create a `db` folder in work directory and run bot executable: ./lemongrab
 
 Commands

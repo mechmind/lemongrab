@@ -1,7 +1,8 @@
 #include "settings.h"
 
 #include <fstream>
-#include <iostream>
+
+#include <glog/logging.h>
 
 Settings::Settings()
 {
@@ -20,7 +21,7 @@ bool Settings::Open(const std::string &path)
 		{
 			auto name = line.substr(0, loc);
 			auto value = line.substr(loc + 1, line.npos);
-			std::cout << "Reading config: " << name << " is set to " << value << std::endl;
+			LOG(INFO) << "Config: " << name << " = " << value;
 			_rawSettings[name] = value;
 		}
 	}

@@ -14,6 +14,8 @@
 
 #include "glooxclient.h"
 
+#include <glog/logging.h>
+
 Bot::Bot(XMPPClient *client, Settings &settings)
 	: _xmpp(client)
 	, _settings(settings)
@@ -26,6 +28,7 @@ void Bot::Run()
 	_startTime = std::chrono::system_clock::now();
 	_lastMessage = std::chrono::system_clock::now();
 
+	LOG(INFO) << "Registering handlers";
 	RegisterHandler<DiceRoller>();
 	RegisterHandler<UrlPreview>();
 	RegisterHandler<LastSeen>();
@@ -36,12 +39,19 @@ void Bot::Run()
 	RegisterHandler<LastURLs>();
 	RegisterHandler<TS3>();
 
+	LOG(INFO) << "All handlers registered";
+	for (const auto &handler : _handlersByName)
+		LOG(INFO) << "> " << handler.first << " " << handler.second->GetVersion();
+
+	LOG(INFO) << "Connecting to XMPP server";
 	_xmpp->Connect(_settings.GetUserJID(), _settings.GetPassword());
 }
 
 void Bot::OnConnect()
 {
 	const auto &muc = _settings.GetMUC();
+	LOG(INFO) << "Joining room";
+	google::FlushLogFiles(google::INFO);
 	_xmpp->JoinRoom(muc);
 }
 
