@@ -13,7 +13,7 @@
 #include "util/github_webhook_formatter.h"
 #include "util/stringops.h"
 
-#include <jsoncpp/json/reader.h>
+#include <json/reader.h>
 
 GithubWebhooks::GithubWebhooks(LemonBot *bot)
 	: LemonHandler("github", bot)

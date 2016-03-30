@@ -1,6 +1,6 @@
 #include "github_webhook_formatter.h"
 
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 
 std::string PrintIssue(const Json::Value &input)
 {

@@ -12,9 +12,10 @@ include(FindCURL)
 pkg_search_module(GLOOX gloox)
 pkg_search_module(LIBEVENT libevent_pthreads)
 pkg_search_module(GLOG libglog)
+pkg_search_module(JSONCPP jsoncpp)
 # find_package(Boost 1.55 COMPONENTS locale)
 
-include_directories(. ${CURL_INCLUDE_DIR} ${GLOOX_INCLUDE_DIR} ${GLOG_INCLUDE_DIR} ${LIBEVENT_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
+include_directories(. ${CURL_INCLUDE_DIRS} ${GLOOX_INCLUDE_DIRS} ${GLOG_INCLUDE_DIRS} ${JSONCPP_INCLUDE_DIRS} ${LIBEVENT_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 file(GLOB_RECURSE SRC_LIST "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
@@ -31,7 +32,7 @@ if(BUILD_COVER)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
 
-target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${GLOOX_LDFLAGS} ${GLOG_LDFLAGS} ${LIBEVENT_LDFLAGS} ${Boost_LIBRARIES} -lboost_locale -lleveldb -ljsoncpp)
+target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${GLOOX_LDFLAGS} ${GLOG_LDFLAGS} ${JSONCPP_LDFLAGS} ${LIBEVENT_LDFLAGS} ${Boost_LIBRARIES} -lboost_locale -lleveldb)
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
