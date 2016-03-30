@@ -16,7 +16,8 @@ LastURLs::LastURLs(LemonBot *bot)
 
 LastURLs::~LastURLs()
 {
-	event_active(_breakLoop, EV_READ, 0);
+	if (_breakLoop)
+		event_active(_breakLoop, EV_READ, 0);
 	_httpServer.join();
 }
 
@@ -70,13 +71,15 @@ void LastURLs::httpServerThreadUrls(LastURLs * parent, std::uint16_t port)
 	auto httpServer = evhttp_new(parent->_eventBase);
 	parent->_breakLoop = event_new(parent->_eventBase, -1, EV_READ, terminateServerUrls, parent);
 	event_add(parent->_breakLoop, nullptr);
-	evhttp_bind_socket(httpServer, "0.0.0.0", port);
+	if (evhttp_bind_socket(httpServer, "0.0.0.0", port) == -1)
+		LOG(ERROR) << "Can't bind socket on port " << port;
 	evhttp_set_gencb(httpServer, httpHandlerUrls, parent);
 
 	evthread_use_pthreads();
 	evthread_make_base_notifiable(parent->_eventBase);
 
-	event_base_dispatch(parent->_eventBase);
+	if (event_base_dispatch(parent->_eventBase) == -1)
+		LOG(ERROR) << "Failed to start event loop";
 }
 
 bool LastURLs::InitLibeventServer()
