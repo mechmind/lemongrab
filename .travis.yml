@@ -12,7 +12,7 @@ before_install:
   - sudo apt-get install -y g++-4.9 lcov libcurl4-openssl-dev libgloox-dev libgtest-dev libgoogle-glog-dev libleveldb-dev libevent-dev libboost-locale-dev
   - export CXX="g++-4.9"
   - wget https://github.com/open-source-parsers/jsoncpp/archive/1.6.5.tar.gz && tar -xzf 1.6.5.tar.gz
-  - cd jsoncpp-1.6.5 && mkdir build && cd build && cmake ..
+  - cd jsoncpp-1.6.5 && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr ..
   - make && sudo make install
   - gem install coveralls-lcov
   - cd /usr/src/gtest && sudo cmake .
