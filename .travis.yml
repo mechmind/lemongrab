@@ -24,6 +24,7 @@ script:
   - make
   - ln -s ../test test
   - mkdir db
+  - ls -R
   - ./lemongrab --test
   - gcov `find . "*.gcda"`
   - lcov -c -d . -o coverage.info
