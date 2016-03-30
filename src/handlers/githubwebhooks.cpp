@@ -100,7 +100,10 @@ void httpServerThread(GithubWebhooks * parent, std::uint16_t port)
 	parent->_breakLoop = event_new(parent->_eventBase, -1, EV_READ, terminateServer, parent);
 	event_add(parent->_breakLoop, nullptr);
 	if (evhttp_bind_socket(httpServer, "0.0.0.0", port) == -1)
+	{
 		LOG(ERROR) << "Can't bind socket on port " << port;
+		return;
+	}
 	evhttp_set_gencb(httpServer, httpHandler, parent);
 
 	evthread_use_pthreads();
