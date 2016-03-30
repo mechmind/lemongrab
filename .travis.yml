@@ -22,7 +22,7 @@ script:
   - cd build
   - cmake .. -DBUILD_TESTS=ON -DBUILD_COVER=ON
   - make
-  - ln -s ../test test
+  - cp -R ../test test
   - mkdir db
   - ls -R
   - ./lemongrab --test
