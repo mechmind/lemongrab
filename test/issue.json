@@ -1,0 +1,14 @@
+{
+  "action": "opened",
+  "issue": {
+    "html_url": "https://github.com/baxterthehacker/public-repo/issues/2",
+    "number": 2,
+    "title": "Spelling error in the README file"
+  },
+  "repository": {
+    "full_name": "baxterthehacker/public-repo"
+  },
+  "sender": {
+    "login": "baxterthehacker"
+  }
+}

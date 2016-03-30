@@ -1,0 +1,13 @@
+{
+  "action": "published",
+  "release": {
+    "html_url": "https://github.com/baxterthehacker/public-repo/releases/tag/0.0.1",
+    "tag_name": "0.0.1"
+  },
+  "repository": {
+    "full_name": "baxterthehacker/public-repo"
+  },
+  "sender": {
+    "login": "baxterthehacker"
+  }
+}
