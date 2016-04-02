@@ -14,6 +14,7 @@ List of features:
 * Pager - leave a public message to a currently absent user
 * Github Webhooks - notify chat about GitHub events (issues, stars, forks & pull requests)
 * TeamSpeak monitor - notify chat when someone connects or disconnects from TeamSpeak server (needs ServerQuery account)
+* Leauge of Legends lookup
 
 How to build/run
 ================

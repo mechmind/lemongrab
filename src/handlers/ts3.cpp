@@ -166,7 +166,10 @@ void TS3::telnetClientThread(TS3 * parent, std::string server)
 		parent->bev, parent->dns_base, AF_UNSPEC, server.c_str(), port);
 
 	// FIXME needs a reliable restart mechanism
-	event_base_dispatch(parent->base);
+	auto result = event_base_dispatch(parent->base);
+
+	if (result == -1)
+		LOG(ERROR) << "Failed to start event loop";
 }
 
 void TS3::StartServerQueryClient()

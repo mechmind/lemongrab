@@ -17,3 +17,8 @@ LastURLsPort=6666
 ts3server=example.com
 TS3QueryLogin=sqlogin
 TS3QueryPassword=sqpassword
+
+[League]
+RiotApiKey=your-key-here
+RiotRegion=eune
+RiotPlatform=EUN1

@@ -9,6 +9,7 @@
 #include "handlers/quotes.h"
 #include "handlers/lasturls.h"
 #include "handlers/ts3.h"
+#include "handlers/leaguelookup.h"
 
 #include "handlers/util/stringops.h"
 
@@ -36,6 +37,7 @@ void Bot::Run()
 	RegisterHandler<GithubWebhooks>();
 	RegisterHandler<Quotes>();
 	RegisterHandler<LastURLs>();
+	RegisterHandler<LeagueLookup>();
 	RegisterHandler<TS3>();
 
 	LOG(INFO) << "All handlers registered";
