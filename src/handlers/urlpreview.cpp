@@ -7,34 +7,9 @@
 #include <glog/logging.h>
 
 #include "util/stringops.h"
+#include "util/curlhelper.h"
 
 std::string formatHTMLchars(std::string input);
-
-// Curl support
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
-{
-	reinterpret_cast<std::string*>(userp)->append(reinterpret_cast<char*>(contents), size * nmemb);
-	return size * nmemb;
-}
-
-static std::string CurlRequest(std::string url)
-{
-	CURL *curl = nullptr;
-	curl = curl_easy_init();
-	if (!curl)
-		return "curl Fail";
-
-	// TODO Handle return codes
-	std::string readBuffer;
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-	curl_easy_perform(curl);
-	curl_easy_cleanup(curl);
-
-	return readBuffer;
-}
 
 UrlPreview::UrlPreview(LemonBot *bot)
 	: LemonHandler("url", bot)
@@ -53,7 +28,15 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 		if (_URLwhitelist.find(site.hostname) == _URLwhitelist.end())
 			continue;
 
-		std::string siteContent = CurlRequest(site.url);
+		auto page = CurlRequest(site.url);
+
+		if (page.second != 200)
+		{
+			SendMessage("Server responded with unexpected code: " + std::to_string(page.second));
+			return ProcessingResult::KeepGoing;
+		}
+
+		const auto &siteContent = page.first;
 		std::string title = "Can't get page title";
 		getTitle(siteContent, title);
 

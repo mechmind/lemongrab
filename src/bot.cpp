@@ -79,11 +79,10 @@ void Bot::OnMessage(const std::string &nick, const std::string &text)
 		return;
 	}
 
-	if (text.length() >= 5 && text.substr(0, 5) == "!help")
+	std::string args;
+	if (getCommandArguments(text, "!help", args))
 	{
-		std::string module = "";
-		if (text.length() > 6)
-			module = text.substr(6);
+		const auto &module = args;
 		return SendMessage(GetHelp(module));
 	}
 

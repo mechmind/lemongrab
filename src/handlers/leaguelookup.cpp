@@ -3,39 +3,10 @@
 #include <glog/logging.h>
 #include <curl/curl.h>
 
+#include <json/json.h>
+
 #include "util/stringops.h"
-
-// TODO: move to separate module code from here and urlpreview
-
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
-{
-	reinterpret_cast<std::string*>(userp)->append(reinterpret_cast<char*>(contents), size * nmemb);
-	return size * nmemb;
-}
-
-static std::pair<std::string, long> CurlRequest(std::string url)
-{
-	std::pair<std::string, long> response = {"", -1};
-	CURL *curl = nullptr;
-	curl = curl_easy_init();
-	if (!curl)
-		return {"curl Fail", -1};
-
-	// TODO Handle return codes
-	std::string readBuffer;
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-	if (curl_easy_perform(curl) == CURLE_OK)
-		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response.second);
-
-	curl_easy_cleanup(curl);
-
-
-	return response;
-}
-
+#include "util/curlhelper.h"
 
 LeagueLookup::LeagueLookup(LemonBot *bot)
 	: LemonHandler("leaugelookup", bot)
@@ -64,7 +35,7 @@ LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const std::string &fr
 		return ProcessingResult::KeepGoing;
 
 	std::string args;
-	if (getCommandArguments(body, "!findsummoner", args))
+	if (getCommandArguments(body, "!ll", args))
 	{
 		SendMessage(lookupCurrentGame(args));
 		return ProcessingResult::StopProcessing;
@@ -78,65 +49,92 @@ const std::string LeagueLookup::GetVersion() const
 	return "0.1";
 }
 
+const std::string LeagueLookup::GetHelp() const
+{
+	return "!ll %summonername% - check if summoner is currently in game";
+}
+
+LeagueLookup::RiotAPIResponse LeagueLookup::RiotAPIRequest(const std::string &request, Json::Value &output)
+{
+	auto apiResponse = CurlRequest(request);
+
+	if (apiResponse.second == 404)
+		return RiotAPIResponse::NotFound;
+
+	if (apiResponse.second != 200)
+	{
+		LOG(ERROR) << "RiotAPI unexpected response: " << apiResponse.second;
+		return RiotAPIResponse::UnexpectedResponseCode;
+	}
+
+	const auto &strResponse = apiResponse.first;
+
+	Json::Reader reader;
+	if (!reader.parse(strResponse.data(), strResponse.data() + strResponse.size(), output))
+	{
+		LOG(ERROR) << "Failed to parse JSON: " << strResponse;
+		return RiotAPIResponse::InvalidJSON;
+	}
+
+	return RiotAPIResponse::OK;
+}
+
 std::string LeagueLookup::lookupCurrentGame(const std::string &name)
 {
 	auto id = getSummonerIDFromName(name);
 	if (id == -1)
 		return "Summoner not found";
 
+	if (id == -2)
+		return "Something went horribly wrong";
+
 	std::string apiRequest = "https://" + _region + ".api.pvp.net/observer-mode/rest/consumer/getSpectatorGameInfo/"
 			+ _platformID + "/" + std::to_string(id) + "?api_key=" + _apiKey;
-	auto apiResponse = CurlRequest(apiRequest);
 
-	if (apiResponse.second == 404)
-		return "Summoner is not currently in game";
+	Json::Value response;
 
-	if (apiResponse.second != 200)
+	switch (RiotAPIRequest(apiRequest, response))
 	{
-		LOG(ERROR) << "RiotAPI unexpected response: " << apiResponse.second;
-		return "Something went horribly wrong (response code " + std::to_string(apiResponse.second) + ")";
+	case RiotAPIResponse::NotFound:
+		return "Summoner is not currently in game";
+	case RiotAPIResponse::UnexpectedResponseCode:
+		return "RiotAPI returned unexpected return code";
+	case RiotAPIResponse::InvalidJSON:
+		return "RiotAPI returned invalid JSON";
+	case RiotAPIResponse::OK:
+	{
+		auto players = getSummonerNamesFromJSON(response);
+
+		std::string message = "Currently playing: { ";
+		for (auto player : players)
+			message += player + " ";
+		message += "}";
+
+		return message;
+	}
 	}
 
-	auto strResponse = apiResponse.first;
-
-	Json::Reader reader;
-	Json::Value parsedResponse;
-
-	if (!reader.parse(strResponse.data(), strResponse.data() + strResponse.size(), parsedResponse))
-		LOG(WARNING) << "Failed to parse JSON: " << strResponse;
-
-	auto players = getSummonerNamesFromJSON(parsedResponse);
-
-	std::string message = "Currently playing: { ";
-	for (auto player : players)
-		message += player + " ";
-	message += "}";
-
-	return message;
+	return "This should never happen";
 }
 
 int LeagueLookup::getSummonerIDFromName(const std::string &name)
 {
 	std::string apiRequest = "https://" + _region + ".api.pvp.net/api/lol/" + _region + "/v1.4/summoner/by-name/" + name + "?api_key=" + _apiKey;
-	auto apiResponse = CurlRequest(apiRequest);
-	if (apiResponse.second == 404)
-		return -1;
 
-	if (apiResponse.second != 200)
+	Json::Value response;
+
+	switch (RiotAPIRequest(apiRequest, response))
 	{
-		LOG(ERROR) << "RiotAPI unexpected response: " << apiResponse.second;
+	case RiotAPIResponse::NotFound:
 		return -1;
+	case RiotAPIResponse::UnexpectedResponseCode:
+	case RiotAPIResponse::InvalidJSON:
+		return -2;
+	case RiotAPIResponse::OK:
+		return getSummonerIdFromJSON(name, response);
 	}
 
-	auto strResponse = apiResponse.first;
-
-	Json::Reader reader;
-	Json::Value parsedResponse;
-
-	if (!reader.parse(strResponse.data(), strResponse.data() + strResponse.size(), parsedResponse))
-		LOG(WARNING) << "Failed to parse JSON: " << strResponse;
-
-	return getSummonerIdFromJSON(name, parsedResponse);
+	return -2;
 }
 
 int LeagueLookup::getSummonerIdFromJSON(const std::string &name, const Json::Value &root)
@@ -171,7 +169,7 @@ std::list<std::string> LeagueLookup::getSummonerNamesFromJSON(const Json::Value 
 #include <vector>
 #include <iostream>
 
-TEST(LeagueLookupTest, JsonParser)
+TEST(LeagueLookupTest, PlayerList)
 {
 	LeagueLookup t(nullptr);
 
