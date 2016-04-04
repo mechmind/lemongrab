@@ -19,7 +19,14 @@ LeagueLookup::LeagueLookup(LemonBot *bot)
 	}
 
 	if (_apiKey.empty())
+	{
 		LOG(WARNING) << "Riot API Key is not set";
+		return;
+	}
+
+
+	if (!InitializeChampions() || !InitializeSpells())
+		LOG(ERROR) << "Failed to initialize static Riot API data";
 
 	if (_region.empty() || _platformID.empty())
 	{
@@ -105,10 +112,18 @@ std::string LeagueLookup::lookupCurrentGame(const std::string &name)
 	{
 		auto players = getSummonerNamesFromJSON(response);
 
-		std::string message = "Currently playing: { ";
-		for (auto player : players)
-			message += player + " ";
-		message += "}";
+		std::string message = "Currently playing:\n";
+		std::string teamA;
+		std::string teamB;
+
+		for (const auto &player : players)
+		{
+			auto &team = player.team ? teamA : teamB;
+			team += player.name + " -> " + player.champion + " (" + player.summonerSpell1 + " & " + player.summonerSpell2 + ")\n";
+		}
+
+		message += "= Red Team  =\n" + teamA + "\n";
+		message += "= Blue Team =\n" + teamB;
 
 		return message;
 	}
@@ -142,23 +157,66 @@ int LeagueLookup::getSummonerIdFromJSON(const std::string &name, const Json::Val
 	return root[toLower(name)]["id"].asInt();
 }
 
-std::list<std::string> LeagueLookup::getSummonerNamesFromJSON(const Json::Value &root)
+std::list<Summoner> LeagueLookup::getSummonerNamesFromJSON(const Json::Value &root)
 {
-	std::list<std::string> result;
+	std::list<Summoner> result;
 
-	auto participants = root["participants"];
+	const auto &participants = root["participants"];
 	if (!participants.isArray())
 		return result;
 
-	auto partNum = participants.size();
-
-	for (Json::ArrayIndex index = 0; index < partNum; index++)
+	for (Json::ArrayIndex index = 0; index < participants.size(); index++)
 	{
-		auto summonerName = participants[index]["summonerName"].asString();
-		result.push_back(summonerName);
+		Summoner summoner;
+		summoner.name = participants[index]["summonerName"].asString();
+		summoner.champion = _champions[participants[index]["championId"].asInt()];
+		summoner.summonerSpell1 = _spells[participants[index]["spell1Id"].asInt()];
+		summoner.summonerSpell2 = _spells[participants[index]["spell2Id"].asInt()];
+		summoner.team = participants[index]["teamId"].asInt() == 100;
+		result.push_back(summoner);
 	}
 
 	return result;
+}
+
+#include <iostream>
+
+bool LeagueLookup::InitializeChampions()
+{
+	std::string apiRequest = "https://global.api.pvp.net/api/lol/static-data/" + _region + "/v1.2/champion?dataById=true&api_key=" + _apiKey;
+
+	Json::Value response;
+	if (RiotAPIRequest(apiRequest, response) != RiotAPIResponse::OK)
+		return false;
+
+	const auto &data = response["data"];
+	try {
+		for(Json::ValueIterator champion = data.begin() ; champion != data.end() ; champion++)
+			_champions[(*champion)["id"].asInt()] = (*champion)["name"].asString() + ", " + (*champion)["title"].asString();
+	} catch (Json::Exception &e) {
+		LOG(ERROR) << "Error parsing Champion data: " << e.what();
+	}
+
+	return true;
+}
+
+bool LeagueLookup::InitializeSpells()
+{
+	std::string apiRequest = "https://global.api.pvp.net/api/lol/static-data/" + _region + "/v1.2/summoner-spell?api_key=" + _apiKey;
+
+	Json::Value response;
+	if (RiotAPIRequest(apiRequest, response) != RiotAPIResponse::OK)
+		return false;
+
+	const auto &data = response["data"];
+	try {
+		for(Json::ValueIterator spell = data.begin() ; spell != data.end() ; spell++)
+			_spells[(*spell)["id"].asInt()] = (*spell)["name"].asString();
+	} catch (Json::Exception &e) {
+		LOG(ERROR) << "Error parsing Spell data: " << e.what();
+	}
+
+	return true;
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
@@ -202,7 +260,7 @@ TEST(LeagueLookupTest, PlayerList)
 
 	while (got != res.end())
 	{
-		EXPECT_EQ(*want, *got);
+		EXPECT_EQ(*want, got->name);
 		++got;
 		++want;
 	}
