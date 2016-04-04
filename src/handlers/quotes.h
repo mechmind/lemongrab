@@ -30,6 +30,7 @@ private:
 
 private:
 	std::shared_ptr<leveldb::DB> _quotesDB;
+	LemonBot *_bot = nullptr;
 
 	std::mt19937_64 _generator;
 

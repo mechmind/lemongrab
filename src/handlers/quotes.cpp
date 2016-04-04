@@ -11,6 +11,7 @@
 
 Quotes::Quotes(LemonBot *bot)
 	: LemonHandler("quotes", bot)
+	, _bot(bot)
 	, _generator(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()))
 {
 	leveldb::Options options;
@@ -42,6 +43,12 @@ LemonHandler::ProcessingResult Quotes::HandleMessage(const std::string &from, co
 
 	if (getCommandArguments(body, "!dq", arg) && !arg.empty())
 	{
+		if (_bot && _bot->GetJidByNick(from) != GetRawConfigValue("admin"))
+		{
+			SendMessage(from + ": only admin can delete quotes");
+			return ProcessingResult::StopProcessing;
+		}
+
 		DeleteQuote(arg) ? SendMessage(from + ": quote deleted") : SendMessage(from + ": quote doesn't exist or access denied");
 		return ProcessingResult::StopProcessing;
 	}
@@ -71,8 +78,8 @@ std::string Quotes::GetQuote(const std::string &id)
 	if (!_quotesDB)
 		return "database connection error";
 
+	std::string quote;
 	std::string lastid;
-	std::string selectedId;
 	_quotesDB->Get(leveldb::ReadOptions(), "lastid", &lastid);
 
 	if (id.empty())
@@ -83,19 +90,28 @@ std::string Quotes::GetQuote(const std::string &id)
 		} catch (std::exception &e) {
 			return "database is empty";
 		}
-		std::uniform_int_distribution<int> dis(1, nLastID);
-		auto randomID = dis(_generator);
-		selectedId = std::to_string(randomID);
-	} else {
-		selectedId = id;
+
+		int attempts = 1;
+		const int maxAttempts = 100;
+		leveldb::Status getResult = leveldb::Status::NotFound("", "");
+		std::string strId;
+		while (attempts < maxAttempts && !getResult.ok())
+		{
+			attempts++;
+			std::uniform_int_distribution<int> dis(1, nLastID);
+			auto randomID = dis(_generator);
+			strId = std::to_string(randomID);
+			getResult = _quotesDB->Get(leveldb::ReadOptions(), strId, &quote);
+		}
+
+		return attempts < maxAttempts ? "(" + strId + "/" + lastid + ") \"" + quote + "\"" : "Too many deleted quotes or database is empty";
 	}
 
-	std::string quote;
-	auto getResult = _quotesDB->Get(leveldb::ReadOptions(), selectedId, &quote);
+	auto getResult = _quotesDB->Get(leveldb::ReadOptions(), id, &quote);
 	if (!getResult.ok())
 		return "Quote not found or something exploded";
 
-	return "(" + selectedId + "/" + lastid + ") \"" + quote + "\"";
+	return "(" + id + "/" + lastid + ") \"" + quote + "\"";
 }
 
 std::string Quotes::AddQuote(const std::string &text)
