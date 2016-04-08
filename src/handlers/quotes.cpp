@@ -60,6 +60,18 @@ LemonHandler::ProcessingResult Quotes::HandleMessage(const std::string &from, co
 		return ProcessingResult::StopProcessing;
 	}
 
+	if (body == "!regenquotes")
+	{
+		if (_bot && _bot->GetJidByNick(from) != GetRawConfigValue("admin"))
+		{
+			SendMessage(from + ": only admin can regenerate index");
+			return ProcessingResult::StopProcessing;
+		}
+
+		RegenerateIndex();
+		return ProcessingResult::StopProcessing;
+	}
+
 	return ProcessingResult::KeepGoing;
 }
 
@@ -70,7 +82,7 @@ const std::string Quotes::GetVersion() const
 
 const std::string Quotes::GetHelp() const
 {
-	return "!aq %text% - add quote, !dq %id% - delete quote, !fq %regex% - find quote, !gq %id% - get quote, if id is empty then quote is random";
+	return "!aq %text% - add quote, !dq %id% - delete quote, !fq %regex% - find quote, !gq %id% - get quote, if id is empty then quote is random, !regenquotes - regenerate index";
 }
 
 std::string Quotes::GetQuote(const std::string &id)
@@ -236,6 +248,32 @@ std::string Quotes::FindQuote(const std::string &request)
 	}
 
 	return searchResults;
+}
+
+void Quotes::RegenerateIndex()
+{
+	std::list<std::string> quotes;
+	std::string lastid;
+	int id = 0;
+
+	std::shared_ptr<leveldb::Iterator> it(_quotesDB->NewIterator(leveldb::ReadOptions()));
+	for (it->SeekToFirst(); it->Valid(); it->Next()) {
+		if (it->key().ToString() == "lastid")
+		{
+			lastid = it->value().ToString();
+			continue;
+		}
+
+		quotes.push_back(it->value().ToString());
+		_quotesDB->Delete(leveldb::WriteOptions(), it->key().ToString());
+	}
+
+	for (const auto &quote : quotes)
+		_quotesDB->Put(leveldb::WriteOptions(), std::to_string(++id), quote);
+
+	_quotesDB->Put(leveldb::WriteOptions(), "lastid", std::to_string(id));
+
+	SendMessage("Index regenerated. Size: " + lastid + " -> " + std::to_string(id));
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START

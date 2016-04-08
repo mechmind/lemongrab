@@ -21,7 +21,12 @@ public:
 	const std::string GetHelp() const;
 
 private:
-	std::string FindSimilar(std::string input);
+	enum class FindBy {
+		Jid,
+		User,
+	};
+
+	std::string FindSimilar(std::string input, FindBy searchOptions);
 
 private:
 	std::shared_ptr<leveldb::DB> _lastSeenDB;

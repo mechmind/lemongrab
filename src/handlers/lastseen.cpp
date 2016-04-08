@@ -18,14 +18,14 @@ LastSeen::LastSeen(LemonBot *bot)
 	leveldb::Options options;
 	options.create_if_missing = true;
 
-	leveldb::DB *lastSeenDB;
+	leveldb::DB *lastSeenDB = nullptr;
 	leveldb::Status status = leveldb::DB::Open(options, "db/lastseen", &lastSeenDB);
 	if (!status.ok())
 		LOG(ERROR) << "Failed to open database: " << status.ToString();
 
 	_lastSeenDB.reset(lastSeenDB);
 
-	leveldb::DB *nick2jidDB;
+	leveldb::DB *nick2jidDB = nullptr;
 	status = leveldb::DB::Open(options, "db/nick2jid", &nick2jidDB);
 	if (!status.ok())
 		LOG(ERROR) << "Failed to open database: " << status.ToString();
@@ -36,6 +36,17 @@ LastSeen::LastSeen(LemonBot *bot)
 LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, const std::string &body)
 {
 	std::string wantedUser;
+
+	if (getCommandArguments(body, "!seenjid", wantedUser))
+	{
+		auto searchResults = FindSimilar(wantedUser, FindBy::Jid);
+		if (searchResults.empty())
+			SendMessage(from + ": I have nothing :<");
+		else
+			SendMessage("Matching JIDs:" + searchResults);
+		return ProcessingResult::StopProcessing;
+	}
+
 	if (!getCommandArguments(body, "!seen", wantedUser))
 		return ProcessingResult::KeepGoing;
 
@@ -55,7 +66,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 
 		if (getJIDByNick.IsNotFound())
 		{
-			auto similarUsers = FindSimilar(wantedUser);
+			auto similarUsers = FindSimilar(wantedUser, FindBy::User);
 			if (similarUsers.empty())
 				SendMessage(wantedUser + "? Who's that?");
 			else
@@ -115,10 +126,10 @@ const std::string LastSeen::GetVersion() const
 
 const std::string LastSeen::GetHelp() const
 {
-	return "Use !seen %nickname% or !seen %jid%";
+	return "Use !seen %nickname% or !seen %jid%; use !seen %regex% or !seenjid %regex% to search users by regex";
 }
 
-std::string LastSeen::FindSimilar(std::string input)
+std::string LastSeen::FindSimilar(std::string input, FindBy searchOptions)
 {
 	std::regex inputRegex;
 	std::string matchingRecords;
@@ -136,9 +147,10 @@ std::string LastSeen::FindSimilar(std::string input)
 
 		std::smatch regexMatch;
 		bool doesMatch = false;
-		std::string nick = toLower(it->key().ToString());
+		std::string userId = (searchOptions == FindBy::User) ?
+					toLower(it->key().ToString()) : toLower(it->value().ToString());
 		try {
-			doesMatch = std::regex_search(nick, regexMatch, inputRegex);
+			doesMatch = std::regex_search(userId, regexMatch, inputRegex);
 		} catch (std::regex_error &e) {
 			LOG(WARNING) << "Regex exception: " << e.what();
 		}

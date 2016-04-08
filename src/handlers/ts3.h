@@ -24,13 +24,13 @@ private:
 	void Disconnected(const std::string &clid);
 
 private:
-	enum class State : int
+	enum class State
 	{
-		NotConnected = 0,
-		ServerQueryConnected = 1,
-		Authrozied = 2,
-		VirtualServerConnected = 3,
-		Subscribed = 4,
+		NotConnected,
+		ServerQueryConnected,
+		Authrozied,
+		VirtualServerConnected,
+		Subscribed,
 	};
 
 	std::thread _telnetClient;

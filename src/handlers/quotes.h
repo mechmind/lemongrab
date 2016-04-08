@@ -27,6 +27,7 @@ private:
 	std::string AddQuote(const std::string &text);
 	bool DeleteQuote(const std::string &id);
 	std::string FindQuote(const std::string &request);
+	void RegenerateIndex();
 
 private:
 	std::shared_ptr<leveldb::DB> _quotesDB;

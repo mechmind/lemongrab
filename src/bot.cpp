@@ -73,6 +73,7 @@ void Bot::OnMessage(const std::string &nick, const std::string &text)
 		auto admin = GetRawConfigValue("admin");
 		if (!admin.empty() && GetJidByNick(nick) == admin)
 		{
+			LOG(INFO) << "Termination requested";
 			_messageHandlers.clear();
 			_xmpp->Disconnect();
 		}

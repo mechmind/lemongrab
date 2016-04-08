@@ -174,7 +174,11 @@ void TS3::telnetClientThread(TS3 * parent, std::string server)
 
 void TS3::StartServerQueryClient()
 {
-	_telnetClient = std::thread (&telnetClientThread, this, GetRawConfigValue("ts3server"));
+	auto serverAddress = GetRawConfigValue("ts3server");
+	if (!serverAddress.empty())
+		_telnetClient = std::thread (&telnetClientThread, this, serverAddress);
+	else
+		LOG(INFO) << "No ts3server option in config, TS3 module disabled";
 }
 
 void TS3::Connected(const std::string &clid, const std::string &nick)
