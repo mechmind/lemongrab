@@ -116,7 +116,7 @@ std::string Quotes::GetQuote(const std::string &id)
 			getResult = _quotesDB->Get(leveldb::ReadOptions(), strId, &quote);
 		}
 
-		return attempts < maxAttempts ? "(" + strId + "/" + lastid + ") \"" + quote + "\"" : "Too many deleted quotes or database is empty";
+		return attempts < maxAttempts ? "(" + strId + "/" + lastid + ") " + quote : "Too many deleted quotes or database is empty";
 	}
 
 	auto getResult = _quotesDB->Get(leveldb::ReadOptions(), id, &quote);
@@ -243,9 +243,7 @@ std::string Quotes::FindQuote(const std::string &request)
 	}
 
 	if (matches == 1)
-	{
-		return "(" + onlyQuoteID + "/" + lastID + ") \"" + onlyQuote + "\"";
-	}
+		return "(" + onlyQuoteID + "/" + lastID + ") " + onlyQuote;
 
 	return searchResults;
 }
