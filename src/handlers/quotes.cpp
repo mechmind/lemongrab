@@ -123,7 +123,7 @@ std::string Quotes::GetQuote(const std::string &id)
 	if (!getResult.ok())
 		return "Quote not found or something exploded";
 
-	return "(" + id + "/" + lastid + ") \"" + quote + "\"";
+	return "(" + id + "/" + lastid + ") " + quote;
 }
 
 std::string Quotes::AddQuote(const std::string &text)
