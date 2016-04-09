@@ -14,15 +14,7 @@ Quotes::Quotes(LemonBot *bot)
 	, _bot(bot)
 	, _generator(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()))
 {
-	leveldb::Options options;
-	options.create_if_missing = true;
-
-	leveldb::DB *quotesDB = nullptr;
-	leveldb::Status status = leveldb::DB::Open(options, "db/quotes", &quotesDB);
-	if (!status.ok())
-		LOG(ERROR) << "Failed to open database: " << status.ToString();
-
-	_quotesDB.reset(quotesDB);
+	_quotesDB.init("quotes");
 }
 
 LemonHandler::ProcessingResult Quotes::HandleMessage(const std::string &from, const std::string &body)
@@ -87,12 +79,13 @@ const std::string Quotes::GetHelp() const
 
 std::string Quotes::GetQuote(const std::string &id)
 {
-	if (!_quotesDB)
+	if (!_quotesDB.isOK())
 		return "database connection error";
 
 	std::string quote;
 	std::string lastid;
-	_quotesDB->Get(leveldb::ReadOptions(), "lastid", &lastid);
+	if (!_quotesDB.Get("lastid", lastid))
+		return "Database is empty";
 
 	if (id.empty())
 	{
@@ -105,22 +98,21 @@ std::string Quotes::GetQuote(const std::string &id)
 
 		int attempts = 1;
 		const int maxAttempts = 100;
-		leveldb::Status getResult = leveldb::Status::NotFound("", "");
+		bool quoteFound = false;
 		std::string strId;
-		while (attempts < maxAttempts && !getResult.ok())
+		while (attempts < maxAttempts && !quoteFound)
 		{
 			attempts++;
 			std::uniform_int_distribution<int> dis(1, nLastID);
 			auto randomID = dis(_generator);
 			strId = std::to_string(randomID);
-			getResult = _quotesDB->Get(leveldb::ReadOptions(), strId, &quote);
+			quoteFound = _quotesDB.Get(strId, quote);
 		}
 
 		return attempts < maxAttempts ? "(" + strId + "/" + lastid + ") " + quote : "Too many deleted quotes or database is empty";
 	}
 
-	auto getResult = _quotesDB->Get(leveldb::ReadOptions(), id, &quote);
-	if (!getResult.ok())
+	if (!_quotesDB.Get(id, quote))
 		return "Quote not found or something exploded";
 
 	return "(" + id + "/" + lastid + ") " + quote;
@@ -128,17 +120,13 @@ std::string Quotes::GetQuote(const std::string &id)
 
 std::string Quotes::AddQuote(const std::string &text)
 {
-	if (!_quotesDB)
-	{
-		LOG(ERROR) << "Database pointer is null";
+	if (!_quotesDB.isOK())
 		return "";
-	}
 
 	std::string sLastID("0");
 	int lastID = 0;
 
-	_quotesDB->Get(leveldb::ReadOptions(), "lastid", &sLastID);
-
+	_quotesDB.Get("lastid", sLastID);
 	try {
 		lastID = std::stoi(sLastID);
 	} catch (std::exception &e) {
@@ -148,45 +136,32 @@ std::string Quotes::AddQuote(const std::string &text)
 
 	lastID++;
 	std::string id(std::to_string(lastID));
-	auto addRecordStatus = _quotesDB->Put(leveldb::WriteOptions(), id, text);
-	if (!addRecordStatus.ok())
-	{
-		LOG(ERROR) << "leveldb::Put for quote failed: " << addRecordStatus.ToString();
-		return "";
-	}
 
-	addRecordStatus = _quotesDB->Put(leveldb::WriteOptions(), "lastid", id);
-	if (!addRecordStatus.ok())
-	{
-		LOG(ERROR) << "leveldb::Put for lastid failed" << addRecordStatus.ToString();
+	if (!_quotesDB.Set(id, text))
 		return "";
-	}
+
+	if (!_quotesDB.Set("lastid", id))
+		return "";
 
 	return id;
 }
 
 bool Quotes::DeleteQuote(const std::string &id)
 {
-	if (!_quotesDB)
-	{
-		LOG(ERROR) << "Database pointer is null";
+	if (!_quotesDB.isOK())
 		return false;
-	}
 
 	std::string tmp;
-	auto checkQuote = _quotesDB->Get(leveldb::ReadOptions(), id, &tmp);
-	if (!checkQuote.ok())
+	if (!_quotesDB.Get(id, tmp))
 		return false;
 
-	auto removeStatus = _quotesDB->Delete(leveldb::WriteOptions(), id);
-	return removeStatus.ok();
+	return _quotesDB.Delete(id);
 }
 
 std::string Quotes::FindQuote(const std::string &request)
 {
-	if (!_quotesDB)
+	if (!_quotesDB.isOK())
 	{
-		LOG(ERROR) << "Database pointer is null";
 		return "database connection error";
 	}
 
@@ -207,40 +182,41 @@ std::string Quotes::FindQuote(const std::string &request)
 	std::string onlyQuoteID;
 	std::string lastID;
 
-	std::shared_ptr<leveldb::Iterator> it(_quotesDB->NewIterator(leveldb::ReadOptions()));
-	for (it->SeekToFirst(); it->Valid(); it->Next()) {
-		if (it->key().ToString() == "lastid")
+	_quotesDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
+		if (record.first == "lastid")
 		{
-			lastID = it->value().ToString();
-			continue;
+			lastID == record.second;
+			return true;
 		}
 
 		bool doesMatch = false;
 		try {
-			auto quote = toLower(it->value().ToString());
+			auto quote = toLower(record.second);
 			doesMatch = std::regex_search(quote, regexMatch, inputRegex);
 		} catch (std::regex_error &e) {
-			LOG(ERROR) << "Regex exception thrown" << e.what();
+			LOG(ERROR) << "Regex exception thrown: " << e.what();
 		}
 
 		if (doesMatch)
 		{
 			if (onlyQuote.empty())
 			{
-				onlyQuote = it->value().ToString();
-				onlyQuoteID = it->key().ToString();
+				onlyQuote = record.second;
+				onlyQuoteID = record.first;
 			}
 
 			if (matches >= 10)
 			{
 				searchResults.append(" ... (too many matches)");
-				return searchResults;
+				return false;
 			}
 
 			matches++;
-			searchResults.append(" " + it->key().ToString());
+			searchResults.append(" " + record.first);
 		}
-	}
+
+		return true;
+	});
 
 	if (matches == 1)
 		return "(" + onlyQuoteID + "/" + lastID + ") " + onlyQuote;
@@ -254,23 +230,22 @@ void Quotes::RegenerateIndex()
 	std::string lastid;
 	int id = 0;
 
-	std::shared_ptr<leveldb::Iterator> it(_quotesDB->NewIterator(leveldb::ReadOptions()));
-	for (it->SeekToFirst(); it->Valid(); it->Next()) {
-		if (it->key().ToString() == "lastid")
+	_quotesDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
+		if (record.first == "lastid")
 		{
-			lastid = it->value().ToString();
-			continue;
+			lastid = record.second;
+			return true;
 		}
 
-		quotes.push_back(it->value().ToString());
-		_quotesDB->Delete(leveldb::WriteOptions(), it->key().ToString());
-	}
+		quotes.push_back(record.second);
+		_quotesDB.Delete(record.first);
+		return true;
+	});
 
 	for (const auto &quote : quotes)
-		_quotesDB->Put(leveldb::WriteOptions(), std::to_string(++id), quote);
+		_quotesDB.Set(std::to_string(++id), quote);
 
-	_quotesDB->Put(leveldb::WriteOptions(), "lastid", std::to_string(id));
-
+	_quotesDB.Set("lastid", std::to_string(id));
 	SendMessage("Index regenerated. Size: " + lastid + " -> " + std::to_string(id));
 }
 

@@ -5,6 +5,8 @@
 #include <random>
 #include <memory>
 
+#include "util/persistentmap.h"
+
 #ifdef _BUILD_TESTS
 #include <gtest/gtest_prod.h>
 #endif
@@ -30,7 +32,7 @@ private:
 	void RegenerateIndex();
 
 private:
-	std::shared_ptr<leveldb::DB> _quotesDB;
+	PersistentMap _quotesDB;
 	LemonBot *_bot = nullptr;
 
 	std::mt19937_64 _generator;
