@@ -44,7 +44,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 
 	if (!_lastSeenDB.Get(wantedUser, lastSeenRecord))
 	{
-		if (_nick2jidDB.Get(wantedUser, jidRecord))
+		if (!_nick2jidDB.Get(wantedUser, jidRecord))
 		{
 			auto similarUsers = FindSimilar(wantedUser, FindBy::User);
 			if (similarUsers.empty())
