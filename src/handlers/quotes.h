@@ -11,11 +11,6 @@
 #include <gtest/gtest_prod.h>
 #endif
 
-namespace leveldb
-{
-	class DB;
-}
-
 class Quotes : public LemonHandler
 {
 public:

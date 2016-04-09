@@ -2,14 +2,11 @@
 
 #include "lemonhandler.h"
 
+#include "util/persistentmap.h"
+
 #include <list>
 #include <chrono>
 #include <memory>
-
-namespace leveldb
-{
-	class DB;
-}
 
 #ifdef _BUILD_TESTS
 #include <gtest/gtest_prod.h>
@@ -50,7 +47,8 @@ private:
 
 	long long _lastId = 0;
 	std::list<Message> _messages;
-	std::shared_ptr<leveldb::DB> _persistentMessages;
+
+	PersistentMap _persistentMessages;
 
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(PagerTest, MsgByNickCheckPresenseHandling);

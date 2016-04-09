@@ -1,7 +1,5 @@
 #include "quotes.h"
 
-#include <leveldb/db.h>
-
 #include <glog/logging.h>
 
 #include <regex>

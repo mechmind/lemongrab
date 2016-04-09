@@ -6,8 +6,6 @@
 
 #include "util/stringops.h"
 
-#include <leveldb/db.h>
-
 #include <glog/logging.h>
 
 Pager::Message::Message(const std::string &serializedInput, long long id)
@@ -64,44 +62,33 @@ bool Pager::Message::operator==(const Pager::Message &rhs)
 Pager::Pager(LemonBot *bot)
 	: LemonHandler("pager", bot)
 {
-	leveldb::Options options;
-	options.create_if_missing = true;
-
-	leveldb::DB *persistentMessages = nullptr;
-	leveldb::Status status = leveldb::DB::Open(options, "db/pager", &persistentMessages);
-	if (!status.ok())
-		LOG(ERROR) << "Failed to open database: " << status.ToString();
-	_persistentMessages.reset(persistentMessages);
-
-	if (!_persistentMessages)
-	{
-		LOG(ERROR) << "Database pointer is null";
+	if (!_persistentMessages.init("pager"))
 		return;
-	}
 
-	std::shared_ptr<leveldb::Iterator> it(_persistentMessages->NewIterator(leveldb::ReadOptions()));
 	int loadedMessages = 0;
-	for (it->SeekToFirst(); it->Valid(); it->Next()) {
+	_persistentMessages.ForEach([&](std::pair<std::string, std::string> record)->bool{
 		try {
-			_lastId = std::stoll(it->key().ToString());
+			_lastId = std::stoll(record.first);
 		} catch (std::exception &e) {
-			LOG(ERROR) << "Invalid pager id: " << it->key().ToString();
-			_persistentMessages->Delete(leveldb::WriteOptions(), it->key().ToString());
-			continue;
+			LOG(ERROR) << "Invalid pager id: " << record.first;
+			_persistentMessages.Delete(record.first);
+			return true;
 		}
 
-		Message m(it->value().ToString(), _lastId);
+		Message m(record.second, _lastId);
+
 		if (!m.isValid())
 		{
-			LOG(ERROR) << "Invalid message: " << it->value().ToString();
-			_persistentMessages->Delete(leveldb::WriteOptions(), it->key().ToString());
+			LOG(ERROR) << "Invalid message: " << record.second;
+			_persistentMessages.Delete(record.first);
+			return true;
 		}
-		else
-		{
-			_messages.push_back(m);
-			loadedMessages++;
-		}
-	}
+
+		_messages.push_back(m);
+		loadedMessages++;
+		return true;
+	});
+
 	LOG(INFO) << "Loaded " << loadedMessages << " message(s) for pager";
 }
 
@@ -171,26 +158,14 @@ const std::string Pager::GetHelp() const
 void Pager::StoreMessage(const std::string &to, const std::string &from, const std::string &text)
 {
 	_messages.emplace_back(to, from + ": " + text, ++_lastId);
-	if (_persistentMessages)
-	{
-		auto status = _persistentMessages->Put(leveldb::WriteOptions(), std::to_string(_lastId), _messages.back().Serialize());
-		if (!status.ok())
-			LOG(ERROR) << "leveldb::Put failed: " << status.ToString();
-	}
-	else
-		LOG(ERROR) << "Database pointer is null";
+	if (_persistentMessages.isOK())
+		_persistentMessages.Set(std::to_string(_lastId), _messages.back().Serialize());
 }
 
 void Pager::PurgeMessageFromDB(long long id)
 {
-	if (_persistentMessages)
-	{
-		auto status = _persistentMessages->Delete(leveldb::WriteOptions(), std::to_string(id));
-		if (!status.ok())
-			LOG(ERROR) << "leveldb::Delete failed: " << status.ToString();
-	}
-	else
-		LOG(ERROR) << "Database pointer is null";
+	if (_persistentMessages.isOK())
+		_persistentMessages.Delete(std::to_string(id));
 }
 
 void Pager::PrintPagerStats()

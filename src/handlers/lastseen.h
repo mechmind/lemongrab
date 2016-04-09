@@ -2,14 +2,11 @@
 
 #include "lemonhandler.h"
 
+#include "util/persistentmap.h"
+
 #include <map>
 #include <string>
 #include <memory>
-
-namespace leveldb
-{
-	class DB;
-}
 
 class LastSeen : public LemonHandler
 {
@@ -29,6 +26,6 @@ private:
 	std::string FindSimilar(std::string input, FindBy searchOptions);
 
 private:
-	std::shared_ptr<leveldb::DB> _lastSeenDB;
-	std::shared_ptr<leveldb::DB> _nick2jidDB;
+	PersistentMap _lastSeenDB;
+	PersistentMap _nick2jidDB;
 };

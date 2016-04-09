@@ -1,8 +1,5 @@
 #include "lastseen.h"
 
-#include <leveldb/db.h>
-#include <leveldb/options.h>
-
 #include <glog/logging.h>
 
 #include <algorithm>
@@ -15,22 +12,8 @@
 LastSeen::LastSeen(LemonBot *bot)
 	: LemonHandler("seen", bot)
 {
-	leveldb::Options options;
-	options.create_if_missing = true;
-
-	leveldb::DB *lastSeenDB = nullptr;
-	leveldb::Status status = leveldb::DB::Open(options, "db/lastseen", &lastSeenDB);
-	if (!status.ok())
-		LOG(ERROR) << "Failed to open database: " << status.ToString();
-
-	_lastSeenDB.reset(lastSeenDB);
-
-	leveldb::DB *nick2jidDB = nullptr;
-	status = leveldb::DB::Open(options, "db/nick2jid", &nick2jidDB);
-	if (!status.ok())
-		LOG(ERROR) << "Failed to open database: " << status.ToString();
-
-	_nick2jidDB.reset(nick2jidDB);
+	_lastSeenDB.init("lastseen");
+	_nick2jidDB.init("nick2jid");
 }
 
 LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, const std::string &body)
@@ -50,7 +33,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 	if (!getCommandArguments(body, "!seen", wantedUser))
 		return ProcessingResult::KeepGoing;
 
-	if (!_nick2jidDB || !_lastSeenDB)
+	if (!_nick2jidDB.isOK() || !_lastSeenDB.isOK())
 	{
 		SendMessage("Database connection error");
 		return ProcessingResult::KeepGoing;
@@ -58,13 +41,10 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 
 	std::string lastSeenRecord = "0";
 	std::string jidRecord = wantedUser;
-	leveldb::Status getLastSeenByJID = _lastSeenDB->Get(leveldb::ReadOptions(), wantedUser, &lastSeenRecord);
 
-	if (getLastSeenByJID.IsNotFound())
+	if (!_lastSeenDB.Get(wantedUser, lastSeenRecord))
 	{
-		leveldb::Status getJIDByNick = _nick2jidDB->Get(leveldb::ReadOptions(), wantedUser, &jidRecord);
-
-		if (getJIDByNick.IsNotFound())
+		if (_nick2jidDB.Get(wantedUser, jidRecord))
 		{
 			auto similarUsers = FindSimilar(wantedUser, FindBy::User);
 			if (similarUsers.empty())
@@ -75,9 +55,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 			return ProcessingResult::StopProcessing;
 		}
 
-		getLastSeenByJID = _lastSeenDB->Get(leveldb::ReadOptions(), jidRecord, &lastSeenRecord);
-
-		if (getLastSeenByJID.IsNotFound())
+		if (!_lastSeenDB.Get(jidRecord, lastSeenRecord))
 		{
 			SendMessage("Well this is weird, " + wantedUser + " resolved to " + jidRecord + " but I have no record for this jid");
 			return ProcessingResult::StopProcessing;
@@ -112,11 +90,11 @@ void LastSeen::HandlePresence(const std::string &from, const std::string &jid, b
 {
 	auto now = std::chrono::system_clock::now();
 
-	if (_nick2jidDB)
-		_nick2jidDB->Put(leveldb::WriteOptions(), from, jid);
+	if (_nick2jidDB.isOK())
+		_nick2jidDB.Set(from, jid);
 
-	if (_lastSeenDB)
-		_lastSeenDB->Put(leveldb::WriteOptions(), jid, std::to_string(std::chrono::system_clock::to_time_t(now)));
+	if (_lastSeenDB.isOK())
+		_lastSeenDB.Set(jid, std::to_string(std::chrono::system_clock::to_time_t(now)));
 }
 
 const std::string LastSeen::GetVersion() const
@@ -142,17 +120,16 @@ std::string LastSeen::FindSimilar(std::string input, FindBy searchOptions)
 
 	int matches = 0;
 
-	std::shared_ptr<leveldb::Iterator> it(_nick2jidDB->NewIterator(leveldb::ReadOptions()));
-	for (it->SeekToFirst(); it->Valid(); it->Next()) {
-
+	_nick2jidDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
 		std::smatch regexMatch;
 		bool doesMatch = false;
 		std::string userId = (searchOptions == FindBy::User) ?
-					toLower(it->key().ToString()) : toLower(it->value().ToString());
+					toLower(record.first) : toLower(record.second);
 		try {
 			doesMatch = std::regex_search(userId, regexMatch, inputRegex);
 		} catch (std::regex_error &e) {
 			LOG(WARNING) << "Regex exception: " << e.what();
+			return true;
 		}
 
 		if (doesMatch)
@@ -160,16 +137,15 @@ std::string LastSeen::FindSimilar(std::string input, FindBy searchOptions)
 			if (matches >= 10)
 			{
 				matchingRecords.append(" ... (too many matches)");
-				return matchingRecords;
+				return false;
 			}
 
 			matches++;
-			matchingRecords.append(" " + it->key().ToString() + " (" + it->value().ToString() + ")");
+			matchingRecords.append(" " + record.first + " (" + record.second + ")");
 		}
-	}
 
-	if (!it->status().ok())
-		SendMessage("Something bad happened during search");
+		return true;
+	});
 
 	return matchingRecords;
 }
