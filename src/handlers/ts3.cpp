@@ -12,15 +12,28 @@
 #include "util/stringops.h"
 
 std::string FormatTS3Name(const std::string &raw);
+std::string ReplaceTS3Spaces(const std::string &input, bool backwards = false);
 
 TS3::TS3(LemonBot *bot)
 	: LemonHandler("ts3", bot)
 {
+	_nickname = GetRawConfigValue("ts3name");
+	if (_nickname.empty())
+		_nickname = "Unseen\\svoice";
+
+	_channelID = GetRawConfigValue("ts3channel");
 	StartServerQueryClient();
 }
 
 LemonHandler::ProcessingResult TS3::HandleMessage(const std::string &from, const std::string &body)
 {
+	std::string message;
+	if (getCommandArguments(body, "!tsay", message))
+	{
+		SendTS3Message(from, message);
+		return ProcessingResult::StopProcessing;
+	}
+
 	if (body != "!ts")
 		return ProcessingResult::KeepGoing;
 
@@ -39,12 +52,12 @@ LemonHandler::ProcessingResult TS3::HandleMessage(const std::string &from, const
 
 const std::string TS3::GetVersion() const
 {
-	return "0.1";
+	return "0.2";
 }
 
 const std::string TS3::GetHelp() const
 {
-	return "!ts - get online teamspeak users";
+	return "!ts - get online teamspeak users, !tsay %message% - chat with teamspeak channel";
 }
 
 void TS3::telnetEvent(bufferevent *bev, short event, void *parentPtr)
@@ -92,10 +105,11 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 		static const std::string welcome = "Welcome to the TeamSpeak 3 ServerQuery interface";
 		if (s.find(welcome) != s.npos)
 		{
+			LOG(INFO) << "Connected to ServerQuery interface";
 			parent->_sqState = TS3::State::ServerQueryConnected;
-			std::string loginString = "login " + parent->GetRawConfigValue("TS3QueryLogin")
-					+ " " + parent->GetRawConfigValue("TS3QueryPassword") + "\n";
-			evbuffer_add_printf(bufferevent_get_output(bev), loginString.c_str());
+			evbuffer_add_printf(bufferevent_get_output(bev), "login %s %s\n",
+								parent->GetRawConfigValue("TS3QueryLogin").c_str(),
+								parent->GetRawConfigValue("TS3QueryPassword").c_str());
 		}
 		break;
 
@@ -103,6 +117,7 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 		static const std::string okMsg = "error id=0 msg=ok";
 		if (beginsWith(s, okMsg))
 		{
+			LOG(INFO) << "Authorized on TS3 server";
 			parent->_sqState = TS3::State::Authrozied;
 			evbuffer_add_printf(bufferevent_get_output(bev), "use port=9987\n");
 		}
@@ -111,14 +126,30 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 	case TS3::State::Authrozied:
 		if (beginsWith(s, okMsg))
 		{
+			LOG(INFO) << "Connected to Virtual Server";
 			parent->_sqState = TS3::State::VirtualServerConnected;
-			evbuffer_add_printf(bufferevent_get_output(bev), "servernotifyregister event=server\n");
+			evbuffer_add_printf(bufferevent_get_output(bev), "clientupdate client_nickname=%s\n", parent->_nickname.c_str());
 		}
 		break;
 
 	case TS3::State::VirtualServerConnected:
 		if (beginsWith(s, okMsg))
+		{
+			LOG(INFO) << "Nickname is set";
+			parent->_sqState = TS3::State::NickSet;
+			evbuffer_add_printf(bufferevent_get_output(bev), "servernotifyregister event=server\n");
+		}
+
+		break;
+
+	case TS3::State::NickSet:
+		if (beginsWith(s, okMsg))
+		{
+			LOG(INFO) << "Subscribed to connects/disconnects";
 			parent->_sqState = TS3::State::Subscribed;
+			if (!parent->_channelID.empty())
+				evbuffer_add_printf(bufferevent_get_output(bev), "servernotifyregister event=textchannel id=%s\n", parent->_channelID.c_str());
+		}
 		break;
 
 	case TS3::State::Subscribed:
@@ -127,7 +158,7 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 			// FIXME we need only 1-2 tokens, no need to tokenize whole thing?
 			auto tokens = tokenize(s, ' ');
 			try {
-				parent->Connected(tokens.at(4).substr(5), tokens.at(6).substr(16));
+				parent->TS3Connected(tokens.at(4).substr(5), tokens.at(6).substr(16));
 			} catch (std::exception &e) {
 				LOG(ERROR) << "Can't parse message: \"" << s << "\" | Exception: " << e.what();
 			}
@@ -138,12 +169,26 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 		{
 			auto tokens = tokenize(s, ' ');
 			try {
-				parent->Disconnected(tokens.at(5).substr(5, tokens.at(5).size() - 5));
+				parent->TS3Disconnected(tokens.at(5).substr(5, tokens.at(5).size() - 5));
 			} catch (std::exception &e) {
 				LOG(ERROR) << "Can't parse message: \"" << s << "\" | Exception: " << e.what();
 			}
 			break;
 		}
+
+		if (beginsWith(s, "notifytextmessage"))
+		{
+			auto tokens = tokenize(s, ' ');
+			try {
+				auto nick = ReplaceTS3Spaces(tokens.at(4).substr(12));
+				auto message = ReplaceTS3Spaces(tokens.at(2).substr(4));
+				parent->TS3Message(nick, message);
+			} catch (std::exception &e) {
+				LOG(ERROR) << "Can't parse message: \"" << s << "\" | Exceptions: " << e.what();
+			}
+			break;
+		}
+
 		break;
 	}
 
@@ -154,6 +199,9 @@ void TS3::telnetClientThread(TS3 * parent, std::string server)
 	int port = 10011;
 	parent->base = event_base_new();
 	parent->dns_base = evdns_base_new(parent->base, 1);
+
+	parent->msg_event = event_new(parent->base, -1, EV_READ, sendTS3message, parent);
+	event_add(parent->msg_event, nullptr);
 
 	parent->bev = bufferevent_socket_new(parent->base, -1, BEV_OPT_CLOSE_ON_FREE);
 	bufferevent_setcb(parent->bev, telnetMessage, nullptr, telnetEvent, parent);
@@ -181,18 +229,38 @@ void TS3::StartServerQueryClient()
 		LOG(INFO) << "No ts3server option in config, TS3 module disabled";
 }
 
-void TS3::Connected(const std::string &clid, const std::string &nick)
+void TS3::TS3Connected(const std::string &clid, const std::string &nick)
 {
 	std::string formattedNick = FormatTS3Name(nick);
 	_clients[clid] = formattedNick;
 	SendMessage("Teamspeak user connected: " + formattedNick);
 }
 
-void TS3::Disconnected(const std::string &clid)
+void TS3::TS3Disconnected(const std::string &clid)
 {
 	auto nick = _clients[clid];
 	SendMessage("Teamspeak user disconnected: " + nick);
 	_clients.erase(clid);
+}
+
+void TS3::TS3Message(const std::string &nick, const std::string &text)
+{
+	if (nick != _nickname)
+		SendMessage("TEAMSPEAK <" + nick + "> " + text);
+}
+
+void TS3::SendTS3Message(const std::string &nick, const std::string &text)
+{
+	_outgoingMessage = "<" + nick + "> " + text;
+	if (msg_event)
+		event_active(msg_event, EV_READ, 0);
+}
+
+void TS3::sendTS3message(int, short, void *parentPtr)
+{
+	auto parent = static_cast<TS3*>(parentPtr);
+	std::string message = "sendtextmessage targetmode=2 target=" + parent->_channelID + " msg=" + ReplaceTS3Spaces(parent->_outgoingMessage, true) + "\n";
+	bufferevent_write(parent->bev, message.c_str(), message.size());
 }
 
 std::string FormatTS3Name(const std::string &raw)
@@ -204,11 +272,21 @@ std::string FormatTS3Name(const std::string &raw)
 	else
 		result = raw;
 
-	auto spacePos = result.find("\\s");
+	return ReplaceTS3Spaces(result);
+}
+
+std::string ReplaceTS3Spaces(const std::string &input, bool backwards)
+{
+	std::string result = input;
+
+	std::string in = backwards ? " " : "\\s";
+	std::string out = backwards ? "\\s" : " ";
+
+	auto spacePos = result.find(in);
 	while (spacePos != result.npos)
 	{
-		result.replace(spacePos, 2, " ");
-		spacePos = result.find("\\s");
+		result.replace(spacePos, backwards ? 1 : 2, out);
+		spacePos = result.find(in);
 	}
 
 	return result;

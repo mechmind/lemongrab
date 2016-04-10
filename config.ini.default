@@ -14,6 +14,8 @@ historyurl=example.com/history
 LastURLsPort=6666
 
 [TeamSpeak]
+ts3name=bot
+ts3channel=1
 ts3server=example.com
 TS3QueryLogin=sqlogin
 TS3QueryPassword=sqpassword
