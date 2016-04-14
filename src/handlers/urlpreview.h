@@ -26,6 +26,8 @@ private:
 	std::set<std::string> _URLwhitelist;
 	std::list<std::pair<std::string, std::string>> _urlHistory;
 	static constexpr int maxLength = 100;
+	static constexpr int maxURLsInOneMessage = 15;
+	static constexpr int maxURLsInSearch = 10;
 
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(URLPreview, History);

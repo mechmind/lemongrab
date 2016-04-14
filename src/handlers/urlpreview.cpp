@@ -48,7 +48,8 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 			_urlHistory.pop_back();
 
 		if (_URLwhitelist.empty()
-				|| _URLwhitelist.find(site.hostname) != _URLwhitelist.end())
+				|| _URLwhitelist.find(site.hostname) != _URLwhitelist.end()
+				|| sites.size() < maxURLsInOneMessage)
 			SendMessage(formatHTMLchars(title));
 	}
 
@@ -120,7 +121,7 @@ std::string UrlPreview::findUrlsInHistory(const std::string &request)
 		if (doesMatch)
 		{
 			++matches;
-			if (matches < 10)
+			if (matches < maxURLsInSearch)
 				searchResults += urlPair.first + " (" + urlPair.second + ")\n";
 			else
 			{
