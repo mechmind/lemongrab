@@ -277,16 +277,27 @@ std::string FormatTS3Name(const std::string &raw)
 
 std::string ReplaceTS3Spaces(const std::string &input, bool backwards)
 {
+	// FIXME real mess
 	std::string result = input;
 
-	std::string in = backwards ? " " : "\\s";
-	std::string out = backwards ? "\\s" : " ";
+	std::string inSpaces = backwards ? " " : "\\s";
+	std::string outSpaces = backwards ? "\\s" : " ";
 
-	auto spacePos = result.find(in);
+	std::string inNewLine = backwards ? "\n" : "\\n";
+	std::string outNewLine = backwards ? "\\n" : "\n";
+
+	auto spacePos = result.find(inSpaces);
 	while (spacePos != result.npos)
 	{
-		result.replace(spacePos, backwards ? 1 : 2, out);
-		spacePos = result.find(in);
+		result.replace(spacePos, backwards ? 1 : 2, outSpaces);
+		spacePos = result.find(inSpaces);
+	}
+
+	auto newLinePos = result.find(inNewLine);
+	while (newLinePos != result.npos)
+	{
+		result.replace(newLinePos, backwards ? 1 : 2, outNewLine);
+		newLinePos = result.find(inNewLine);
 	}
 
 	return result;
