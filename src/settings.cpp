@@ -10,7 +10,9 @@ Settings::Settings()
 
 bool Settings::Open(const std::string &path)
 {
-	// TODO: Better config reading
+	_originalPath = path;
+	_rawSettings.clear();
+
 	std::ifstream ini(path, std::ifstream::in);
 
 	std::string line;
@@ -40,4 +42,36 @@ bool Settings::Open(const std::string &path)
 		return false;
 
 	return true;
+}
+
+bool Settings::Reload()
+{
+	if (_originalPath.empty())
+		return false;
+
+	return Open(_originalPath);
+}
+
+const std::string &Settings::GetUserJID() const
+{
+	return _JID;
+}
+
+const std::string &Settings::GetMUC() const
+{
+	return _MUC;
+}
+
+const std::string &Settings::GetPassword() const
+{
+	return _password;
+}
+
+std::string Settings::GetRawString(const std::string &name) const
+{
+	auto it = _rawSettings.find(name);
+	if (it == _rawSettings.end())
+		return "";
+
+	return it->second;
 }

@@ -8,7 +8,7 @@ Simple XMPP MUC bot, serving one conference at a time, written in C++
 
 List of features:
 
-* URL preview - posts page title for URLs posted by participants
+* URL preview - posts page title for URLs posted by participants + url history
 * Dice roller
 * Last seen - check when specific user last time visited the conference (bot must see user JIDs for this to work)
 * Pager - leave a public message to a currently absent user

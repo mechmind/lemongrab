@@ -7,7 +7,6 @@
 #include "handlers/githubwebhooks.h"
 #include "handlers/goodenough.h"
 #include "handlers/quotes.h"
-#include "handlers/lasturls.h"
 #include "handlers/ts3.h"
 #include "handlers/leaguelookup.h"
 
@@ -36,7 +35,6 @@ void Bot::Run()
 	RegisterHandler<Pager>();
 	RegisterHandler<GithubWebhooks>();
 	RegisterHandler<Quotes>();
-	RegisterHandler<LastURLs>();
 	RegisterHandler<LeagueLookup>();
 	RegisterHandler<TS3>();
 
@@ -58,6 +56,11 @@ void Bot::OnConnect()
 
 void Bot::OnMessage(const std::string &nick, const std::string &text)
 {
+	bool isAdmin = false;
+	auto admin = GetRawConfigValue("admin");
+	if (!admin.empty() && GetJidByNick(nick) == admin)
+		isAdmin = true;
+
 	if (text == "!getversion")
 		return SendMessage(GetVersion());
 
@@ -68,16 +71,19 @@ void Bot::OnMessage(const std::string &nick, const std::string &text)
 		return SendMessage(uptime);
 	}
 
-	if (text == "!die")
+	if (text == "!die" && isAdmin)
 	{
-		auto admin = GetRawConfigValue("admin");
-		if (!admin.empty() && GetJidByNick(nick) == admin)
-		{
-			LOG(INFO) << "Termination requested";
-			_messageHandlers.clear();
-			_xmpp->Disconnect();
-		}
+		LOG(INFO) << "Termination requested";
+		_messageHandlers.clear();
+		_xmpp->Disconnect();
 		return;
+	}
+
+	// FIXME: this calls for a small module redesign and is useless in current state
+	if (text == "!reload" && isAdmin)
+	{
+		LOG(INFO) << "Config reload requested";
+		_settings.Reload() ? SendMessage("Settings successfully reloaded") : SendMessage("Failed to reload settings");
 	}
 
 	std::string args;

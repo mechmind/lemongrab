@@ -24,7 +24,8 @@ const std::string &LemonHandler::GetName() const
 
 void LemonHandler::SendMessage(const std::string &text)
 {
-	_botPtr->SendMessage(text);
+	if (_botPtr)
+		_botPtr->SendMessage(text);
 }
 
 const std::string LemonHandler::GetRawConfigValue(const std::string &name) const

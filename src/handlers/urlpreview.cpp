@@ -19,28 +19,37 @@ UrlPreview::UrlPreview(LemonBot *bot)
 
 LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from, const std::string &body)
 {
+	std::string args;
+	if (getCommandArguments(body, "!url", args))
+	{
+		SendMessage(findUrlsInHistory(args));
+		return ProcessingResult::StopProcessing;
+	}
+
 	auto sites = findURLs(body);
 	if (sites.empty())
 		return ProcessingResult::KeepGoing;
 
 	for (auto &site : sites)
 	{
-		if (_URLwhitelist.find(site.hostname) == _URLwhitelist.end())
-			continue;
+		auto page = CurlRequest(site.url, _botPtr == nullptr);
 
-		auto page = CurlRequest(site.url);
-
+		std::string title = "Can't get page title";
 		if (page.second != 200)
 		{
-			SendMessage("Server responded with unexpected code: " + std::to_string(page.second));
-			return ProcessingResult::KeepGoing;
+			LOG(INFO) << "URL: " << site.url << " | Server responded with unexpected code: " << page.second;
+		} else {
+			const auto &siteContent = page.first;
+			getTitle(siteContent, title);
 		}
 
-		const auto &siteContent = page.first;
-		std::string title = "Can't get page title";
-		getTitle(siteContent, title);
+		_urlHistory.push_front({site.url, title});
+		if (_urlHistory.size() > maxLength)
+			_urlHistory.pop_back();
 
-		SendMessage(formatHTMLchars(title));
+		if (_URLwhitelist.empty()
+				|| _URLwhitelist.find(site.hostname) != _URLwhitelist.end())
+			SendMessage(formatHTMLchars(title));
 	}
 
 	return ProcessingResult::KeepGoing;
@@ -48,12 +57,17 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 
 const std::string UrlPreview::GetVersion() const
 {
-	return "0.2";
+	return "0.3";
+}
+
+const std::string UrlPreview::GetHelp() const
+{
+	return "!url %regex% - search in URL history by title or url";
 }
 
 void UrlPreview::readConfig(LemonBot *bot)
 {
-	auto unparsedWhitelist = bot->GetRawConfigValue("URLwhitelist");
+	auto unparsedWhitelist = bot ? bot->GetRawConfigValue("URLwhitelist") : "";
 
 	auto urls = tokenize(unparsedWhitelist, ';');
 	for (const auto &url : urls)
@@ -65,23 +79,58 @@ void UrlPreview::readConfig(LemonBot *bot)
 
 bool UrlPreview::getTitle(const std::string &content, std::string &title)
 {
-	static const std::regex titleRegex("<title>(.*)</title>");
-
-	std::smatch titleMatch;
-	bool titleFound = false;
-
-	try {
-		titleFound = std::regex_search(content, titleMatch, titleRegex);
-	} catch (std::regex_error &e) {
-		LOG(WARNING) << "Regex error: " << e.what();
+	// FIXME: maybe should use actual HTML parser here?
+	auto titleBegin = content.find("<title>");
+	if (titleBegin == content.npos)
 		return false;
+
+	auto titleEnd = content.find("</title>", titleBegin);
+	if (titleEnd == content.npos)
+		return false;
+
+	title = content.substr(titleBegin + 7, titleEnd - titleBegin - 7);
+	return true;
+}
+
+std::string UrlPreview::findUrlsInHistory(const std::string &request)
+{
+	std::string searchResults("Matching URLs: \n");
+	std::regex inputRegex;
+	std::smatch regexMatch;
+	int matches = 0;
+	try {
+		inputRegex = std::regex(toLower(request));
+	} catch (std::regex_error& e) {
+		LOG(WARNING) << "Input regex " << request << " is invalid: " << e.what();
+		return "Something broke: " + std::string(e.what());
 	}
 
-	if (!titleFound)
-		return false;
+	for (const auto &urlPair : _urlHistory)
+	{
+		bool doesMatch = false;
+		try {
+			auto url = toLower(urlPair.first);
+			auto title = toLower(urlPair.second);
+			doesMatch = std::regex_search(url, regexMatch, inputRegex)
+					|| std::regex_search(title, regexMatch, inputRegex);
+		} catch (std::regex_error &e) {
+			LOG(ERROR) << "Regex exception thrown: " << e.what();
+		}
 
-	title = titleMatch.str(1);
-	return true;
+		if (doesMatch)
+		{
+			++matches;
+			if (matches < 10)
+				searchResults += urlPair.first + " (" + urlPair.second + ")\n";
+			else
+			{
+				searchResults += "... too many matches";
+				return searchResults;
+			}
+		}
+	}
+
+	return searchResults;
 }
 
 std::string formatHTMLchars(std::string input)
@@ -174,6 +223,21 @@ TEST(URLPreview, GetTitle)
 		testUnit.getTitle(content, title);
 		EXPECT_EQ("This is a test title", formatHTMLchars(title));
 	}
+}
+
+TEST(URLPreview, History)
+{
+	UrlPreview t(nullptr);
+	t.HandleMessage("Bob", "http://example.com/?test http://test.com/page#anchor");
+	t.HandleMessage("Alice", "http://test.ru/");
+
+	std::list<std::pair<std::string, std::string>> expectedHistory = {
+		{"http://test.ru/", "Can't get page title"},
+		{"http://test.com/page#anchor", "Can't get page title"},
+		{"http://example.com/?test", "Can't get page title"},
+	};
+	ASSERT_EQ(expectedHistory.size(), t._urlHistory.size());
+	EXPECT_TRUE(std::equal(expectedHistory.begin(), expectedHistory.end(), t._urlHistory.begin()));
 }
 
 #endif // LCOV_EXCL_STOP

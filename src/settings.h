@@ -8,33 +8,17 @@ class Settings
 public:
 	Settings();
 	bool Open(const std::string &path);
+	bool Reload();
 
 public:
-	const std::string &GetUserJID() const
-	{
-		return _JID;
-	}
+	const std::string &GetUserJID() const;
+	const std::string &GetMUC() const;
+	const std::string &GetPassword() const;
 
-	const std::string &GetMUC() const
-	{
-		return _MUC;
-	}
-
-	const std::string &GetPassword() const
-	{
-		return _password;
-	}
-
-	std::string GetRawString(const std::string &name) const
-	{
-		auto it = _rawSettings.find(name);
-		if (it == _rawSettings.end())
-			return "";
-
-		return it->second;
-	}
+	std::string GetRawString(const std::string &name) const;
 
 private:
+	std::string _originalPath;
 	std::string _JID;
 	std::string _MUC;
 	std::string _password;

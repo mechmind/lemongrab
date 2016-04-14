@@ -2,4 +2,4 @@
 
 #include <string>
 
-std::pair<std::string, long> CurlRequest(std::string url);
+std::pair<std::string, long> CurlRequest(std::string url, bool dummy = false);
