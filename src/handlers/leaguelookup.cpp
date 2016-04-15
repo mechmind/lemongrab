@@ -227,6 +227,11 @@ bool LeagueLookup::InitializeSpells()
 #include <vector>
 #include <iostream>
 
+bool operator==(const std::string &lhs, const Summoner &rhs)
+{
+	return rhs.name == lhs;
+}
+
 TEST(LeagueLookupTest, PlayerList)
 {
 	LeagueLookup t(nullptr);
@@ -254,16 +259,8 @@ TEST(LeagueLookupTest, PlayerList)
 	ASSERT_TRUE(reader.parse(responseStr.data(), responseStr.data() + responseStr.size(), tmp));
 
 	auto res = t.getSummonerNamesFromJSON(tmp);
-
-	auto got = res.begin();
-	auto want = expectedNames.begin();
-
-	while (got != res.end())
-	{
-		EXPECT_EQ(*want, got->name);
-		++got;
-		++want;
-	}
+	ASSERT_EQ(expectedNames.size(), res.size());
+	EXPECT_TRUE(std::equal(expectedNames.begin(), expectedNames.end(), res.begin()));
 }
 
 TEST(LeagueLookupTest, SummonerByNameJson)
@@ -278,7 +275,6 @@ TEST(LeagueLookupTest, SummonerByNameJson)
 	Json::Reader reader;
 
 	ASSERT_TRUE(reader.parse(responseStr.data(), responseStr.data() + responseStr.size(), tmp));
-
 	EXPECT_EQ(20374680, t.getSummonerIdFromJSON("JazzUSCM", tmp));
 }
 

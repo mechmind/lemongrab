@@ -24,6 +24,12 @@ public:
 	{ }
 	std::string url;
 	std::string hostname;
+
+	bool operator==(const URL& rhs)
+	{
+		return url == rhs.url
+				&& hostname == rhs.hostname;
+	}
 };
 
 std::list<URL> findURLs(const std::string &input);

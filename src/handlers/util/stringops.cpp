@@ -108,17 +108,7 @@ TEST(StringOps, findURLs)
 		{"https://www.youtube.com/watch?v=abcde", "youtube.com"},
 	};
 	ASSERT_EQ(expectedURLs.size(), urls.size());
-
-	auto expected = expectedURLs.begin();
-	auto result = urls.begin();
-
-	while (expected != expectedURLs.end())
-	{
-		EXPECT_EQ(expected->url, result->url);
-		EXPECT_EQ(expected->hostname, result->hostname);
-		++expected;
-		++result;
-	}
+	EXPECT_TRUE(std::equal(expectedURLs.begin(), expectedURLs.end(), urls.begin()));
 
 	urls = findURLs("https://www.youtube.com/watch?v=lxQjwbUiM9w");
 	ASSERT_EQ(1, urls.size());

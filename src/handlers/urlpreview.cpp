@@ -34,7 +34,7 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 	{
 		auto page = CurlRequest(site.url, _botPtr == nullptr);
 
-		std::string title = "Can't get page title";
+		std::string title = "";
 		if (page.second != 200)
 		{
 			LOG(INFO) << "URL: " << site.url << " | Server responded with unexpected code: " << page.second;
@@ -47,9 +47,10 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 		if (_urlHistory.size() > maxLength)
 			_urlHistory.pop_back();
 
-		if (_URLwhitelist.empty()
-				|| _URLwhitelist.find(site.hostname) != _URLwhitelist.end()
-				|| sites.size() < maxURLsInOneMessage)
+		if ((_URLwhitelist.empty()
+				|| _URLwhitelist.find(site.hostname) != _URLwhitelist.end())
+				&& sites.size() < maxURLsInOneMessage
+				&& !title.empty())
 			SendMessage(formatHTMLchars(title));
 	}
 
@@ -197,17 +198,8 @@ TEST(URLPreview, ConfigReader)
 
 	std::set<std::string> expectedWhitelist = {"youtube.com", "youtu.be", "store.steampowered.com"};
 
-	EXPECT_EQ(expectedWhitelist.size(), testUnit._URLwhitelist.size());
-
-	auto result = testUnit._URLwhitelist.begin();
-	auto expected = expectedWhitelist.begin();
-
-	while (result != testUnit._URLwhitelist.end())
-	{
-		EXPECT_EQ(*expected, *result);
-		++expected;
-		++result;
-	}
+	ASSERT_EQ(expectedWhitelist.size(), testUnit._URLwhitelist.size());
+	EXPECT_TRUE(std::equal(expectedWhitelist.begin(), expectedWhitelist.end(), testUnit._URLwhitelist.begin()));
 }
 
 TEST(URLPreview, GetTitle)
@@ -233,9 +225,9 @@ TEST(URLPreview, History)
 	t.HandleMessage("Alice", "http://test.ru/");
 
 	std::list<std::pair<std::string, std::string>> expectedHistory = {
-		{"http://test.ru/", "Can't get page title"},
-		{"http://test.com/page#anchor", "Can't get page title"},
-		{"http://example.com/?test", "Can't get page title"},
+		{"http://test.ru/", ""},
+		{"http://test.com/page#anchor", ""},
+		{"http://example.com/?test", ""},
 	};
 	ASSERT_EQ(expectedHistory.size(), t._urlHistory.size());
 	EXPECT_TRUE(std::equal(expectedHistory.begin(), expectedHistory.end(), t._urlHistory.begin()));
