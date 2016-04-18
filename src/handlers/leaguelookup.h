@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "lemonhandler.h"
+#include "util/persistentmap.h"
 
 #ifdef _BUILD_TESTS
 #include <gtest/gtest_prod.h>
@@ -38,6 +39,7 @@ private:
 		OK,
 		NotFound,
 		UnexpectedResponseCode,
+		RateLimitReached,
 		InvalidJSON,
 	};
 
@@ -50,7 +52,12 @@ private:
 
 	bool InitializeChampions();
 	bool InitializeSpells();
+	std::string GetSummonerNameByID(const std::string &id);
 
+	void LookupAllSummoners();
+	void AddSummoner(const std::string &id);
+	void DeleteSummoner(const std::string &id);
+	void ListSummoners();
 private:
 	std::unordered_map<int, std::string> _champions;
 	std::unordered_map<int, std::string> _spells;
@@ -58,6 +65,8 @@ private:
 	std::string _region;
 	std::string _platformID;
 	std::string _apiKey;
+
+	PersistentMap _starredSummoners;
 
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(LeagueLookupTest, PlayerList);

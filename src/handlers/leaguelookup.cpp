@@ -2,11 +2,13 @@
 
 #include <glog/logging.h>
 #include <curl/curl.h>
-
 #include <json/json.h>
 
 #include "util/stringops.h"
 #include "util/curlhelper.h"
+
+#include <chrono>
+#include <thread>
 
 LeagueLookup::LeagueLookup(LemonBot *bot)
 	: LemonHandler("leaugelookup", bot)
@@ -34,6 +36,8 @@ LeagueLookup::LeagueLookup(LemonBot *bot)
 		_region = "eune";
 		_platformID = "EUN1";
 	}
+
+	_starredSummoners.init("leaguelookup");
 }
 
 LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const std::string &from, const std::string &body)
@@ -44,7 +48,28 @@ LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const std::string &fr
 	std::string args;
 	if (getCommandArguments(body, "!ll", args))
 	{
-		SendMessage(lookupCurrentGame(args));
+		if (!args.empty())
+			SendMessage(lookupCurrentGame(args));
+		else
+			LookupAllSummoners();
+		return ProcessingResult::StopProcessing;
+	}
+
+	if (getCommandArguments(body, "!addsummoner", args))
+	{
+		AddSummoner(args);
+		return ProcessingResult::StopProcessing;
+	}
+
+	if (getCommandArguments(body, "!delsummoner", args))
+	{
+		DeleteSummoner(args);
+		return ProcessingResult::StopProcessing;
+	}
+
+	if (body == "!listsummoners")
+	{
+		ListSummoners();
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -58,7 +83,11 @@ const std::string LeagueLookup::GetVersion() const
 
 const std::string LeagueLookup::GetHelp() const
 {
-	return "!ll %summonername% - check if summoner is currently in game";
+	return "!ll %summonername% - check if summoner is currently in game\n"
+			"!ll without arguments - look up every summoner on the watchlist. This may take a while\n"
+			"!addsummoner %id% - add summoner to watchlist\n"
+			"!delsummoner %id% - remove summoner from watchlist\n"
+			"!listsummoners - list watchlist content";
 }
 
 LeagueLookup::RiotAPIResponse LeagueLookup::RiotAPIRequest(const std::string &request, Json::Value &output)
@@ -67,6 +96,12 @@ LeagueLookup::RiotAPIResponse LeagueLookup::RiotAPIRequest(const std::string &re
 
 	if (apiResponse.second == 404)
 		return RiotAPIResponse::NotFound;
+
+	if (apiResponse.second == 429)
+	{
+		LOG(ERROR) << "Rate limit reached!";
+		return RiotAPIResponse::RateLimitReached;
+	}
 
 	if (apiResponse.second != 200)
 	{
@@ -104,6 +139,8 @@ std::string LeagueLookup::lookupCurrentGame(const std::string &name)
 	{
 	case RiotAPIResponse::NotFound:
 		return "Summoner is not currently in game";
+	case RiotAPIResponse::RateLimitReached:
+		return "Rate limit reached";
 	case RiotAPIResponse::UnexpectedResponseCode:
 		return "RiotAPI returned unexpected return code";
 	case RiotAPIResponse::InvalidJSON:
@@ -142,6 +179,8 @@ int LeagueLookup::getSummonerIDFromName(const std::string &name)
 	{
 	case RiotAPIResponse::NotFound:
 		return -1;
+	case RiotAPIResponse::RateLimitReached:
+		return -2;
 	case RiotAPIResponse::UnexpectedResponseCode:
 	case RiotAPIResponse::InvalidJSON:
 		return -2;
@@ -217,6 +256,111 @@ bool LeagueLookup::InitializeSpells()
 	}
 
 	return true;
+}
+
+std::string LeagueLookup::GetSummonerNameByID(const std::string &id)
+{
+	std::string apiRequest = "https://" + _region + ".api.pvp.net/api/lol/" + _region + "/v1.4/summoner/" + id + "?api_key=" + _apiKey;
+
+	Json::Value response;
+	if (RiotAPIRequest(apiRequest, response) != RiotAPIResponse::OK)
+		return "";
+
+	return response[id]["name"].asString();
+}
+
+void LeagueLookup::LookupAllSummoners()
+{
+	int totalSummoners = 0;
+	std::list<std::string> inGame;
+	std::list<std::string> broken;
+
+	_starredSummoners.ForEach([&](std::pair<std::string, std::string> record)->bool{
+		totalSummoners++;
+		if (totalSummoners > 500)
+		{
+			SendMessage("Too many summoners");
+			return false;
+		}
+
+		std::string apiRequest = "https://" + _region + ".api.pvp.net/observer-mode/rest/consumer/getSpectatorGameInfo/"
+				+ _platformID + "/" + record.first + "?api_key=" + _apiKey;
+
+		Json::Value response;
+		switch (RiotAPIRequest(apiRequest, response))
+		{
+		case RiotAPIResponse::NotFound:
+			break;
+		case RiotAPIResponse::RateLimitReached:
+			SendMessage("Rate limit reached");
+			return false;
+		case RiotAPIResponse::UnexpectedResponseCode:
+		case RiotAPIResponse::InvalidJSON:
+			broken.push_back(record.second);
+			break;
+		case RiotAPIResponse::OK:
+			inGame.push_back(record.first);
+			break;
+		}
+
+		// to avoid breaking dev api key rates
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		return true;
+	});
+
+	std::string output;
+	if (inGame.empty())
+		output = "No one is playing";
+	else
+	{
+		output = "Currently in game:";
+		for (const auto &summoner : inGame)
+			output += " " + summoner;
+	}
+
+	if (!broken.empty())
+	{
+		output += " | Following lookups failed:";
+		for (const auto &summoner : broken)
+			output += " " + summoner;
+	}
+
+	SendMessage(output);
+}
+
+void LeagueLookup::AddSummoner(const std::string &id)
+{
+	auto name = GetSummonerNameByID(id);
+	if (name.empty())
+	{
+		SendMessage("Summoner not found");
+	} else {
+		if (_starredSummoners.Set(id, name))
+			SendMessage("Summoner with ID " + id + " added as " + name);
+		else
+			SendMessage("Failed to add summoner to database");
+	}
+}
+
+void LeagueLookup::DeleteSummoner(const std::string &id)
+{
+	if (_starredSummoners.Delete(id))
+		SendMessage("Summoner with ID " + id + " deleted from watchlist");
+	else
+		SendMessage("Failde to delete the summoner from db");
+}
+
+void LeagueLookup::ListSummoners()
+{
+	std::string output;
+	_starredSummoners.ForEach([&output](std::pair<std::string, std::string> record)->bool{
+		output += record.first + " : " + record.second + "\n";
+		return true;
+	});
+	if (output.empty())
+		output = "Watchlist is empty";
+
+	SendMessage(output);
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
