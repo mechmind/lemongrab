@@ -299,7 +299,7 @@ void LeagueLookup::LookupAllSummoners()
 			broken.push_back(record.second);
 			break;
 		case RiotAPIResponse::OK:
-			inGame.push_back(record.first);
+			inGame.push_back(record.second);
 			break;
 		}
 
