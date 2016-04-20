@@ -2,6 +2,7 @@
 
 #include <list>
 #include <unordered_map>
+#include <thread>
 
 #include "lemonhandler.h"
 #include "util/persistentmap.h"
@@ -25,6 +26,14 @@ public:
 	std::string summonerSpell2;
 };
 
+class apiOptions
+{
+public:
+	std::string region;
+	std::string platformID;
+	std::string key;
+};
+
 class LeagueLookup : public LemonHandler
 {
 public:
@@ -43,7 +52,7 @@ private:
 		InvalidJSON,
 	};
 
-	RiotAPIResponse RiotAPIRequest(const std::string &request, Json::Value &output);
+	static RiotAPIResponse RiotAPIRequest(const std::string &request, Json::Value &output);
 
 	std::string lookupCurrentGame(const std::string &name);
 	int getSummonerIDFromName(const std::string &name);
@@ -54,18 +63,16 @@ private:
 	bool InitializeSpells();
 	std::string GetSummonerNameByID(const std::string &id);
 
-	void LookupAllSummoners();
+	static void LookupAllSummoners(PersistentMap &starredSummoners, LeagueLookup *_parent, apiOptions &api);
 	void AddSummoner(const std::string &id);
 	void DeleteSummoner(const std::string &id);
 	void ListSummoners();
 private:
+	std::shared_ptr<std::thread> _lookupHelper;
 	std::unordered_map<int, std::string> _champions;
 	std::unordered_map<int, std::string> _spells;
 
-	std::string _region;
-	std::string _platformID;
-	std::string _apiKey;
-
+	apiOptions _api;
 	PersistentMap _starredSummoners;
 
 #ifdef _BUILD_TESTS
