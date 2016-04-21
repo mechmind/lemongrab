@@ -81,8 +81,8 @@ std::string Quotes::GetQuote(const std::string &id)
 		return "database connection error";
 
 	std::string quote;
-	std::string lastid;
-	if (!_quotesDB.Get("lastid", lastid))
+	std::string lastid = _quotesDB.GetLastRecord().first;
+	if (lastid.empty())
 		return "Database is empty";
 
 	if (id.empty())
@@ -121,24 +121,17 @@ std::string Quotes::AddQuote(const std::string &text)
 	if (!_quotesDB.isOK())
 		return "";
 
-	std::string sLastID("0");
+	std::string sLastID = _quotesDB.GetLastRecord().first;
 	int lastID = 0;
 
-	_quotesDB.Get("lastid", sLastID);
 	try {
 		lastID = std::stoi(sLastID);
 	} catch (std::exception &e) {
 		LOG(ERROR) << "Can't convert " << sLastID << " to integer: " << e.what();
-		return "";
 	}
 
-	lastID++;
-	std::string id(std::to_string(lastID));
-
+	std::string id(std::to_string(++lastID));
 	if (!_quotesDB.Set(id, text))
-		return "";
-
-	if (!_quotesDB.Set("lastid", id))
 		return "";
 
 	return id;
@@ -159,66 +152,22 @@ bool Quotes::DeleteQuote(const std::string &id)
 std::string Quotes::FindQuote(const std::string &request)
 {
 	if (!_quotesDB.isOK())
-	{
 		return "database connection error";
-	}
 
-	// FIXME put similar code from lastseen and this into utils?
+	auto lastID = _quotesDB.GetLastRecord().first;
+	auto quotes = _quotesDB.Find(request, PersistentMap::FindOptions::ValuesOnly);
+	if (quotes.size() == 1)
+		return "(" + quotes.front().first + "/" + lastID + ") " + quotes.front().second;
+
+	if (quotes.size() == 0)
+		return "No matches";
+
+	if (quotes.size() > maxMatches)
+		return "Too many matches (" + std::to_string(quotes.size()) + ")";
+
 	std::string searchResults("Matching quote IDs:");
-	std::regex inputRegex;
-	std::smatch regexMatch;
-	try {
-		inputRegex = std::regex(toLower(request));
-	} catch (std::regex_error& e) {
-		LOG(WARNING) << "Input regex " << request << " is invalid: " << e.what();
-		return "Something broke: " + std::string(e.what());
-	}
-
-	int matches = 0;
-
-	std::string onlyQuote;
-	std::string onlyQuoteID;
-	std::string lastID;
-
-	_quotesDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		if (record.first == "lastid")
-		{
-			lastID == record.second;
-			return true;
-		}
-
-		bool doesMatch = false;
-		try {
-			auto quote = toLower(record.second);
-			doesMatch = std::regex_search(quote, regexMatch, inputRegex);
-		} catch (std::regex_error &e) {
-			LOG(ERROR) << "Regex exception thrown: " << e.what();
-		}
-
-		if (doesMatch)
-		{
-			if (onlyQuote.empty())
-			{
-				onlyQuote = record.second;
-				onlyQuoteID = record.first;
-			}
-
-			if (matches >= 10)
-			{
-				searchResults.append(" ... (too many matches)");
-				return false;
-			}
-
-			matches++;
-			searchResults.append(" " + record.first);
-		}
-
-		return true;
-	});
-
-	if (matches == 1)
-		return "(" + onlyQuoteID + "/" + lastID + ") " + onlyQuote;
-
+	for (const auto &match : quotes)
+		searchResults += " " + match.first;
 	return searchResults;
 }
 
@@ -227,14 +176,9 @@ void Quotes::RegenerateIndex()
 	std::list<std::string> quotes;
 	std::string lastid;
 	int id = 0;
+	lastid = _quotesDB.GetLastRecord().first;
 
 	_quotesDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		if (record.first == "lastid")
-		{
-			lastid = record.second;
-			return true;
-		}
-
 		quotes.push_back(record.second);
 		_quotesDB.Delete(record.first);
 		return true;
@@ -242,8 +186,6 @@ void Quotes::RegenerateIndex()
 
 	for (const auto &quote : quotes)
 		_quotesDB.Set(std::to_string(++id), quote);
-
-	_quotesDB.Set("lastid", std::to_string(id));
 	SendMessage("Index regenerated. Size: " + lastid + " -> " + std::to_string(id));
 }
 

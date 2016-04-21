@@ -32,6 +32,7 @@ private:
 
 	std::mt19937_64 _generator;
 
+	static constexpr int maxMatches = 10;
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(QuotesTest, General);
 	FRIEND_TEST(QuotesTest, Search);
