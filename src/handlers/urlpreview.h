@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lemonhandler.h"
+#include "util/persistentmap.h"
 
 #include <set>
 #include <list>
@@ -9,7 +10,8 @@
 #include <gtest/gtest_prod.h>
 #endif
 
-class UrlPreview : public LemonHandler
+class UrlPreview
+		: public LemonHandler
 {
 public:
 	UrlPreview(LemonBot *bot);
@@ -21,11 +23,13 @@ private:
 	void readConfig(LemonBot *bot);
 	bool getTitle(const std::string &content, std::string &title);
 	std::string findUrlsInHistory(const std::string &request);
+	void StoreRecord(const std::string &record);
 
 private:
 	std::set<std::string> _URLwhitelist;
-	std::list<std::pair<std::string, std::string>> _urlHistory;
-	static constexpr int maxLength = 100;
+	PersistentMap _urlHistory;
+	int _historyLength = 0;
+	static constexpr int maxLength = 10;
 	static constexpr int maxURLsInOneMessage = 15;
 	static constexpr int maxURLsInSearch = 10;
 

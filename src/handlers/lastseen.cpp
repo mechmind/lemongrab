@@ -19,17 +19,6 @@ LastSeen::LastSeen(LemonBot *bot)
 LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, const std::string &body)
 {
 	std::string wantedUser;
-
-	if (getCommandArguments(body, "!seenjid", wantedUser))
-	{
-		auto searchResults = FindSimilar(wantedUser, FindBy::Jid);
-		if (searchResults.empty())
-			SendMessage(from + ": I have nothing :<");
-		else
-			SendMessage("Matching JIDs:" + searchResults);
-		return ProcessingResult::StopProcessing;
-	}
-
 	if (!getCommandArguments(body, "!seen", wantedUser))
 		return ProcessingResult::KeepGoing;
 
@@ -46,12 +35,21 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 	{
 		if (!_nick2jidDB.Get(wantedUser, jidRecord))
 		{
-			auto similarUsers = FindSimilar(wantedUser, FindBy::User);
-			if (similarUsers.empty())
-				SendMessage(wantedUser + "? Who's that?");
-			else
-				SendMessage("Users similar to " + wantedUser + ":" + similarUsers);
+			auto similarUsers = _nick2jidDB.Find(wantedUser, PersistentMap::FindOptions::All);
+			std::string message;
 
+			if (similarUsers.empty())
+				message = wantedUser + "? Who's that?";
+			else if (similarUsers.size() > maxSearchResults)
+				message = "Too many matches";
+			else
+			{
+				message = "Similar users:";
+				for (const auto &user : similarUsers)
+					message += user.first + " (" + user.second + ")";
+			}
+
+			SendMessage(message);
 			return ProcessingResult::StopProcessing;
 		}
 
@@ -105,49 +103,6 @@ const std::string LastSeen::GetVersion() const
 const std::string LastSeen::GetHelp() const
 {
 	return "Use !seen %nickname% or !seen %jid%; use !seen %regex% or !seenjid %regex% to search users by regex";
-}
-
-std::string LastSeen::FindSimilar(std::string input, FindBy searchOptions)
-{
-	std::regex inputRegex;
-	std::string matchingRecords;
-	try {
-		inputRegex = std::regex(toLower(input));
-	} catch (std::regex_error &e) {
-		SendMessage("Can't do deep search, regex error: " + std::string(e.what()));
-		LOG(WARNING) << "Regex exception: " << e.what();
-	}
-
-	int matches = 0;
-
-	_nick2jidDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		std::smatch regexMatch;
-		bool doesMatch = false;
-		std::string userId = (searchOptions == FindBy::User) ?
-					toLower(record.first) : toLower(record.second);
-		try {
-			doesMatch = std::regex_search(userId, regexMatch, inputRegex);
-		} catch (std::regex_error &e) {
-			LOG(WARNING) << "Regex exception: " << e.what();
-			return true;
-		}
-
-		if (doesMatch)
-		{
-			if (matches >= 10)
-			{
-				matchingRecords.append(" ... (too many matches)");
-				return false;
-			}
-
-			matches++;
-			matchingRecords.append(" " + record.first + " (" + record.second + ")");
-		}
-
-		return true;
-	});
-
-	return matchingRecords;
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START

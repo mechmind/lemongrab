@@ -18,12 +18,7 @@ public:
 	const std::string GetHelp() const;
 
 private:
-	enum class FindBy {
-		Jid,
-		User,
-	};
-
-	std::string FindSimilar(std::string input, FindBy searchOptions);
+	static constexpr int maxSearchResults = 20;
 
 private:
 	PersistentMap _lastSeenDB;

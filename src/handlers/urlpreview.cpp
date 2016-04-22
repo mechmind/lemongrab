@@ -14,6 +14,9 @@ std::string formatHTMLchars(std::string input);
 UrlPreview::UrlPreview(LemonBot *bot)
 	: LemonHandler("url", bot)
 {
+	if (_urlHistory.init("urlhistory"))
+		_historyLength = _urlHistory.Size();
+
 	readConfig(bot);
 }
 
@@ -43,9 +46,13 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 			getTitle(siteContent, title);
 		}
 
-		_urlHistory.push_front({site.url, title});
-		if (_urlHistory.size() > maxLength)
-			_urlHistory.pop_back();
+		// FIXME: This is going to overflow and explode eventually
+		auto id = easy_stoll(_urlHistory.GetLastRecord().first);
+		_urlHistory.Set(std::to_string(++id), title + " " + site.url);
+		if (_historyLength < maxLength)
+			_historyLength++;
+		else
+			_urlHistory.PopFront();
 
 		if ((_URLwhitelist.empty()
 				|| _URLwhitelist.find(site.hostname) != _URLwhitelist.end())
@@ -96,43 +103,26 @@ bool UrlPreview::getTitle(const std::string &content, std::string &title)
 
 std::string UrlPreview::findUrlsInHistory(const std::string &request)
 {
-	std::string searchResults("Matching URLs: \n");
-	std::regex inputRegex;
-	std::smatch regexMatch;
-	int matches = 0;
-	try {
-		inputRegex = std::regex(toLower(request));
-	} catch (std::regex_error& e) {
-		LOG(WARNING) << "Input regex " << request << " is invalid: " << e.what();
-		return "Something broke: " + std::string(e.what());
-	}
+	std::string searchResults;
+	auto urls = _urlHistory.Find(request, PersistentMap::FindOptions::ValuesOnly);
 
-	for (const auto &urlPair : _urlHistory)
+	if (urls.size() > maxURLsInSearch)
+		searchResults = "Too many matches";
+	else if (urls.empty())
+		searchResults = "No matches";
+	else
 	{
-		bool doesMatch = false;
-		try {
-			auto url = toLower(urlPair.first);
-			auto title = toLower(urlPair.second);
-			doesMatch = std::regex_search(url, regexMatch, inputRegex)
-					|| std::regex_search(title, regexMatch, inputRegex);
-		} catch (std::regex_error &e) {
-			LOG(ERROR) << "Regex exception thrown: " << e.what();
-		}
-
-		if (doesMatch)
-		{
-			++matches;
-			if (matches < maxURLsInSearch)
-				searchResults += urlPair.first + " (" + urlPair.second + ")\n";
-			else
-			{
-				searchResults += "... too many matches";
-				return searchResults;
-			}
-		}
+		searchResults = "Matching URLs: \n";
+		for (const auto &url : urls)
+			searchResults += url.second + "\n";
 	}
 
 	return searchResults;
+}
+
+void UrlPreview::StoreRecord(const std::string &record)
+{
+
 }
 
 std::string formatHTMLchars(std::string input)
@@ -217,7 +207,8 @@ TEST(URLPreview, GetTitle)
 		EXPECT_EQ("This is a test title", formatHTMLchars(title));
 	}
 }
-
+// Need a persisten map implementation for tests
+/*
 TEST(URLPreview, History)
 {
 	UrlPreview t(nullptr);
@@ -231,6 +222,6 @@ TEST(URLPreview, History)
 	};
 	ASSERT_EQ(expectedHistory.size(), t._urlHistory.size());
 	EXPECT_TRUE(std::equal(expectedHistory.begin(), expectedHistory.end(), t._urlHistory.begin()));
-}
+}*/
 
 #endif // LCOV_EXCL_STOP

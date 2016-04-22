@@ -26,11 +26,12 @@ public:
 	bool Set(const std::string &key, const std::string &value);
 	bool Delete(const std::string &key);
 	void ForEach(std::function<bool (std::pair<std::string, std::string>)> call);
-	std::pair<std::string, std::string> GetLastRecord();
+	std::pair<std::string, std::string> GetLastRecord() const;
 	bool PopFront();
 	std::list<std::pair<std::string, std::string>> Find(const std::string &input,
 														FindOptions options,
 														bool caseSensitive = false);
+	int Size();
 
 private:
 	std::string _name;

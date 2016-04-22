@@ -85,7 +85,7 @@ void PersistentMap::ForEach(std::function<bool (std::pair<std::string, std::stri
 	}
 }
 
-std::pair<std::string, std::string> PersistentMap::GetLastRecord()
+std::pair<std::string, std::string> PersistentMap::GetLastRecord() const
 {
 	std::shared_ptr<leveldb::Iterator> it(_database->NewIterator(leveldb::ReadOptions()));
 	it->SeekToLast();
@@ -149,4 +149,14 @@ std::list<std::pair<std::string, std::string>> PersistentMap::Find(const std::st
 	});
 
 	return result;
+}
+
+int PersistentMap::Size()
+{
+	int size = 0;
+	ForEach([&size](std::pair<std::string, std::string> record)->bool{
+		++size;
+		return true;
+	});
+	return size;
 }

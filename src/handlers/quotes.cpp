@@ -2,7 +2,6 @@
 
 #include <glog/logging.h>
 
-#include <regex>
 #include <chrono>
 
 #include "util/stringops.h"
@@ -81,19 +80,13 @@ std::string Quotes::GetQuote(const std::string &id)
 		return "database connection error";
 
 	std::string quote;
-	std::string lastid = _quotesDB.GetLastRecord().first;
-	if (lastid.empty())
+	auto lastID = easy_stoll(_quotesDB.GetLastRecord().first);
+
+	if (lastID == 0)
 		return "Database is empty";
 
 	if (id.empty())
 	{
-		int nLastID = 1;
-		try {
-			nLastID = std::stoi(lastid);
-		} catch (std::exception &e) {
-			return "database is empty";
-		}
-
 		int attempts = 1;
 		const int maxAttempts = 100;
 		bool quoteFound = false;
@@ -101,19 +94,19 @@ std::string Quotes::GetQuote(const std::string &id)
 		while (attempts < maxAttempts && !quoteFound)
 		{
 			attempts++;
-			std::uniform_int_distribution<int> dis(1, nLastID);
+			std::uniform_int_distribution<int> dis(1, lastID);
 			auto randomID = dis(_generator);
 			strId = std::to_string(randomID);
 			quoteFound = _quotesDB.Get(strId, quote);
 		}
 
-		return attempts < maxAttempts ? "(" + strId + "/" + lastid + ") " + quote : "Too many deleted quotes or database is empty";
+		return attempts < maxAttempts ? "(" + strId + "/" + std::to_string(lastID) + ") " + quote : "Too many deleted quotes or database is empty";
 	}
 
 	if (!_quotesDB.Get(id, quote))
 		return "Quote not found or something exploded";
 
-	return "(" + id + "/" + lastid + ") " + quote;
+	return "(" + id + "/" + std::to_string(lastID) + ") " + quote;
 }
 
 std::string Quotes::AddQuote(const std::string &text)
@@ -121,15 +114,7 @@ std::string Quotes::AddQuote(const std::string &text)
 	if (!_quotesDB.isOK())
 		return "";
 
-	std::string sLastID = _quotesDB.GetLastRecord().first;
-	int lastID = 0;
-
-	try {
-		lastID = std::stoi(sLastID);
-	} catch (std::exception &e) {
-		LOG(ERROR) << "Can't convert " << sLastID << " to integer: " << e.what();
-	}
-
+	auto lastID = easy_stoll(_quotesDB.GetLastRecord().first);
 	std::string id(std::to_string(++lastID));
 	if (!_quotesDB.Set(id, text))
 		return "";

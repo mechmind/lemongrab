@@ -3,6 +3,8 @@
 #include <regex>
 #include <boost/locale.hpp>
 
+#include "glog/logging.h"
+
 void initLocale()
 {
 	boost::locale::generator gen;
@@ -77,6 +79,20 @@ std::string CustomTimeFormat(std::chrono::system_clock::duration input)
 	output += std::to_string(std::chrono::duration_cast<std::chrono::seconds>(input).count() % 60) + "s";
 
 	return output;
+}
+
+long long easy_stoll(const std::string &index)
+{
+	if (index.empty())
+		return 0;
+
+	try {
+		return std::stoll(index);
+	} catch (std::exception &e) {
+		LOG(ERROR) << "stoll for " << index << " failed: " << e.what();
+	}
+
+	return 0;
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
