@@ -46,7 +46,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 			{
 				message = "Similar users:";
 				for (const auto &user : similarUsers)
-					message += user.first + " (" + user.second + ")";
+					message += " " + user.first + " (" + user.second + ")";
 			}
 
 			SendMessage(message);
