@@ -29,7 +29,7 @@ private:
 	std::set<std::string> _URLwhitelist;
 	PersistentMap _urlHistory;
 	int _historyLength = 0;
-	static constexpr int maxLength = 10;
+	static constexpr int maxLength = 500;
 	static constexpr int maxURLsInOneMessage = 15;
 	static constexpr int maxURLsInSearch = 10;
 
