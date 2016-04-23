@@ -8,6 +8,7 @@
 namespace leveldb
 {
 	class DB;
+	class Comparator;
 }
 
 class PersistentMap
@@ -36,4 +37,5 @@ public:
 private:
 	std::string _name;
 	std::shared_ptr<leveldb::DB> _database;
+	std::shared_ptr<leveldb::Comparator> _comparator;
 };

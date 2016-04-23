@@ -5,6 +5,7 @@
 
 #include <curl/curl.h>
 #include <glog/logging.h>
+#include <boost/algorithm/string.hpp>
 
 #include "util/stringops.h"
 #include "util/curlhelper.h"
@@ -98,6 +99,7 @@ bool UrlPreview::getTitle(const std::string &content, std::string &title)
 		return false;
 
 	title = content.substr(titleBegin + 7, titleEnd - titleBegin - 7);
+	boost::trim(title);
 	return true;
 }
 
@@ -118,11 +120,6 @@ std::string UrlPreview::findUrlsInHistory(const std::string &request)
 	}
 
 	return searchResults;
-}
-
-void UrlPreview::StoreRecord(const std::string &record)
-{
-
 }
 
 std::string formatHTMLchars(std::string input)

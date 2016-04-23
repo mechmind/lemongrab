@@ -3,9 +3,39 @@
 #include "stringops.h"
 
 #include <leveldb/db.h>
+#include <leveldb/comparator.h>
 #include <glog/logging.h>
 
 #include <regex>
+
+class PseudoNaturalSorting
+		: public leveldb::Comparator {
+public:
+	int Compare(const leveldb::Slice& a, const leveldb::Slice& b) const {
+		long long ai = 0;
+		long long bi = 0;
+		try {
+			ai = std::stoll(a.ToString());
+			bi = std::stoll(b.ToString());
+			if (ai != 0 && bi != 0)
+			{
+				if (ai < bi)
+					return -1;
+				else if (ai > bi)
+					return +1;
+				else
+					return 0;
+			}
+		} catch (std::exception &e) {
+			// check if it's stoll that failed
+		}
+		return a.ToString().compare(b.ToString());
+	}
+
+	const char* Name() const { return "leveldb.BytewiseComparator"; }
+	void FindShortestSeparator(std::string*, const leveldb::Slice&) const { }
+	void FindShortSuccessor(std::string*) const { }
+};
 
 bool PersistentMap::init(const std::string &name)
 {
@@ -17,7 +47,9 @@ bool PersistentMap::init(const std::string &name)
 
 	_name = name;
 	leveldb::Options options;
+	_comparator = std::make_shared<PseudoNaturalSorting>();
 	options.create_if_missing = true;
+	options.comparator = _comparator.get();
 
 	leveldb::DB *DB = nullptr;
 	auto status = leveldb::DB::Open(options, "db/" + _name, &DB);
