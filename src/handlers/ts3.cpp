@@ -9,6 +9,8 @@
 
 #include <glog/logging.h>
 
+#include <boost/algorithm/string.hpp>
+
 #include "util/stringops.h"
 
 std::string FormatTS3Name(const std::string &raw);
@@ -246,12 +248,16 @@ void TS3::TS3Disconnected(const std::string &clid)
 void TS3::TS3Message(const std::string &nick, const std::string &text)
 {
 	if (nick != _nickname)
-		SendMessage("TEAMSPEAK <" + nick + "> " + text);
+		SendMessage("TS <" + nick + "> " + text);
 }
 
 void TS3::SendTS3Message(const std::string &nick, const std::string &text)
 {
-	_outgoingMessage = "<" + nick + "> " + text;
+	std::string jid = "null";
+	if (_botPtr)
+		jid = _botPtr->GetJidByNick(nick);
+
+	_outgoingMessage = "<" + nick + " [" + jid + "] > " + text;
 	if (msg_event)
 		event_active(msg_event, EV_READ, 0);
 }
@@ -277,27 +283,26 @@ std::string FormatTS3Name(const std::string &raw)
 
 std::string ReplaceTS3Spaces(const std::string &input, bool backwards)
 {
-	// FIXME real mess
-	std::string result = input;
-
-	std::string inSpaces = backwards ? " " : "\\s";
-	std::string outSpaces = backwards ? "\\s" : " ";
-
-	std::string inNewLine = backwards ? "\n" : "\\n";
-	std::string outNewLine = backwards ? "\\n" : "\n";
-
-	auto spacePos = result.find(inSpaces);
-	while (spacePos != result.npos)
+	static const std::list<std::pair<std::string, std::string>> ts3escape =
 	{
-		result.replace(spacePos, backwards ? 1 : 2, outSpaces);
-		spacePos = result.find(inSpaces);
+		{" " , "\\s"},
+		{"\n", "\\n"},
+		{"/" , "\\/"},
+	};
+
+	std::string result = input;
+	for (const auto &replacer : ts3escape)
+	{
+		if (backwards)
+			boost::replace_all(result, replacer.first, replacer.second);
+		else
+			boost::replace_all(result, replacer.second, replacer.first);
 	}
 
-	auto newLinePos = result.find(inNewLine);
-	while (newLinePos != result.npos)
+	if (!backwards)
 	{
-		result.replace(newLinePos, backwards ? 1 : 2, outNewLine);
-		newLinePos = result.find(inNewLine);
+		boost::erase_all(result, "[URL]");
+		boost::erase_all(result, "[/URL]");
 	}
 
 	return result;
@@ -312,6 +317,11 @@ TEST(TS3, NameFormatter)
 	EXPECT_EQ("Bob", FormatTS3Name("Bob"));
 	EXPECT_EQ("Alice Bob", FormatTS3Name("Alice\\sBob"));
 	EXPECT_EQ("ServerQuery<Alice Bob>", FormatTS3Name("Alice\\sBob\\sfrom\\s127.0.0.1"));
+}
+
+TEST(TS3, UrlFormatter)
+{
+	EXPECT_EQ("http://example.org/", ReplaceTS3Spaces("[URL]http:\\/\\/example.org\\/[/URL]"));
 }
 
 #endif // LCOV_EXCL_STOP
