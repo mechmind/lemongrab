@@ -236,7 +236,7 @@ bool LeagueLookup::InitializeChampions()
 
 	const auto &data = response["data"];
 	try {
-		for(Json::ValueIterator champion = data.begin() ; champion != data.end() ; champion++)
+		for(auto champion = data.begin() ; champion != data.end() ; champion++)
 			_champions[(*champion)["id"].asInt()] = (*champion)["name"].asString() + ", " + (*champion)["title"].asString();
 	} catch (Json::Exception &e) {
 		LOG(ERROR) << "Error parsing Champion data: " << e.what();
@@ -255,7 +255,7 @@ bool LeagueLookup::InitializeSpells()
 
 	const auto &data = response["data"];
 	try {
-		for(Json::ValueIterator spell = data.begin() ; spell != data.end() ; spell++)
+		for(auto spell = data.begin() ; spell != data.end() ; spell++)
 			_spells[(*spell)["id"].asInt()] = (*spell)["name"].asString();
 	} catch (Json::Exception &e) {
 		LOG(ERROR) << "Error parsing Spell data: " << e.what();
