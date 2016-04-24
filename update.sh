@@ -2,7 +2,7 @@
 
 git pull
 cd build
-cmake ..
+cmake .. -DGLOOXPATH=~/gloox-1.0.15/
 make || exit 1
 
 killall lemongrab

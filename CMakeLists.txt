@@ -6,10 +6,18 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pthread" )
 
 option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_COVER "Generate test coverage" OFF)
+SET(GLOOXPATH "" CACHE STRING "Path to Gloox library")
 
 find_package(PkgConfig)
 include(FindCURL)
-pkg_search_module(GLOOX gloox)
+
+if (GLOOXPATH STREQUAL "")
+    pkg_search_module(GLOOX gloox)
+else()
+    SET(GLOOX_INCLUDE_DIRS "${GLOOXPATH}/src")
+    SET(GLOOX_LDFLAGS "-L${GLOOXPATH}/.libs -lgloox")
+endif()
+
 pkg_search_module(LIBEVENT libevent_pthreads)
 pkg_search_module(GLOG libglog)
 pkg_search_module(JSONCPP jsoncpp)
