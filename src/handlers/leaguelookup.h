@@ -39,7 +39,6 @@ class LeagueLookup : public LemonHandler
 public:
 	LeagueLookup(LemonBot *bot);
 	ProcessingResult HandleMessage(const std::string &from, const std::string &body);
-	const std::string GetVersion() const;
 	const std::string GetHelp() const;
 
 private:
@@ -71,6 +70,8 @@ private:
 	std::shared_ptr<std::thread> _lookupHelper;
 	std::unordered_map<int, std::string> _champions;
 	std::unordered_map<int, std::string> _spells;
+
+	static constexpr int maxSummoners = 500;
 
 	apiOptions _api;
 	PersistentMap _starredSummoners;

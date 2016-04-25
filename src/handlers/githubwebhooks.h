@@ -15,7 +15,6 @@ public:
 	GithubWebhooks(LemonBot *bot);
 	~GithubWebhooks();
 	ProcessingResult HandleMessage(const std::string &from, const std::string &body);
-	const std::string GetVersion() const;
 
 private:
 	bool InitLibeventServer();

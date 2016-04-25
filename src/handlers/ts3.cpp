@@ -52,11 +52,6 @@ LemonHandler::ProcessingResult TS3::HandleMessage(const std::string &from, const
 	return ProcessingResult::StopProcessing;
 }
 
-const std::string TS3::GetVersion() const
-{
-	return "0.2";
-}
-
 const std::string TS3::GetHelp() const
 {
 	return "!ts - get online teamspeak users, !tsay %message% - chat with teamspeak channel";

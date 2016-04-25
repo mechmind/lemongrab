@@ -145,11 +145,6 @@ void Pager::HandlePresence(const std::string &from, const std::string &jid, bool
 	}
 }
 
-const std::string Pager::GetVersion() const
-{
-	return "0.1";
-}
-
 const std::string Pager::GetHelp() const
 {
 	return "Use !pager %jid% %message% or !pager %nick% %message%. Paged messages are lost after 72 hours. Use !pager_stats to get number of paged messages";

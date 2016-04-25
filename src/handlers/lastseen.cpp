@@ -95,11 +95,6 @@ void LastSeen::HandlePresence(const std::string &from, const std::string &jid, b
 		_lastSeenDB.Set(jid, std::to_string(std::chrono::system_clock::to_time_t(now)));
 }
 
-const std::string LastSeen::GetVersion() const
-{
-	return "0.1";
-}
-
 const std::string LastSeen::GetHelp() const
 {
 	return "Use !seen %nickname% or !seen %jid%; use !seen %regex% or !seenjid %regex% to search users by regex";

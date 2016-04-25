@@ -18,7 +18,6 @@ public:
 	Pager(LemonBot *bot);
 	ProcessingResult HandleMessage(const std::string &from, const std::string &body);
 	void HandlePresence(const std::string &from, const std::string &jid, bool connected);
-	const std::string GetVersion() const;
 	const std::string GetHelp() const;
 
 private:

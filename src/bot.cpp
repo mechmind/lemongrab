@@ -38,9 +38,8 @@ void Bot::Run()
 	RegisterHandler<LeagueLookup>();
 	RegisterHandler<TS3>();
 
-	LOG(INFO) << "All handlers registered";
 	for (const auto &handler : _handlersByName)
-		LOG(INFO) << "> " << handler.first << " " << handler.second->GetVersion();
+		LOG(INFO) << "Handler loaded: " << handler.first;
 
 	LOG(INFO) << "Connecting to XMPP server";
 	_xmpp->Connect(_settings.GetUserJID(), _settings.GetPassword());
@@ -61,13 +60,10 @@ void Bot::OnMessage(const std::string &nick, const std::string &text)
 	if (!admin.empty() && GetJidByNick(nick) == admin)
 		isAdmin = true;
 
-	if (text == "!getversion")
-		return SendMessage(GetVersion());
-
 	if (text == "!uptime")
 	{
 		auto CurrentTime = std::chrono::system_clock::now();
-		std::string uptime("Uptime: " + CustomTimeFormat(CurrentTime - _startTime));
+		std::string uptime("Uptime: " + CustomTimeFormat(CurrentTime - _startTime) + " | Build date: " + std::string(__DATE__));
 		return SendMessage(uptime);
 	}
 
@@ -153,16 +149,6 @@ void Bot::SendMessage(const std::string &text)
 std::string Bot::GetRawConfigValue(const std::string &name) const
 {
 	return _settings.GetRawString(name);
-}
-
-const std::string Bot::GetVersion() const
-{
-	std::string version = "Core: 0.1 (" + std::string(__DATE__) + ") | Modules:";
-	for (auto handler : _messageHandlers)
-	{
-		version.append(" [" + handler->GetName() + ": " + handler->GetVersion() + "]");
-	}
-	return version;
 }
 
 const std::string Bot::GetHelp(const std::string &module) const

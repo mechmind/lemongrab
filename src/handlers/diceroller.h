@@ -13,7 +13,6 @@ class DiceRoller : public LemonHandler
 public:
 	DiceRoller(LemonBot *bot);
 	ProcessingResult HandleMessage(const std::string &from, const std::string &body);
-	const std::string GetVersion() const;
 	const std::string GetHelp() const;
 
 private:

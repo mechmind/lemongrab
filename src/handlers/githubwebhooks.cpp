@@ -35,13 +35,7 @@ LemonHandler::ProcessingResult GithubWebhooks::HandleMessage(const std::string &
 	return ProcessingResult::KeepGoing;
 }
 
-const std::string GithubWebhooks::GetVersion() const
-{
-	return "0.2";
-}
-
 void httpHandler(evhttp_request *request, void *arg) {
-	// TODO: look up valid responses
 	GithubWebhooks * parent = static_cast<GithubWebhooks*>(arg);
 	std::string githubHeader;
 
@@ -76,7 +70,7 @@ void httpHandler(evhttp_request *request, void *arg) {
 	{
 	case GithubWebhookFormatter::FormatResult::JSONParseError:
 		LOG(ERROR) << "Can't parse json payload";
-		evhttp_send_reply(request, HTTP_BADREQUEST, "Can't parse json payload", output);
+		evhttp_send_reply(request, HTTP_INTERNAL, "Can't parse json payload", output);
 		evbuffer_add_printf(output, "Can't parse json");
 		return;
 
@@ -132,4 +126,3 @@ bool GithubWebhooks::InitLibeventServer()
 	_httpServer = std::thread (&httpServerThread, this, port);
 	return true;
 }
-

@@ -42,7 +42,6 @@ private:
 		_handlersByName[_messageHandlers.back()->GetName()] = _messageHandlers.back();
 	}
 
-	const std::string GetVersion() const;
 	const std::string GetHelp(const std::string &module) const;
 
 private:

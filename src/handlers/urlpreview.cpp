@@ -65,11 +65,6 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 	return ProcessingResult::KeepGoing;
 }
 
-const std::string UrlPreview::GetVersion() const
-{
-	return "0.3";
-}
-
 const std::string UrlPreview::GetHelp() const
 {
 	return "!url %regex% - search in URL history by title or url";

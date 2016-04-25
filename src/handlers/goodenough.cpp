@@ -34,11 +34,6 @@ LemonHandler::ProcessingResult GoodEnough::HandleMessage(const std::string &from
 	return ProcessingResult::KeepGoing;
 }
 
-const std::string GoodEnough::GetVersion() const
-{
-	return "good enough";
-}
-
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
 
 #include "gtest/gtest.h"

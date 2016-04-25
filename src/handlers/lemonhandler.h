@@ -36,12 +36,6 @@ public:
 	virtual void HandlePresence(const std::string &from, const std::string &jid, bool connected) { }
 
 	/**
-	 * @brief Get module version
-	 * @return Version string (e.g. "Dice 0.1")
-	 */
-	virtual const std::string GetVersion() const = 0;
-
-	/**
 	 * @brief Get help string
 	 * @return List of module commands and their description
 	 */

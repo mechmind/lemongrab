@@ -184,11 +184,6 @@ LemonHandler::ProcessingResult DiceRoller::HandleMessage(const std::string &from
 	return ProcessingResult::StopProcessing;
 }
 
-const std::string DiceRoller::GetVersion() const
-{
-	return "0.3";
-}
-
 const std::string DiceRoller::GetHelp() const
 {
 	return "Start your message with . (dot) and write an expression using integer numbers, dice"

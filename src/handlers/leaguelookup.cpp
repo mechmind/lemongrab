@@ -82,11 +82,6 @@ LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const std::string &fr
 	return ProcessingResult::KeepGoing;
 }
 
-const std::string LeagueLookup::GetVersion() const
-{
-	return "0.1";
-}
-
 const std::string LeagueLookup::GetHelp() const
 {
 	return "!ll %summonername% - check if summoner is currently in game\n"
@@ -283,7 +278,7 @@ void LeagueLookup::LookupAllSummoners(PersistentMap &starredSummoners, LeagueLoo
 
 	starredSummoners.ForEach([&](std::pair<std::string, std::string> record)->bool{
 		totalSummoners++;
-		if (totalSummoners > 500)
+		if (totalSummoners > maxSummoners)
 		{
 			_parent->SendMessage("Too many summoners");
 			return false;

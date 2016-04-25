@@ -64,11 +64,6 @@ LemonHandler::ProcessingResult Quotes::HandleMessage(const std::string &from, co
 	return ProcessingResult::KeepGoing;
 }
 
-const std::string Quotes::GetVersion() const
-{
-	return "0.1";
-}
-
 const std::string Quotes::GetHelp() const
 {
 	return "!aq %text% - add quote, !dq %id% - delete quote, !fq %regex% - find quote, !gq %id% - get quote, if id is empty then quote is random, !regenquotes - regenerate index";
