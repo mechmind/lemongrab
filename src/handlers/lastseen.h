@@ -20,6 +20,6 @@ private:
 	static constexpr int maxSearchResults = 20;
 
 private:
-	PersistentMap _lastSeenDB;
-	PersistentMap _nick2jidDB;
+	LevelDBPersistentMap _lastSeenDB;
+	LevelDBPersistentMap _nick2jidDB;
 };

@@ -24,15 +24,15 @@ private:
 	void StoreRecord(const std::string &record);
 
 	bool shouldPrintTitle(const std::string &url);
-	bool isFoundInRules(const std::string &url, const PersistentMap &ruleset);
-	bool addRuleToRuleset(const std::string &rule, PersistentMap &ruleset);
-	bool delRuleFromRuleset(const std::string &ruleID, PersistentMap &ruleset);
+	bool isFoundInRules(const std::string &url, const LevelDBPersistentMap &ruleset);
+	bool addRuleToRuleset(const std::string &rule, LevelDBPersistentMap &ruleset);
+	bool delRuleFromRuleset(const std::string &ruleID, LevelDBPersistentMap &ruleset);
 	void ShowURLRules();
 
 private:
-	PersistentMap _urlHistory;
-	PersistentMap _urlWhitelist;
-	PersistentMap _urlBlacklist;
+	LevelDBPersistentMap _urlHistory;
+	LevelDBPersistentMap _urlWhitelist;
+	LevelDBPersistentMap _urlBlacklist;
 
 	int _historyLength = 0;
 	static constexpr int maxLength = 500;

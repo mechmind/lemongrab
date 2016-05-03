@@ -26,7 +26,7 @@ private:
 	void RegenerateIndex();
 
 private:
-	PersistentMap _quotesDB;
+	LevelDBPersistentMap _quotesDB;
 	LemonBot *_bot = nullptr;
 
 	std::mt19937_64 _generator;

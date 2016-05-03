@@ -35,7 +35,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, 
 	{
 		if (!_nick2jidDB.Get(wantedUser, jidRecord))
 		{
-			auto similarUsers = _nick2jidDB.Find(wantedUser, PersistentMap::FindOptions::All);
+			auto similarUsers = _nick2jidDB.Find(wantedUser, LevelDBPersistentMap::FindOptions::All);
 			std::string message;
 
 			if (similarUsers.empty())

@@ -96,7 +96,7 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 const std::string UrlPreview::GetHelp() const
 {
 	return "!url %regex% - search in URL history by title or url\n"
-			"!wlisturl %regex% and !blisturl %regex% - enable/disable notifications for specific urls\n";
+			"!wlisturl %regex% and !blisturl %regex% - enable/disable notifications for specific urls\n"
 			"!wdelisturl %id% and !bdelisturl %id% - delete existing rules. !urlrules - print existing rules and their ids";
 }
 
@@ -119,7 +119,7 @@ bool UrlPreview::getTitle(const std::string &content, std::string &title)
 std::string UrlPreview::findUrlsInHistory(const std::string &request)
 {
 	std::string searchResults;
-	auto urls = _urlHistory.Find(request, PersistentMap::FindOptions::ValuesOnly);
+	auto urls = _urlHistory.Find(request, LevelDBPersistentMap::FindOptions::ValuesOnly);
 
 	if (urls.size() > maxURLsInSearch)
 		searchResults = "Too many matches";
@@ -143,12 +143,12 @@ bool UrlPreview::shouldPrintTitle(const std::string &url)
 	return !blacklisted || whitelisted;
 }
 
-bool UrlPreview::isFoundInRules(const std::string &url, const PersistentMap &ruleset)
+bool UrlPreview::isFoundInRules(const std::string &url, const LevelDBPersistentMap &ruleset)
 {
 	if (!ruleset.isOK() || ruleset.isEmpty())
 		return false;
 
-	auto ruleMatches = ruleset.Find(url, PersistentMap::FindOptions::ValuesAsRegex);
+	auto ruleMatches = ruleset.Find(url, LevelDBPersistentMap::FindOptions::ValuesAsRegex);
 	if (!ruleMatches.empty())
 	{
 		LOG(INFO) << "URL is found in ruleset " << ruleset.getName() << " in rule " << (*ruleMatches.begin()).second;
@@ -158,7 +158,7 @@ bool UrlPreview::isFoundInRules(const std::string &url, const PersistentMap &rul
 	return false;
 }
 
-bool UrlPreview::addRuleToRuleset(const std::string &rule, PersistentMap &ruleset)
+bool UrlPreview::addRuleToRuleset(const std::string &rule, LevelDBPersistentMap &ruleset)
 {
 	if (!ruleset.isOK())
 		return false;
@@ -170,7 +170,7 @@ bool UrlPreview::addRuleToRuleset(const std::string &rule, PersistentMap &rulese
 	return ok;
 }
 
-bool UrlPreview::delRuleFromRuleset(const std::string &ruleID, PersistentMap &ruleset)
+bool UrlPreview::delRuleFromRuleset(const std::string &ruleID, LevelDBPersistentMap &ruleset)
 {
 	if (!ruleset.isOK())
 		return false;

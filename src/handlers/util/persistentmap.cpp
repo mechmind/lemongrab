@@ -37,7 +37,7 @@ public:
 	void FindShortSuccessor(std::string*) const { }
 };
 
-bool PersistentMap::init(const std::string &name)
+bool LevelDBPersistentMap::init(const std::string &name)
 {
 	if (name.empty())
 	{
@@ -63,12 +63,12 @@ bool PersistentMap::init(const std::string &name)
 	return true;
 }
 
-bool PersistentMap::isOK() const
+bool LevelDBPersistentMap::isOK() const
 {
 	return static_cast<bool>(_database);
 }
 
-bool PersistentMap::Get(const std::string &key, std::string &value) const
+bool LevelDBPersistentMap::Get(const std::string &key, std::string &value) const
 {
 	auto status = _database->Get(leveldb::ReadOptions(), key, &value);
 
@@ -81,7 +81,7 @@ bool PersistentMap::Get(const std::string &key, std::string &value) const
 	return true;
 }
 
-bool PersistentMap::Set(const std::string &key, const std::string &value)
+bool LevelDBPersistentMap::Set(const std::string &key, const std::string &value)
 {
 	auto status = _database->Put(leveldb::WriteOptions(), key, value);
 
@@ -94,7 +94,7 @@ bool PersistentMap::Set(const std::string &key, const std::string &value)
 	return true;
 }
 
-bool PersistentMap::Delete(const std::string &key)
+bool LevelDBPersistentMap::Delete(const std::string &key)
 {
 	auto status = _database->Delete(leveldb::WriteOptions(), key);
 
@@ -107,7 +107,7 @@ bool PersistentMap::Delete(const std::string &key)
 	return true;
 }
 
-void PersistentMap::ForEach(std::function<bool (std::pair<std::string, std::string>)> call) const
+void LevelDBPersistentMap::ForEach(std::function<bool (std::pair<std::string, std::string>)> call) const
 {
 	std::shared_ptr<leveldb::Iterator> it(_database->NewIterator(leveldb::ReadOptions()));
 	for (it->SeekToFirst(); it->Valid(); it->Next())
@@ -117,7 +117,7 @@ void PersistentMap::ForEach(std::function<bool (std::pair<std::string, std::stri
 	}
 }
 
-std::pair<std::string, std::string> PersistentMap::GetLastRecord() const
+std::pair<std::string, std::string> LevelDBPersistentMap::GetLastRecord() const
 {
 	std::shared_ptr<leveldb::Iterator> it(_database->NewIterator(leveldb::ReadOptions()));
 	it->SeekToLast();
@@ -127,7 +127,7 @@ std::pair<std::string, std::string> PersistentMap::GetLastRecord() const
 		return std::pair<std::string, std::string>();
 }
 
-bool PersistentMap::PopFront()
+bool LevelDBPersistentMap::PopFront()
 {
 	std::shared_ptr<leveldb::Iterator> it(_database->NewIterator(leveldb::ReadOptions()));
 	it->SeekToFirst();
@@ -137,7 +137,7 @@ bool PersistentMap::PopFront()
 	return Delete(it->key().ToString());
 }
 
-std::list<std::pair<std::string, std::string>> PersistentMap::Find(const std::string &input,
+std::list<std::pair<std::string, std::string>> LevelDBPersistentMap::Find(const std::string &input,
 																   FindOptions options,
 																   bool caseSensitive) const
 {
@@ -192,7 +192,15 @@ std::list<std::pair<std::string, std::string>> PersistentMap::Find(const std::st
 	return result;
 }
 
-int PersistentMap::Size() const
+void LevelDBPersistentMap::Clear()
+{
+	ForEach([&](std::pair<std::string, std::string> record){
+		Delete(record.first);
+		return true;
+	});
+}
+
+int LevelDBPersistentMap::Size() const
 {
 	int size = 0;
 	ForEach([&size](std::pair<std::string, std::string> record)->bool{
@@ -200,6 +208,11 @@ int PersistentMap::Size() const
 		return true;
 	});
 	return size;
+}
+
+PersistentMap::~PersistentMap()
+{
+
 }
 
 bool PersistentMap::isEmpty() const
@@ -211,3 +224,117 @@ const std::string PersistentMap::getName() const
 {
 	return _name;
 }
+
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
+
+#include <gtest/gtest.h>
+
+TEST(LevelDB, SaveLoad)
+{
+	{
+		LevelDBPersistentMap testdb;
+		EXPECT_TRUE(testdb.init("testdb"));
+		ASSERT_TRUE(testdb.isOK());
+		testdb.Clear();
+
+		EXPECT_TRUE(testdb.Set("key1", "value1"));
+	}
+
+	{
+		LevelDBPersistentMap testdb;
+		EXPECT_TRUE(testdb.init("testdb"));
+		ASSERT_TRUE(testdb.isOK());
+		std::string value;
+		EXPECT_TRUE(testdb.Get("key1", value));
+		EXPECT_EQ("value1", value);
+		testdb.Clear();
+	}
+}
+
+TEST(LevelDB, SetGetDelete)
+{
+	LevelDBPersistentMap testdb;
+	ASSERT_TRUE(testdb.init("testdb"));
+	testdb.Clear();
+
+	std::string output;
+	EXPECT_FALSE(testdb.Get("key1", output));
+
+	testdb.Set("key1", "value1");
+	testdb.Set("key2", "value2");
+	EXPECT_TRUE(testdb.Get("key1", output));
+	EXPECT_EQ("value1", output);
+
+	EXPECT_TRUE(testdb.Delete("key1"));
+	EXPECT_FALSE(testdb.Get("key1", output));
+}
+
+TEST(LevelDB, Size)
+{
+	LevelDBPersistentMap testdb;
+	ASSERT_TRUE(testdb.init("testdb"));
+	testdb.Clear();
+	EXPECT_TRUE(testdb.isEmpty());
+	EXPECT_EQ(0, testdb.Size());
+
+	ASSERT_TRUE(testdb.Set("key1", "value1"));
+	EXPECT_FALSE(testdb.isEmpty());
+	EXPECT_EQ(1, testdb.Size());
+
+	ASSERT_TRUE(testdb.Set("key2", "value2"));
+	EXPECT_FALSE(testdb.isEmpty());
+	EXPECT_EQ(2, testdb.Size());
+
+	ASSERT_TRUE(testdb.Set("key1", "value3"));
+	EXPECT_FALSE(testdb.isEmpty());
+	EXPECT_EQ(2, testdb.Size());
+
+	testdb.Clear();
+}
+
+TEST(LevelDB, Search)
+{
+	LevelDBPersistentMap testdb;
+	ASSERT_TRUE(testdb.init("testdb"));
+	testdb.Clear();
+
+	ASSERT_TRUE(testdb.Set("key1", "value1"));
+	ASSERT_TRUE(testdb.Set("key2", "value2"));
+	ASSERT_TRUE(testdb.Set("key3", "value3"));
+
+	{
+		auto result = testdb.Find("key", PersistentMap::FindOptions::KeysOnly);
+		std::list<std::pair<std::string,std::string>> expectedResult = {
+			{"key1", "value1"},
+			{"key2", "value2"},
+			{"key3", "value3"},
+		};
+		EXPECT_TRUE(std::equal(expectedResult.begin(), expectedResult.end(), result.begin()));
+	}
+
+	{
+		auto result = testdb.Find("key[12]", PersistentMap::FindOptions::KeysOnly);
+		std::list<std::pair<std::string,std::string>> expectedResult = {
+			{"key1", "value1"},
+			{"key2", "value2"},
+		};
+		EXPECT_TRUE(std::equal(expectedResult.begin(), expectedResult.end(), result.begin()));
+	}
+
+	{
+		auto result = testdb.Find("VALUE2", PersistentMap::FindOptions::ValuesOnly, false);
+		std::list<std::pair<std::string,std::string>> expectedResult = {
+			{"key2", "value2"},
+		};
+		EXPECT_TRUE(std::equal(expectedResult.begin(), expectedResult.end(), result.begin()));
+	}
+
+	{
+		auto result = testdb.Find("VALUE2", PersistentMap::FindOptions::ValuesOnly, true);
+		EXPECT_TRUE(result.empty());
+	}
+
+	testdb.Clear();
+}
+
+#endif // LCOV_EXCL_STOP

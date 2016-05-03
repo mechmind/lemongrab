@@ -138,9 +138,11 @@ TEST(StringOps, findURLs)
 TEST(StringOps, beginsWith)
 {
 	EXPECT_TRUE(beginsWith("!test", "!test"));
-	//EXPECT_EQ(false, beginsWith("!testok", "!test"))
-
 	EXPECT_FALSE(beginsWith("!toost", "!test"));
+	EXPECT_TRUE(beginsWith("!test", "!test"));
+	EXPECT_TRUE(beginsWith("!test!", "!test"));
+	EXPECT_FALSE(beginsWith("!tes", "!test"));
+	EXPECT_FALSE(beginsWith("?test", "!test"));
 }
 
 TEST(StringOps, getArguments)

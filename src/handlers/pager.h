@@ -47,7 +47,7 @@ private:
 	long long _lastId = 0;
 	std::list<Message> _messages;
 
-	PersistentMap _persistentMessages;
+	LevelDBPersistentMap _persistentMessages;
 
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(PagerTest, MsgByNickCheckPresenseHandling);

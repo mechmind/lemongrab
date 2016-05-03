@@ -62,7 +62,7 @@ private:
 	bool InitializeSpells();
 	std::string GetSummonerNameByID(const std::string &id);
 
-	static void LookupAllSummoners(PersistentMap &starredSummoners, LeagueLookup *_parent, apiOptions &api);
+	static void LookupAllSummoners(LevelDBPersistentMap &starredSummoners, LeagueLookup *_parent, apiOptions &api);
 	void AddSummoner(const std::string &id);
 	void DeleteSummoner(const std::string &id);
 	void ListSummoners();
@@ -74,7 +74,7 @@ private:
 	static constexpr int maxSummoners = 500;
 
 	apiOptions _api;
-	PersistentMap _starredSummoners;
+	LevelDBPersistentMap _starredSummoners;
 
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(LeagueLookupTest, PlayerList);

@@ -270,7 +270,7 @@ std::string LeagueLookup::GetSummonerNameByID(const std::string &id)
 	return response[id]["name"].asString();
 }
 
-void LeagueLookup::LookupAllSummoners(PersistentMap &starredSummoners, LeagueLookup *_parent, apiOptions &api)
+void LeagueLookup::LookupAllSummoners(LevelDBPersistentMap &starredSummoners, LeagueLookup *_parent, apiOptions &api)
 {
 	int totalSummoners = 0;
 	std::list<std::string> inGame;

@@ -135,7 +135,7 @@ std::string Quotes::FindQuote(const std::string &request)
 		return "database connection error";
 
 	auto lastID = _quotesDB.GetLastRecord().first;
-	auto quotes = _quotesDB.Find(request, PersistentMap::FindOptions::ValuesOnly);
+	auto quotes = _quotesDB.Find(request, LevelDBPersistentMap::FindOptions::ValuesOnly);
 	if (quotes.size() == 1)
 		return "(" + quotes.front().first + "/" + lastID + ") " + quotes.front().second;
 
