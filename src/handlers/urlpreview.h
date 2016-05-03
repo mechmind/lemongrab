@@ -19,14 +19,21 @@ public:
 	const std::string GetHelp() const;
 
 private:
-	void readConfig(LemonBot *bot);
 	bool getTitle(const std::string &content, std::string &title);
 	std::string findUrlsInHistory(const std::string &request);
 	void StoreRecord(const std::string &record);
 
+	bool shouldPrintTitle(const std::string &url);
+	bool isFoundInRules(const std::string &url, const PersistentMap &ruleset);
+	bool addRuleToRuleset(const std::string &rule, PersistentMap &ruleset);
+	bool delRuleFromRuleset(const std::string &ruleID, PersistentMap &ruleset);
+	void ShowURLRules();
+
 private:
-	std::set<std::string> _URLwhitelist;
 	PersistentMap _urlHistory;
+	PersistentMap _urlWhitelist;
+	PersistentMap _urlBlacklist;
+
 	int _historyLength = 0;
 	static constexpr int maxLength = 500;
 	static constexpr int maxURLsInOneMessage = 15;

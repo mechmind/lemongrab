@@ -68,7 +68,7 @@ bool PersistentMap::isOK() const
 	return static_cast<bool>(_database);
 }
 
-bool PersistentMap::Get(const std::string &key, std::string &value)
+bool PersistentMap::Get(const std::string &key, std::string &value) const
 {
 	auto status = _database->Get(leveldb::ReadOptions(), key, &value);
 
@@ -107,7 +107,7 @@ bool PersistentMap::Delete(const std::string &key)
 	return true;
 }
 
-void PersistentMap::ForEach(std::function<bool (std::pair<std::string, std::string>)> call)
+void PersistentMap::ForEach(std::function<bool (std::pair<std::string, std::string>)> call) const
 {
 	std::shared_ptr<leveldb::Iterator> it(_database->NewIterator(leveldb::ReadOptions()));
 	for (it->SeekToFirst(); it->Valid(); it->Next())
@@ -139,16 +139,20 @@ bool PersistentMap::PopFront()
 
 std::list<std::pair<std::string, std::string>> PersistentMap::Find(const std::string &input,
 																   FindOptions options,
-																   bool caseSensitive)
+																   bool caseSensitive) const
 {
 	std::list<std::pair<std::string, std::string>> result;
 
-	std::regex inputRegex;
-	try {
-		inputRegex = std::regex(caseSensitive ? input : toLower(input));
-	} catch (std::regex_error& e) {
-		LOG(WARNING) << "Input regex " << input << " is invalid: " << e.what();
-		return result;
+	std::regex searchRegex;
+
+	if (options != FindOptions::ValuesAsRegex)
+	{
+		try {
+			searchRegex = std::regex(caseSensitive ? input : toLower(input));
+		} catch (std::regex_error& e) {
+			LOG(WARNING) << "Input regex " << input << " is invalid: " << e.what();
+			return result;
+		}
 	}
 
 	std::smatch regexMatch;
@@ -161,14 +165,19 @@ std::list<std::pair<std::string, std::string>> PersistentMap::Find(const std::st
 			switch (options)
 			{
 			case FindOptions::KeysOnly:
-				doesMatch = std::regex_search(key, regexMatch, inputRegex);
+				doesMatch = std::regex_search(key, regexMatch, searchRegex);
 				break;
 			case FindOptions::ValuesOnly:
-				doesMatch = std::regex_search(value, regexMatch, inputRegex);
+				doesMatch = std::regex_search(value, regexMatch, searchRegex);
 				break;
 			case FindOptions::All:
-				doesMatch = std::regex_search(key, regexMatch, inputRegex)
-						|| std::regex_search(value, regexMatch, inputRegex);
+				doesMatch = std::regex_search(key, regexMatch, searchRegex)
+						|| std::regex_search(value, regexMatch, searchRegex);
+				break;
+			case FindOptions::ValuesAsRegex:
+				searchRegex = std::regex(caseSensitive ? value : toLower(value));
+				doesMatch = std::regex_search(input, regexMatch, searchRegex);
+				break;
 			}
 		} catch (std::regex_error &e) {
 			LOG(ERROR) << "Regex exception thrown: " << e.what();
@@ -183,7 +192,7 @@ std::list<std::pair<std::string, std::string>> PersistentMap::Find(const std::st
 	return result;
 }
 
-int PersistentMap::Size()
+int PersistentMap::Size() const
 {
 	int size = 0;
 	ForEach([&size](std::pair<std::string, std::string> record)->bool{
@@ -191,4 +200,14 @@ int PersistentMap::Size()
 		return true;
 	});
 	return size;
+}
+
+bool PersistentMap::isEmpty() const
+{
+	return Size() == 0;
+}
+
+const std::string PersistentMap::getName() const
+{
+	return _name;
 }

@@ -18,7 +18,8 @@ UrlPreview::UrlPreview(LemonBot *bot)
 	if (_urlHistory.init("urlhistory"))
 		_historyLength = _urlHistory.Size();
 
-	readConfig(bot);
+	_urlWhitelist.init("urlwhitelist");
+	_urlBlacklist.init("urlblacklist");
 }
 
 LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from, const std::string &body)
@@ -27,6 +28,36 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 	if (getCommandArguments(body, "!url", args))
 	{
 		SendMessage(findUrlsInHistory(args));
+		return ProcessingResult::StopProcessing;
+	}
+
+	if (getCommandArguments(body, "!wlisturl", args))
+	{
+		addRuleToRuleset(args, _urlWhitelist);
+		return ProcessingResult::StopProcessing;
+	}
+
+	if (getCommandArguments(body, "!blisturl", args))
+	{
+		addRuleToRuleset(args, _urlBlacklist);
+		return ProcessingResult::StopProcessing;
+	}
+
+	if (getCommandArguments(body, "!wdelisturl", args))
+	{
+		delRuleFromRuleset(args, _urlWhitelist);
+		return ProcessingResult::StopProcessing;
+	}
+
+	if (getCommandArguments(body, "!bdelisturl", args))
+	{
+		delRuleFromRuleset(args, _urlBlacklist);
+		return ProcessingResult::StopProcessing;
+	}
+
+	if (body == "!urlrules")
+	{
+		ShowURLRules();
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -55,10 +86,7 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 		else
 			_urlHistory.PopFront();
 
-		if ((_URLwhitelist.empty()
-				|| _URLwhitelist.find(site.hostname) != _URLwhitelist.end())
-				&& sites.size() < maxURLsInOneMessage
-				&& !title.empty())
+		if (shouldPrintTitle(site.url))
 			SendMessage(formatHTMLchars(title));
 	}
 
@@ -67,19 +95,9 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 
 const std::string UrlPreview::GetHelp() const
 {
-	return "!url %regex% - search in URL history by title or url";
-}
-
-void UrlPreview::readConfig(LemonBot *bot)
-{
-	auto unparsedWhitelist = bot ? bot->GetRawConfigValue("URLwhitelist") : "";
-
-	auto urls = tokenize(unparsedWhitelist, ';');
-	for (const auto &url : urls)
-	{
-		LOG(INFO) << "Whitelisted URL: " << url << std::endl;
-		_URLwhitelist.insert(url);
-	}
+	return "!url %regex% - search in URL history by title or url\n"
+			"!wlisturl %regex% and !blisturl %regex% - enable/disable notifications for specific urls\n";
+			"!wdelisturl %id% and !bdelisturl %id% - delete existing rules. !urlrules - print existing rules and their ids";
 }
 
 bool UrlPreview::getTitle(const std::string &content, std::string &title)
@@ -115,6 +133,77 @@ std::string UrlPreview::findUrlsInHistory(const std::string &request)
 	}
 
 	return searchResults;
+}
+
+bool UrlPreview::shouldPrintTitle(const std::string &url)
+{
+	bool whitelisted = isFoundInRules(url, _urlWhitelist);
+	bool blacklisted = isFoundInRules(url, _urlBlacklist);
+
+	return !blacklisted || whitelisted;
+}
+
+bool UrlPreview::isFoundInRules(const std::string &url, const PersistentMap &ruleset)
+{
+	if (!ruleset.isOK() || ruleset.isEmpty())
+		return false;
+
+	auto ruleMatches = ruleset.Find(url, PersistentMap::FindOptions::ValuesAsRegex);
+	if (!ruleMatches.empty())
+	{
+		LOG(INFO) << "URL is found in ruleset " << ruleset.getName() << " in rule " << (*ruleMatches.begin()).second;
+		return true;
+	}
+
+	return false;
+}
+
+bool UrlPreview::addRuleToRuleset(const std::string &rule, PersistentMap &ruleset)
+{
+	if (!ruleset.isOK())
+		return false;
+
+	long long index = easy_stoll(ruleset.GetLastRecord().first);
+	auto ok = ruleset.Set(std::to_string(++index), rule);
+
+	ok ? SendMessage("Rule successfully added") : SendMessage("Failed to add rule");
+	return ok;
+}
+
+bool UrlPreview::delRuleFromRuleset(const std::string &ruleID, PersistentMap &ruleset)
+{
+	if (!ruleset.isOK())
+		return false;
+
+	auto ok = ruleset.Delete(ruleID);
+	ok ? SendMessage("Rule successfully removed") : SendMessage("Failed to remove rule");
+
+	return ok;
+}
+
+void UrlPreview::ShowURLRules()
+{
+	std::string whitelist;
+	std::string blacklist;
+
+	if (_urlWhitelist.isOK())
+	{
+		_urlWhitelist.ForEach([&](std::pair<std::string, std::string> record){
+			whitelist += "\n" + record.first + ") " + record.second;
+			return true;
+		});
+	}
+
+	if (_urlBlacklist.isOK())
+	{
+		_urlBlacklist.ForEach([&](std::pair<std::string, std::string> record){
+			blacklist += "\n" + record.first + ") " + record.second;
+			return true;
+		});
+	}
+
+	SendMessage("URL Whitelist: " + whitelist);
+	SendMessage("URL Blacklist: " + blacklist);
 }
 
 std::string formatHTMLchars(std::string input)
@@ -172,7 +261,7 @@ TEST(URLPreview, HTMLSpecialChars)
 
 	EXPECT_EQ("\"&><", formatHTMLchars(input));
 }
-
+/*
 TEST(URLPreview, ConfigReader)
 {
 	UrlPreviewTestBot testBot;
@@ -183,7 +272,9 @@ TEST(URLPreview, ConfigReader)
 	ASSERT_EQ(expectedWhitelist.size(), testUnit._URLwhitelist.size());
 	EXPECT_TRUE(std::equal(expectedWhitelist.begin(), expectedWhitelist.end(), testUnit._URLwhitelist.begin()));
 }
-
+*/
+// Need a persisten map implementation for tests
+/*
 TEST(URLPreview, GetTitle)
 {
 	UrlPreviewTestBot testBot;
@@ -198,8 +289,8 @@ TEST(URLPreview, GetTitle)
 		testUnit.getTitle(content, title);
 		EXPECT_EQ("This is a test title", formatHTMLchars(title));
 	}
-}
-// Need a persisten map implementation for tests
+}*/
+
 /*
 TEST(URLPreview, History)
 {

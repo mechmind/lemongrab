@@ -4,8 +4,6 @@ Password=secret123
 MUC=muc@muchost.com/BotNickname
 admin=me@example.com
 
-URLwhitelist=youtube.com;youtu.be;store.steampowered.com;
-
 [Github]
 GithubWebhookPort=5555
 

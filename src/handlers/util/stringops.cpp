@@ -30,8 +30,11 @@ bool getCommandArguments(const std::string &input, const std::string &command, s
 	if (!beginsWith(input, command))
 		return false;
 
-	if (input.size() <= command.size() + 1 || input.at(command.size()) != ' ')
+	if (input.size() == command.size())
 		return true;
+
+	if (input.at(command.size()) != ' ')
+		return false;
 
 	arguments = input.substr(command.size() + 1);
 	return true;
@@ -81,15 +84,15 @@ std::string CustomTimeFormat(std::chrono::system_clock::duration input)
 	return output;
 }
 
-long long easy_stoll(const std::string &index)
+long long easy_stoll(const std::string &input)
 {
-	if (index.empty())
+	if (input.empty())
 		return 0;
 
 	try {
-		return std::stoll(index);
+		return std::stoll(input);
 	} catch (std::exception &e) {
-		LOG(ERROR) << "stoll for " << index << " failed: " << e.what();
+		LOG(ERROR) << "stoll for " << input << " failed: " << e.what();
 	}
 
 	return 0;
@@ -148,6 +151,8 @@ TEST(StringOps, getArguments)
 
 	EXPECT_TRUE(getCommandArguments("!test", "!test", output));
 	EXPECT_TRUE(output.empty());
+
+	EXPECT_FALSE(getCommandArguments("!testfail", "!test", output));
 
 	EXPECT_TRUE(getCommandArguments("!test ", "!test", output));
 	EXPECT_TRUE(output.empty());
