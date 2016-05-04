@@ -5,6 +5,7 @@ Simple XMPP MUC bot, serving one conference at a time, written in C++
 
 [![Build Status](https://travis-ci.org/Chemrat/lemongrab.svg?branch=master)](https://travis-ci.org/Chemrat/lemongrab)
 [![Coverage Status](https://coveralls.io/repos/github/Chemrat/lemongrab/badge.svg?branch=master)](https://coveralls.io/github/Chemrat/lemongrab?branch=master)
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/8766/badge.svg)](https://scan.coverity.com/projects/8766)
 
 List of features:
 
