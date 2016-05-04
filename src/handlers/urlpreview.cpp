@@ -31,6 +31,12 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 		return ProcessingResult::StopProcessing;
 	}
 
+	if (getCommandArguments(body, "!!!url", args))
+	{
+		SendMessage(findUrlsInHistory(args, true));
+		return ProcessingResult::StopProcessing;
+	}
+
 	if (getCommandArguments(body, "!wlisturl", args))
 	{
 		addRuleToRuleset(args, _urlWhitelist);
@@ -78,9 +84,12 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 			getTitle(siteContent, title);
 		}
 
-		// FIXME: This is going to overflow and explode eventually
 		auto id = easy_stoll(_urlHistory.GetLastRecord().first);
 		_urlHistory.Set(std::to_string(++id), title + " " + site.url);
+
+		if (id > regenIndicesAfter)
+			_urlHistory.GenerateNumericIndex();
+
 		if (_historyLength < maxLength)
 			_historyLength++;
 		else
@@ -116,7 +125,7 @@ bool UrlPreview::getTitle(const std::string &content, std::string &title)
 	return true;
 }
 
-std::string UrlPreview::findUrlsInHistory(const std::string &request)
+std::string UrlPreview::findUrlsInHistory(const std::string &request, bool withIndices)
 {
 	std::string searchResults;
 	auto urls = _urlHistory.Find(request, LevelDBPersistentMap::FindOptions::ValuesOnly);
@@ -129,7 +138,7 @@ std::string UrlPreview::findUrlsInHistory(const std::string &request)
 	{
 		searchResults = "Matching URLs: \n";
 		for (const auto &url : urls)
-			searchResults += url.second + "\n";
+			searchResults += withIndices ? (url.first + ") " + url.second + "\n") : (url.second + "\n");
 	}
 
 	return searchResults;
@@ -214,7 +223,11 @@ std::string formatHTMLchars(std::string input)
 			   {"&lt;", "<"},
 			   {"&gt;", ">"},
 			   {"&apos;", "'"},
-			   {"&#39;", "'"}};
+			   {"&#39;", "'"},
+			   {"&bull;", "•"},
+			   {"mdash;", "—"},
+			   {"ndash;", "–"},
+			  };
 
 	for (auto &specialCharPair : chars)
 	{
@@ -244,37 +257,15 @@ public:
 		_lastMessage = text;
 	}
 
-	std::string GetRawConfigValue(const std::string &name) const
-	{
-		if (name == "URLwhitelist")
-			return "youtube.com;youtu.be;store.steampowered.com";
-		else
-			return "";
-	}
-
 	std::string _lastMessage;
 };
 
 TEST(URLPreview, HTMLSpecialChars)
 {
 	std::string input = "&quot;&amp;&gt;&lt;";
-
 	EXPECT_EQ("\"&><", formatHTMLchars(input));
 }
-/*
-TEST(URLPreview, ConfigReader)
-{
-	UrlPreviewTestBot testBot;
-	UrlPreview testUnit(&testBot);
 
-	std::set<std::string> expectedWhitelist = {"youtube.com", "youtu.be", "store.steampowered.com"};
-
-	ASSERT_EQ(expectedWhitelist.size(), testUnit._URLwhitelist.size());
-	EXPECT_TRUE(std::equal(expectedWhitelist.begin(), expectedWhitelist.end(), testUnit._URLwhitelist.begin()));
-}
-*/
-// Need a persisten map implementation for tests
-/*
 TEST(URLPreview, GetTitle)
 {
 	UrlPreviewTestBot testBot;
@@ -289,12 +280,12 @@ TEST(URLPreview, GetTitle)
 		testUnit.getTitle(content, title);
 		EXPECT_EQ("This is a test title", formatHTMLchars(title));
 	}
-}*/
-
+}
 /*
 TEST(URLPreview, History)
 {
 	UrlPreview t(nullptr);
+	t._urlHistory.Clear();
 	t.HandleMessage("Bob", "http://example.com/?test http://test.com/page#anchor");
 	t.HandleMessage("Alice", "http://test.ru/");
 
@@ -303,8 +294,12 @@ TEST(URLPreview, History)
 		{"http://test.com/page#anchor", ""},
 		{"http://example.com/?test", ""},
 	};
-	ASSERT_EQ(expectedHistory.size(), t._urlHistory.size());
-	EXPECT_TRUE(std::equal(expectedHistory.begin(), expectedHistory.end(), t._urlHistory.begin()));
+	ASSERT_EQ(expectedHistory.size(), t._urlHistory.Size());
+	auto expectedRecord = expectedHistory.begin();
+	t._urlHistory.ForEach([&](std::pair<std::string, std::string> record){
+		EXPECT_EQ(*expectedRecord, record);
+		return true;
+	});
 }*/
 
 #endif // LCOV_EXCL_STOP

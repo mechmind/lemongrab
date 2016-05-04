@@ -34,6 +34,7 @@ public:
 	virtual std::list<std::pair<std::string, std::string>> Find(const std::string &input,
 																FindOptions options,
 																bool caseSensitive = false) const = 0;
+	virtual void GenerateNumericIndex() = 0;
 	virtual void Clear() = 0;
 	virtual int Size() const = 0;
 	bool isEmpty() const;
@@ -58,6 +59,7 @@ public:
 	std::list<std::pair<std::string, std::string>> Find(const std::string &input,
 														FindOptions options,
 														bool caseSensitive = false) const;
+	void GenerateNumericIndex();
 	void Clear();
 	int Size() const;
 private:

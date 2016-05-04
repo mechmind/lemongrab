@@ -153,20 +153,10 @@ std::string Quotes::FindQuote(const std::string &request)
 
 void Quotes::RegenerateIndex()
 {
-	std::list<std::string> quotes;
-	std::string lastid;
-	int id = 0;
-	lastid = _quotesDB.GetLastRecord().first;
-
-	_quotesDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		quotes.push_back(record.second);
-		_quotesDB.Delete(record.first);
-		return true;
-	});
-
-	for (const auto &quote : quotes)
-		_quotesDB.Set(std::to_string(++id), quote);
-	SendMessage("Index regenerated. Size: " + lastid + " -> " + std::to_string(id));
+	auto oldCount = _quotesDB.GetLastRecord().first;
+	_quotesDB.GenerateNumericIndex();
+	auto newCount = _quotesDB.GetLastRecord().first;
+	SendMessage("Index regenerated. Size: " + oldCount + " -> " + newCount);
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START

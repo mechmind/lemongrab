@@ -20,7 +20,7 @@ public:
 
 private:
 	bool getTitle(const std::string &content, std::string &title);
-	std::string findUrlsInHistory(const std::string &request);
+	std::string findUrlsInHistory(const std::string &request, bool withIndices = false);
 	void StoreRecord(const std::string &record);
 
 	bool shouldPrintTitle(const std::string &url);
@@ -36,6 +36,7 @@ private:
 
 	int _historyLength = 0;
 	static constexpr int maxLength = 500;
+	static constexpr int regenIndicesAfter = 30000;
 	static constexpr int maxURLsInOneMessage = 15;
 	static constexpr int maxURLsInSearch = 10;
 

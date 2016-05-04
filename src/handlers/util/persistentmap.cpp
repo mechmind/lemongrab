@@ -192,6 +192,20 @@ std::list<std::pair<std::string, std::string>> LevelDBPersistentMap::Find(const 
 	return result;
 }
 
+void LevelDBPersistentMap::GenerateNumericIndex()
+{
+	std::list<std::string> records;
+	ForEach([&](std::pair<std::string, std::string> record){
+		records.push_back(record.second);
+		Delete(record.first);
+		return true;
+	});
+
+	long long index = 1;
+	for (const auto &record : records)
+		Set(std::to_string(index++), record);
+}
+
 void LevelDBPersistentMap::Clear()
 {
 	ForEach([&](std::pair<std::string, std::string> record){
@@ -336,5 +350,29 @@ TEST(LevelDB, Search)
 
 	testdb.Clear();
 }
+
+TEST(LevelDB, IndexGenerator)
+{
+	LevelDBPersistentMap testdb;
+	ASSERT_TRUE(testdb.init("testdb"));
+	testdb.Clear();
+
+	testdb.Set("2", "Test2");
+	testdb.Set("3", "Test3");
+	testdb.Set("5", "Test5");
+	testdb.Set("4", "Test4");
+
+	testdb.GenerateNumericIndex();
+	EXPECT_EQ(4, testdb.Size());
+
+	std::string value;
+	ASSERT_TRUE(testdb.Get("1", value));
+	EXPECT_EQ("Test2", value);
+	ASSERT_TRUE(testdb.Get("2", value));
+	EXPECT_EQ("Test3", value);
+	ASSERT_TRUE(testdb.Get("3", value));
+	EXPECT_EQ("Test4", value);
+	ASSERT_TRUE(testdb.Get("4", value));
+	EXPECT_EQ("Test5", value);}
 
 #endif // LCOV_EXCL_STOP

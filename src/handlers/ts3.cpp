@@ -152,7 +152,6 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 	case TS3::State::Subscribed:
 		if (beginsWith(s, "notifycliententerview"))
 		{
-			// FIXME we need only 1-2 tokens, no need to tokenize whole thing?
 			auto tokens = tokenize(s, ' ');
 			try {
 				parent->TS3Connected(tokens.at(4).substr(5), tokens.at(6).substr(16));

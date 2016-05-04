@@ -28,6 +28,14 @@ void Bot::Run()
 	_startTime = std::chrono::system_clock::now();
 	_lastMessage = std::chrono::system_clock::now();
 
+	RegisterAllHandlers();
+
+	LOG(INFO) << "Connecting to XMPP server";
+	_xmpp->Connect(_settings.GetUserJID(), _settings.GetPassword());
+}
+
+void Bot::RegisterAllHandlers()
+{
 	LOG(INFO) << "Registering handlers";
 	RegisterHandler<DiceRoller>();
 	RegisterHandler<UrlPreview>();
@@ -40,9 +48,12 @@ void Bot::Run()
 
 	for (const auto &handler : _handlersByName)
 		LOG(INFO) << "Handler loaded: " << handler.first;
+}
 
-	LOG(INFO) << "Connecting to XMPP server";
-	_xmpp->Connect(_settings.GetUserJID(), _settings.GetPassword());
+void Bot::UnregisterAllHandlers()
+{
+	_handlersByName.clear();
+	_messageHandlers.clear();
 }
 
 void Bot::OnConnect()
@@ -75,11 +86,18 @@ void Bot::OnMessage(const std::string &nick, const std::string &text)
 		return;
 	}
 
-	// FIXME: this calls for a small module redesign and is useless in current state
 	if (text == "!reload" && isAdmin)
 	{
 		LOG(INFO) << "Config reload requested";
-		_settings.Reload() ? SendMessage("Settings successfully reloaded") : SendMessage("Failed to reload settings");
+		if (_settings.Reload())
+		{
+			SendMessage("Settings successfully reloaded, re-registering handlers...");
+			UnregisterAllHandlers();
+			RegisterAllHandlers();
+			SendMessage("Done");
+		}
+		else
+			SendMessage("Failed to reload settings");
 	}
 
 	std::string args;

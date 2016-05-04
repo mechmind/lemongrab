@@ -22,6 +22,9 @@ public:
 
 	void Run(); // Locks thread
 
+	void RegisterAllHandlers();
+	void UnregisterAllHandlers();
+
 	// XMPPHandler interface
 	void OnConnect();
 	void OnMessage(const std::string &nick, const std::string &text);
