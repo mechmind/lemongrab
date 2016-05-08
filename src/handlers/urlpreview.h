@@ -3,9 +3,6 @@
 #include "lemonhandler.h"
 #include "util/persistentmap.h"
 
-#include <set>
-#include <list>
-
 #ifdef _BUILD_TESTS
 #include <gtest/gtest_prod.h>
 #endif

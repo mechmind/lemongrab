@@ -1,8 +1,7 @@
 #include "githubwebhooks.h"
 
-#include <memory>
 #include <vector>
-#include <algorithm>
+#include <exception>
 
 #include <event2/event.h>
 #include <event2/buffer.h>
@@ -14,8 +13,6 @@
 
 #include "util/github_webhook_formatter.h"
 #include "util/stringops.h"
-
-#include <json/reader.h>
 
 GithubWebhooks::GithubWebhooks(LemonBot *bot)
 	: LemonHandler("github", bot)

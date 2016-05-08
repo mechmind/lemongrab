@@ -2,8 +2,6 @@
 
 #include "lemonhandler.h"
 
-#include <memory>
-
 #ifdef _BUILD_TESTS
 #include <gtest/gtest_prod.h>
 #endif

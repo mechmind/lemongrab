@@ -1,8 +1,8 @@
 #include "leaguelookup.h"
 
 #include <glog/logging.h>
-#include <curl/curl.h>
-#include <json/json.h>
+#include <json/reader.h>
+#include <json/value.h>
 
 #include "util/stringops.h"
 #include "util/curlhelper.h"
@@ -218,8 +218,6 @@ std::list<Summoner> LeagueLookup::getSummonerNamesFromJSON(const Json::Value &ro
 
 	return result;
 }
-
-#include <iostream>
 
 bool LeagueLookup::InitializeChampions()
 {

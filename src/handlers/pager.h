@@ -6,7 +6,6 @@
 
 #include <list>
 #include <chrono>
-#include <memory>
 
 #ifdef _BUILD_TESTS
 #include <gtest/gtest_prod.h>

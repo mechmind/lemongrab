@@ -4,9 +4,7 @@
 
 #include "util/persistentmap.h"
 
-#include <map>
 #include <string>
-#include <memory>
 
 class LastSeen : public LemonHandler
 {

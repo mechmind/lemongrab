@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <memory>
 
 #include <glog/logging.h>
 

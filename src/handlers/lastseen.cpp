@@ -2,9 +2,7 @@
 
 #include <glog/logging.h>
 
-#include <algorithm>
 #include <ctime>
-#include <regex>
 #include <chrono>
 
 #include "util/stringops.h"

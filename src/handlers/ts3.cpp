@@ -1,7 +1,5 @@
 #include "ts3.h"
 
-#include "util/stringops.h"
-
 #include <event2/dns.h>
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
