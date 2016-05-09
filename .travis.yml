@@ -7,10 +7,15 @@ compiler:
 
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo add-apt-repository ppa:george-edison55/cmake-3.x -y
   - sudo apt-get update -qq
-  - sudo apt-get install -y g++-4.9 cmake lcov libcurl4-openssl-dev libgloox-dev libgtest-dev libgoogle-glog-dev libleveldb-dev libevent-dev libboost-locale-dev
+  - sudo apt-get install -y g++-4.9 lcov libcurl4-openssl-dev libgloox-dev libgtest-dev libgoogle-glog-dev libleveldb-dev libevent-dev libboost-locale-dev
   - export CXX="g++-4.9"
+  - wget http://www.cmake.org/files/v3.3/cmake-3.3.2.tar.gz
+  - tar xf cmake-3.3.2.tar.gz
+  - cd cmake-3.3.2
+  - ./configure
+  - make
+  - sudo make install
   - wget https://github.com/open-source-parsers/jsoncpp/archive/1.6.5.tar.gz && tar -xzf 1.6.5.tar.gz
   - cd jsoncpp-1.6.5 && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr ..
   - make && sudo make install
