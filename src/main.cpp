@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 
 #ifdef _BUILD_TESTS
 	#include <gtest/gtest.h>
@@ -8,6 +9,7 @@
 
 #include "bot.h"
 #include "glooxclient.h"
+#include "cliclient.h"
 #include "settings.h"
 #include "handlers/util/stringops.h"
 
@@ -27,6 +29,7 @@ int main(int argc, char **argv)
 {
 	initLocale();
 
+	bool cliTestMode = false;
 	if (argc > 1 && std::string(argv[1]) == "--test")
 	{
 #ifdef _BUILD_TESTS
@@ -36,6 +39,8 @@ int main(int argc, char **argv)
 		std::cout << "Tests are not built" << std::endl;
 		return 1;
 #endif
+	} else if (argc > 1 && std::string(argv[1]) == "--cli") {
+		cliTestMode = true;
 	}
 
 	InitGLOG(argv);
@@ -44,8 +49,14 @@ int main(int argc, char **argv)
 	if (!settings.Open("config.ini"))
 		LOG(FATAL) << "Failed to read config file";
 
-	Bot bot(new GlooxClient(), settings);
-	bot.Run();
+	std::shared_ptr<Bot> botPtr;
+
+	if (!cliTestMode)
+		botPtr = std::make_shared<Bot>(new GlooxClient(), settings);
+	else
+		botPtr = std::make_shared<Bot>(new ConsoleClient(settings.GetRawString("admin")), settings);
+
+	botPtr->Run();
 
 	LOG(INFO) << "Exiting...";
 	return 0;
