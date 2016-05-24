@@ -3,7 +3,6 @@
 #include <map>
 #include <regex>
 
-#include <curl/curl.h>
 #include <glog/logging.h>
 #include <boost/algorithm/string.hpp>
 

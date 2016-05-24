@@ -1,36 +1,38 @@
 project(lemongrab)
 cmake_minimum_required(VERSION 3.3.0 FATAL_ERROR)
 
+LIST (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb3 -O0 -Wall")
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pthread" )
 set(CXX_INCLUDE_WHAT_YOU_USE "/usr/bin/include-what-you-use")
 
 option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_COVER "Generate test coverage" OFF)
 option(CHECK_INCLUDES "Run iwyu" OFF)
-SET(GLOOXPATH "" CACHE STRING "Path to Gloox library")
 
-find_package(PkgConfig)
-include(FindCURL)
-
-if (GLOOXPATH STREQUAL "")
-    pkg_search_module(GLOOX gloox)
-else()
-    SET(GLOOX_INCLUDE_DIRS "${GLOOXPATH}/src")
-    SET(GLOOX_LDFLAGS "-L${GLOOXPATH}/.libs -lgloox")
-endif()
-
-pkg_search_module(LIBEVENT libevent_pthreads)
-pkg_search_module(GLOG libglog)
-pkg_search_module(JSONCPP jsoncpp)
-# find_package(Boost 1.55 COMPONENTS locale)
+find_package(Threads REQUIRED)
+find_package(CURL REQUIRED)
+find_package(Gloox REQUIRED)
+find_package(Glog REQUIRED)
+find_package(LibEvent REQUIRED)
+find_package(JsonCpp REQUIRED)
+find_package(LevelDB REQUIRED)
+find_package(Boost COMPONENTS locale REQUIRED)
 
 find_program(iwyu_path NAMES include-what-you-use iwyu)
 if(CHECK_INCLUDES AND NOT iwyu_path)
     message(FATAL_ERROR "Could not find the program include-what-you-use but CHECK_INCLUDES is ON")
 endif()
 
-include_directories(. ${CURL_INCLUDE_DIRS} ${GLOOX_INCLUDE_DIRS} ${GLOG_INCLUDE_DIRS} ${JSONCPP_INCLUDE_DIRS} ${LIBEVENT_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(
+    ${CURL_INCLUDE_DIRS}
+    ${GLOOX_INCLUDE_DIR}
+    ${GLOG_INCLUDE_DIR}
+    ${JSONCPP_INCLUDE_DIR}
+    ${LIBEVENT_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
+    ${LEVELDB_INCLUDE_DIR}
+    )
 
 file(GLOB_RECURSE SRC_LIST "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
@@ -47,7 +49,17 @@ if(BUILD_COVER)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
 
-target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARY} ${GLOOX_LDFLAGS} ${GLOG_LDFLAGS} ${JSONCPP_LDFLAGS} ${LIBEVENT_LDFLAGS} ${Boost_LIBRARIES} -lboost_locale -lleveldb)
+target_link_libraries(${PROJECT_NAME}
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${CURL_LIBRARIES}
+    ${GLOOX_LIBRARY}
+    ${GLOG_LIBRARY}
+    ${JSONCPP_LIBRARY}
+    ${LIBEVENT_LIBRARY}
+    ${LIBEVENT_PTHREADS_LIBRARY}
+    ${Boost_LIBRARIES}
+    ${LEVELDB_LIBRARY}
+    )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
