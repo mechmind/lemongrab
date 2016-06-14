@@ -114,6 +114,7 @@ LemonHandler::ProcessingResult Pager::HandleMessage(const std::string &from, con
 	auto recepient = args.substr(0, space);
 	auto pagerMessage = args.substr(space + 1);
 	StoreMessage(recepient, from, pagerMessage);
+	SendMessage(from + ": message stored");
 
 	return ProcessingResult::StopProcessing;
 }
