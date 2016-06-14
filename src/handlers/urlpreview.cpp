@@ -126,18 +126,27 @@ bool UrlPreview::getTitle(const std::string &content, std::string &title)
 
 std::string UrlPreview::findUrlsInHistory(const std::string &request, bool withIndices)
 {
+	bool moreMatches = false;
 	std::string searchResults;
 	auto urls = _urlHistory.Find(request, LevelDBPersistentMap::FindOptions::ValuesOnly);
 
 	if (urls.size() > maxURLsInSearch)
-		searchResults = "Too many matches";
-	else if (urls.empty())
+	{
+		urls.reverse();
+		urls.resize(maxURLsInSearch);
+		moreMatches = true;
+	}
+
+	if (urls.empty())
 		searchResults = "No matches";
 	else
 	{
 		searchResults = "Matching URLs: \n";
 		for (const auto &url : urls)
 			searchResults += withIndices ? (url.first + ") " + url.second + "\n") : (url.second + "\n");
+
+		if (moreMatches)
+			searchResults += "\n...and more";
 	}
 
 	return searchResults;

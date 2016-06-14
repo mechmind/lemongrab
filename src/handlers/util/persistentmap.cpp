@@ -138,8 +138,8 @@ bool LevelDBPersistentMap::PopFront()
 }
 
 std::list<std::pair<std::string, std::string>> LevelDBPersistentMap::Find(const std::string &input,
-																   FindOptions options,
-																   bool caseSensitive) const
+																		  FindOptions options,
+																		  bool caseSensitive) const
 {
 	std::list<std::pair<std::string, std::string>> result;
 

@@ -25,7 +25,7 @@ bool ConsoleClient::Connect(const std::string &jid, const std::string &password)
 	while (_connected)
 	{
 		std::string input;
-		std::cin >> input;
+		std::getline(std::cin, input);
 
 		std::string args;
 		if (getCommandArguments(input, "!setjid", args))
