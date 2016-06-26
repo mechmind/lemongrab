@@ -9,6 +9,7 @@
 #include "handlers/quotes.h"
 #include "handlers/ts3.h"
 #include "handlers/leaguelookup.h"
+#include "handlers/vote.h"
 
 #include "handlers/util/stringops.h"
 
@@ -45,6 +46,7 @@ void Bot::RegisterAllHandlers()
 	RegisterHandler<Quotes>();
 	RegisterHandler<LeagueLookup>();
 	RegisterHandler<TS3>();
+	RegisterHandler<Voting>();
 
 	for (const auto &handler : _handlersByName)
 		LOG(INFO) << "Handler loaded: " << handler.first;

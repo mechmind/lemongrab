@@ -24,6 +24,10 @@ std::pair<std::string, long> CurlRequest(std::string url, bool dummy)
 	if (!curl)
 		return {"curl Fail", -1};
 
+	curl_slist *headers = nullptr;
+	headers = curl_slist_append(headers, "charsets: utf-8");
+
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl, CURLOPT_MAXFILESIZE, 10*1024*1024);
