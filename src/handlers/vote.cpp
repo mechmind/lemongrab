@@ -60,12 +60,13 @@ void Voting::HandlePresence(const std::string &from, const std::string &jid, boo
 
 const std::string Voting::GetHelp() const
 {
-	return "!addpoll [#]question|option1[|option2...] - new poll (start with # for multioption)\n"
-			"!pollinfo %pollid%\n"
-			"!vote %pollid% %optionid% - cast your vote\n"
-			"!unvote %pollid% - remove your vote(s)\n"
-			"!closepoll - end poll and show results\n"
-			"!invite %pollid%|%jid/nick%[|%jid/nick%...] - invite users to vote on poll";
+	return "!polls - list polls\n"
+		   "!addpoll [#]question|option1[|option2...] - new poll (start with # for multioption)\n"
+		   "!pollinfo %pollid%\n"
+		   "!vote %pollid% %optionid% - cast your vote\n"
+		   "!unvote %pollid% - remove your vote(s)\n"
+		   "!closepoll - end poll and show results\n"
+		   "!invite %pollid%|%jid/nick%[|%jid/nick%...] - invite users to vote on poll";
 }
 
 void Voting::ListPolls()

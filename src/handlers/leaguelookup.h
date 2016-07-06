@@ -38,6 +38,7 @@ class LeagueLookup : public LemonHandler
 {
 public:
 	LeagueLookup(LemonBot *bot);
+	~LeagueLookup();
 	ProcessingResult HandleMessage(const std::string &from, const std::string &body);
 	const std::string GetHelp() const;
 

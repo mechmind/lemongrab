@@ -11,6 +11,7 @@ option(CHECK_INCLUDES "Run iwyu" OFF)
 
 find_package(Threads REQUIRED)
 find_package(CURL REQUIRED)
+find_package(Cpr REQUIRED)
 find_package(Gloox REQUIRED)
 find_package(Glog REQUIRED)
 find_package(LibEvent REQUIRED)
@@ -25,6 +26,7 @@ endif()
 
 include_directories(
     ${CURL_INCLUDE_DIRS}
+    ${CPR_INCLUDE_DIRS}
     ${GLOOX_INCLUDE_DIR}
     ${GLOG_INCLUDE_DIR}
     ${JSONCPP_INCLUDE_DIR}
@@ -51,6 +53,7 @@ endif()
 target_link_libraries(${PROJECT_NAME}
     ${CMAKE_THREAD_LIBS_INIT}
     ${CURL_LIBRARIES}
+    ${CPR_LIBRARY}
     ${GLOOX_LIBRARY}
     ${GLOG_LIBRARY}
     ${JSONCPP_LIBRARY}

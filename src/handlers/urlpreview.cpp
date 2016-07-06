@@ -5,9 +5,9 @@
 
 #include <glog/logging.h>
 #include <boost/algorithm/string.hpp>
+#include <cpr/cpr.h>
 
 #include "util/stringops.h"
-#include "util/curlhelper.h"
 
 std::string formatHTMLchars(std::string input);
 
@@ -72,14 +72,14 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 
 	for (auto &site : sites)
 	{
-		auto page = CurlRequest(site.url, _botPtr == nullptr);
+		auto page = cpr::Get(site.url);
 
 		std::string title = "";
-		if (page.second != 200)
+		if (page.status_code != 200)
 		{
-			LOG(INFO) << "URL: " << site.url << " | Server responded with unexpected code: " << page.second;
+			LOG(INFO) << "URL: " << site.url << " | Server responded with unexpected code: " << page.status_code;
 		} else {
-			const auto &siteContent = page.first;
+			const auto &siteContent = page.text;
 			getTitle(siteContent, title);
 		}
 

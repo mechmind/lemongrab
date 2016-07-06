@@ -3,9 +3,9 @@
 #include <glog/logging.h>
 #include <json/reader.h>
 #include <json/value.h>
+#include <cpr/cpr.h>
 
 #include "util/stringops.h"
-#include "util/curlhelper.h"
 
 #include <chrono>
 #include <thread>
@@ -38,6 +38,12 @@ LeagueLookup::LeagueLookup(LemonBot *bot)
 	}
 
 	_starredSummoners.init("leaguelookup");
+}
+
+LeagueLookup::~LeagueLookup()
+{
+	if (_lookupHelper && _lookupHelper->joinable())
+		_lookupHelper->join();
 }
 
 LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const std::string &from, const std::string &body)
@@ -93,33 +99,32 @@ const std::string LeagueLookup::GetHelp() const
 
 LeagueLookup::RiotAPIResponse LeagueLookup::RiotAPIRequest(const std::string &request, Json::Value &output)
 {
-	auto apiResponse = CurlRequest(request);
+	auto apiResponse = cpr::Get(request);
 
-	if (apiResponse.second == 404)
-		return RiotAPIResponse::NotFound;
-
-	if (apiResponse.second == 429)
+	switch (apiResponse.status_code)
 	{
+	case 404:
+		return RiotAPIResponse::NotFound;
+	case 429:
 		LOG(ERROR) << "Rate limit reached!";
 		return RiotAPIResponse::RateLimitReached;
-	}
-
-	if (apiResponse.second != 200)
+	case 200:
 	{
-		LOG(ERROR) << "RiotAPI unexpected response: " << apiResponse.second;
+		const auto &strResponse = apiResponse.text;
+
+		Json::Reader reader;
+		if (!reader.parse(strResponse.data(), strResponse.data() + strResponse.size(), output))
+		{
+			LOG(ERROR) << "Failed to parse JSON: " << strResponse;
+			return RiotAPIResponse::InvalidJSON;
+		}
+
+		return RiotAPIResponse::OK;
+	}
+	default:
+		LOG(ERROR) << "RiotAPI unexpected response: " << apiResponse.status_code;
 		return RiotAPIResponse::UnexpectedResponseCode;
 	}
-
-	const auto &strResponse = apiResponse.first;
-
-	Json::Reader reader;
-	if (!reader.parse(strResponse.data(), strResponse.data() + strResponse.size(), output))
-	{
-		LOG(ERROR) << "Failed to parse JSON: " << strResponse;
-		return RiotAPIResponse::InvalidJSON;
-	}
-
-	return RiotAPIResponse::OK;
 }
 
 std::string LeagueLookup::lookupCurrentGame(const std::string &name)
