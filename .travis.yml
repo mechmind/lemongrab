@@ -4,26 +4,26 @@ dist: trusty
 
 compiler:
   - gcc
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - g++-4.9
+          - lcov
+          - libcurl4-openssl-dev
+          - libgloox-dev
+          - libgtest-dev
+          - libgoogle-glog-dev
+          - libleveldb-dev
+          - libevent-dev
+          - libboost-locale-dev
+    env: CXX="g++-4.9"
 
 before_install:
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update -qq
-  - sudo apt-get install -y g++-4.9 lcov libcurl4-openssl-dev libgloox-dev libgtest-dev libgoogle-glog-dev libleveldb-dev libevent-dev libboost-locale-dev
-  - export CXX="g++-4.9"
-  - wget http://www.cmake.org/files/v3.3/cmake-3.3.2.tar.gz
-  - tar xf cmake-3.3.2.tar.gz
-  - cd cmake-3.3.2
-  - ./configure
-  - make
-  - sudo make install
-  - wget https://github.com/open-source-parsers/jsoncpp/archive/1.6.5.tar.gz && tar -xzf 1.6.5.tar.gz
-  - cd jsoncpp-1.6.5 && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr ..
-  - make && sudo make install
-  - gem install coveralls-lcov
-  - cd /usr/src/gtest && sudo cmake .
-  - sudo make
-  - sudo mv libg* /usr/lib/
-  - cd $TRAVIS_BUILD_DIR
+  - bash travis/install_cmake.sh
+  - bash travis/install_jsoncpp.sh
+  - bash travis/install_cpr.sh
 
 script:
   - mkdir build
