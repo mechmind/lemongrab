@@ -53,8 +53,8 @@ endif()
 
 target_link_libraries(${PROJECT_NAME}
     ${CMAKE_THREAD_LIBS_INIT}
-    ${CURL_LIBRARIES}
     ${CPR_LIBRARY}
+    ${CURL_LIBRARIES}
     ${GLOOX_LIBRARY}
     ${GLOG_LIBRARY}
     ${JSONCPP_LIBRARY}
