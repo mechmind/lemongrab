@@ -20,7 +20,7 @@ addons:
     - libevent-dev
     - libboost-locale-dev
 
-env: CXX="g++-4.9"
+env: COMPILER="g++-4.9"
 
 before_install:
   - bash travis/install_cmake.sh
