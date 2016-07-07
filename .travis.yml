@@ -20,9 +20,8 @@ addons:
     - libevent-dev
     - libboost-locale-dev
 
-env: COMPILER="g++-4.9"
-
 before_install:
+  - export CXX="g++-4.9"
   - bash travis/install_cmake.sh
   - bash travis/install_jsoncpp.sh
   - bash travis/install_cpr.sh
