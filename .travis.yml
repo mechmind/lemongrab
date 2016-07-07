@@ -4,21 +4,23 @@ dist: trusty
 
 compiler:
   - gcc
-    addons:
-      apt:
-        sources:
-          - ubuntu-toolchain-r-test
-        packages:
-          - g++-4.9
-          - lcov
-          - libcurl4-openssl-dev
-          - libgloox-dev
-          - libgtest-dev
-          - libgoogle-glog-dev
-          - libleveldb-dev
-          - libevent-dev
-          - libboost-locale-dev
-    env: CXX="g++-4.9"
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - g++-4.9
+    - lcov
+    - libcurl4-openssl-dev
+    - libgloox-dev
+    - libgtest-dev
+    - libgoogle-glog-dev
+    - libleveldb-dev
+    - libevent-dev
+    - libboost-locale-dev
+
+env: CXX="g++-4.9"
 
 before_install:
   - bash travis/install_cmake.sh
