@@ -6,9 +6,9 @@
 
 #include "lemonhandler.h"
 
-class event_base;
-class evhttp_request;
-class event;
+class event_base; // NOLINT
+class evhttp_request; // NOLINT
+class event; // NOLINT
 
 class GithubWebhooks : public LemonHandler
 {

@@ -1,11 +1,11 @@
 #include "diceroller.h"
 
 #include <random>
-#include <vector>
 #include <algorithm>
 #include <cctype>
 #include <chrono>
 #include <memory>
+#include <vector>
 
 #include <glog/logging.h>
 

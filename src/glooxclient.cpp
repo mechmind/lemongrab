@@ -12,9 +12,9 @@ void GlooxClient::SetXMPPHandler(XMPPHandler *handler)
 
 bool GlooxClient::Connect(const std::string &jid, const std::string &password)
 {
-	gloox::JID GlooxJid(jid);
+	gloox::JID glooxJid(jid);
 
-	_client = std::make_shared<gloox::Client>(GlooxJid, password);
+	_client = std::make_shared<gloox::Client>(glooxJid, password);
 	_client->registerMessageHandler(this);
 	_client->registerConnectionListener(this);
 

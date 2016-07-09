@@ -37,7 +37,7 @@ std::string Pager::Message::Serialize()
 }
 
 
-Pager::Message::Message(std::string to, std::string text, long long id)
+Pager::Message::Message(const std::string &to, const std::string &text, long long id)
 	: _id(id)
 	, _recepient(to)
 	, _text(text)

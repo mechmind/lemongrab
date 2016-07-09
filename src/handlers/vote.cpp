@@ -110,7 +110,7 @@ void Voting::Vote(const std::string &args, const std::string &voter)
 		return;
 	}
 
-	size_t vote = easy_stoll(tokens.at(1));
+	auto vote = easy_stoll(tokens.at(1));
 	if (vote >= poll->second.options.size() || vote < 0)
 	{
 		SendMessage("No such option");

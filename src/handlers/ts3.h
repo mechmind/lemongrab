@@ -6,10 +6,10 @@
 
 #include "lemonhandler.h"
 
-class event_base;
-class event;
-class evdns_base;
-class bufferevent;
+class event_base; // NOLINT
+class event; // NOLINT
+class evdns_base; // NOLINT
+class bufferevent; // NOLINT
 
 class TS3 : public LemonHandler
 {

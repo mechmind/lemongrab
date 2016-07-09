@@ -9,6 +9,8 @@ option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_COVER "Generate test coverage" OFF)
 option(CHECK_INCLUDES "Run iwyu" OFF)
 
+include(ClangTidy)
+
 find_package(Threads REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Cpr REQUIRED)
@@ -38,7 +40,7 @@ include_directories(
 file(GLOB_RECURSE SRC_LIST "${CMAKE_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE TRAVIS_HELPERS "${CMAKE_SOURCE_DIR}/travis/*.sh")
 
-add_executable(${PROJECT_NAME} ${SRC_LIST} ${TRAVIS_HELPERS} .travis.yml)
+add_executable(${PROJECT_NAME} ${SRC_LIST} ${TRAVIS_HELPERS} .travis.yml .clang-tidy)
 
 if(BUILD_TESTS)
     add_definitions(-D_BUILD_TESTS)

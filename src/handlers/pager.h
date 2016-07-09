@@ -29,7 +29,7 @@ private:
 	{
 	public:
 		Message(const std::string &serializedInput, long long id);
-		Message(std::string to, std::string text, long long id);
+		Message(const std::string &to, const std::string &text, long long id);
 
 		bool isValid();
 		inline bool operator==(const Message &rhs);
