@@ -73,7 +73,7 @@ void TS3::telnetEvent(bufferevent *bev, short event, void *parentPtr)
 		// FIXME needs a reliable restart mechanism, see thread
 		parent->SendMessage("TS3 ServerQuery connection closed, fix me please");
 		bufferevent_free(bev);
-		event_base_loopexit(parent->base, nullptr);
+		event_base_loopexit(parent->_base, nullptr);
 	}
 }
 
@@ -191,24 +191,24 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 void TS3::telnetClientThread(TS3 * parent, std::string server)
 {
 	int port = 10011;
-	parent->base = event_base_new();
-	parent->dns_base = evdns_base_new(parent->base, 1);
+	parent->_base = event_base_new();
+	parent->_dns_base = evdns_base_new(parent->_base, 1);
 
-	parent->msg_event = event_new(parent->base, -1, EV_READ, sendTS3message, parent);
-	event_add(parent->msg_event, nullptr);
+	parent->_msg_event = event_new(parent->_base, -1, EV_READ, sendTS3message, parent);
+	event_add(parent->_msg_event, nullptr);
 
-	parent->bev = bufferevent_socket_new(parent->base, -1, BEV_OPT_CLOSE_ON_FREE);
-	bufferevent_setcb(parent->bev, telnetMessage, nullptr, telnetEvent, parent);
-	bufferevent_enable(parent->bev, EV_READ|EV_WRITE);
+	parent->_bev = bufferevent_socket_new(parent->_base, -1, BEV_OPT_CLOSE_ON_FREE);
+	bufferevent_setcb(parent->_bev, telnetMessage, nullptr, telnetEvent, parent);
+	bufferevent_enable(parent->_bev, EV_READ|EV_WRITE);
 	timeval t;
 	t.tv_sec = 60;
 	t.tv_usec = 0;
-	bufferevent_set_timeouts(parent->bev, &t, nullptr);
+	bufferevent_set_timeouts(parent->_bev, &t, nullptr);
 	bufferevent_socket_connect_hostname(
-		parent->bev, parent->dns_base, AF_UNSPEC, server.c_str(), port);
+		parent->_bev, parent->_dns_base, AF_UNSPEC, server.c_str(), port);
 
 	// FIXME needs a reliable restart mechanism
-	auto result = event_base_dispatch(parent->base);
+	auto result = event_base_dispatch(parent->_base);
 
 	if (result == -1)
 		LOG(ERROR) << "Failed to start event loop";
@@ -250,15 +250,15 @@ void TS3::SendTS3Message(const std::string &nick, const std::string &text)
 		jid = _botPtr->GetJidByNick(nick);
 
 	_outgoingMessage = "<" + nick + " [" + jid + "] > " + text;
-	if (msg_event)
-		event_active(msg_event, EV_READ, 0);
+	if (_msg_event)
+		event_active(_msg_event, EV_READ, 0);
 }
 
 void TS3::sendTS3message(int, short, void *parentPtr)
 {
 	auto parent = static_cast<TS3*>(parentPtr);
 	std::string message = "sendtextmessage targetmode=2 target=" + parent->_channelID + " msg=" + ReplaceTS3Spaces(parent->_outgoingMessage, true) + "\n";
-	bufferevent_write(parent->bev, message.c_str(), message.size());
+	bufferevent_write(parent->_bev, message.c_str(), message.size());
 }
 
 std::string FormatTS3Name(const std::string &raw)

@@ -19,16 +19,16 @@ class URL
 {
 public:
 	URL(const std::string &url_, const std::string &hostname_)
-		: url(url_)
-		, hostname(hostname_)
+		: _url(url_)
+		, _hostname(hostname_)
 	{ }
-	std::string url;
-	std::string hostname;
+	std::string _url;
+	std::string _hostname;
 
 	bool operator==(const URL& rhs)
 	{
-		return url == rhs.url
-				&& hostname == rhs.hostname;
+		return _url == rhs._url
+				&& _hostname == rhs._hostname;
 	}
 };
 

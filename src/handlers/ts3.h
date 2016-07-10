@@ -46,10 +46,10 @@ private:
 	State _sqState = State::NotConnected;
 	std::unordered_map<std::string, std::string> _clients;
 
-	event_base *base = nullptr;
-	evdns_base *dns_base = nullptr;
-	event *msg_event = nullptr;
-	bufferevent *bev = nullptr;
+	event_base *_base = nullptr;
+	evdns_base *_dns_base = nullptr;
+	event *_msg_event = nullptr;
+	bufferevent *_bev = nullptr;
 
 	// custom events
 	static void terminateClient(int, short int, void *arg);

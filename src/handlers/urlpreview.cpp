@@ -72,19 +72,19 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 
 	for (auto &site : sites)
 	{
-		auto page = cpr::Get(site.url);
+		auto page = cpr::Get(site._url);
 
 		std::string title = "";
 		if (page.status_code != 200)
 		{
-			LOG(INFO) << "URL: " << site.url << " | Server responded with unexpected code: " << page.status_code;
+			LOG(INFO) << "URL: " << site._url << " | Server responded with unexpected code: " << page.status_code;
 		} else {
 			const auto &siteContent = page.text;
 			getTitle(siteContent, title);
 		}
 
 		auto id = easy_stoll(_urlHistory.GetLastRecord().first);
-		_urlHistory.Set(std::to_string(++id), title + " " + site.url);
+		_urlHistory.Set(std::to_string(++id), title + " " + site._url);
 
 		if (id > regenIndicesAfter)
 			_urlHistory.GenerateNumericIndex();
@@ -94,7 +94,7 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 		else
 			_urlHistory.PopFront();
 
-		if (shouldPrintTitle(site.url))
+		if (shouldPrintTitle(site._url))
 			SendMessage(formatHTMLchars(title));
 	}
 

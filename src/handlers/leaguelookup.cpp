@@ -15,12 +15,12 @@ LeagueLookup::LeagueLookup(LemonBot *bot)
 {
 	if (bot)
 	{
-		_api.key = bot->GetRawConfigValue("RiotApiKey");
-		_api.region = bot->GetRawConfigValue("RiotRegion");
-		_api.platformID = bot->GetRawConfigValue("RiotPlatform");
+		_api._key = bot->GetRawConfigValue("RiotApiKey");
+		_api._region = bot->GetRawConfigValue("RiotRegion");
+		_api._platformID = bot->GetRawConfigValue("RiotPlatform");
 	}
 
-	if (_api.key.empty())
+	if (_api._key.empty())
 	{
 		LOG(WARNING) << "Riot API Key is not set";
 		return;
@@ -30,11 +30,11 @@ LeagueLookup::LeagueLookup(LemonBot *bot)
 	if (!InitializeChampions() || !InitializeSpells())
 		LOG(ERROR) << "Failed to initialize static Riot API data";
 
-	if (_api.region.empty() || _api.platformID.empty())
+	if (_api._region.empty() || _api._platformID.empty())
 	{
 		LOG(WARNING) << "Region / platform are not set, defaulting to EUNE";
-		_api.region = "eune";
-		_api.platformID = "EUN1";
+		_api._region = "eune";
+		_api._platformID = "EUN1";
 	}
 
 	_starredSummoners.init("leaguelookup");
@@ -48,7 +48,7 @@ LeagueLookup::~LeagueLookup()
 
 LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const std::string &from, const std::string &body)
 {
-	if (_api.key.empty())
+	if (_api._key.empty())
 		return ProcessingResult::KeepGoing;
 
 	std::string args;
@@ -113,7 +113,7 @@ LeagueLookup::RiotAPIResponse LeagueLookup::RiotAPIRequest(const std::string &re
 		const auto &strResponse = apiResponse.text;
 
 		Json::Reader reader;
-		if (!reader.parse(strResponse.data(), strResponse.data() + strResponse.size(), output))
+		if (!reader.parse(strResponse, output))
 		{
 			LOG(ERROR) << "Failed to parse JSON: " << strResponse;
 			return RiotAPIResponse::InvalidJSON;
@@ -136,8 +136,8 @@ std::string LeagueLookup::lookupCurrentGame(const std::string &name)
 	if (id == -2)
 		return "Something went horribly wrong";
 
-	std::string apiRequest = "https://" + _api.region + ".api.pvp.net/observer-mode/rest/consumer/getSpectatorGameInfo/"
-			+ _api.platformID + "/" + std::to_string(id) + "?api_key=" + _api.key;
+	std::string apiRequest = "https://" + _api._region + ".api.pvp.net/observer-mode/rest/consumer/getSpectatorGameInfo/"
+			+ _api._platformID + "/" + std::to_string(id) + "?api_key=" + _api._key;
 
 	Json::Value response;
 
@@ -161,8 +161,8 @@ std::string LeagueLookup::lookupCurrentGame(const std::string &name)
 
 		for (const auto &player : players)
 		{
-			auto &team = player.team ? teamA : teamB;
-			team += player.name + " -> " + player.champion + " (" + player.summonerSpell1 + " & " + player.summonerSpell2 + ")\n";
+			auto &team = player._team ? teamA : teamB;
+			team += player._name + " -> " + player._champion + " (" + player._summonerSpell1 + " & " + player._summonerSpell2 + ")\n";
 		}
 
 		message += "= Red Team  =\n" + teamA + "\n";
@@ -177,7 +177,7 @@ std::string LeagueLookup::lookupCurrentGame(const std::string &name)
 
 int LeagueLookup::getSummonerIDFromName(const std::string &name)
 {
-	std::string apiRequest = "https://" + _api.region + ".api.pvp.net/api/lol/" + _api.region + "/v1.4/summoner/by-name/" + name + "?api_key=" + _api.key;
+	std::string apiRequest = "https://" + _api._region + ".api.pvp.net/api/lol/" + _api._region + "/v1.4/summoner/by-name/" + name + "?api_key=" + _api._key;
 
 	Json::Value response;
 
@@ -213,11 +213,11 @@ std::list<Summoner> LeagueLookup::getSummonerNamesFromJSON(const Json::Value &ro
 	for (Json::ArrayIndex index = 0; index < participants.size(); index++)
 	{
 		Summoner summoner;
-		summoner.name = participants[index]["summonerName"].asString();
-		summoner.champion = _champions[participants[index]["championId"].asInt()];
-		summoner.summonerSpell1 = _spells[participants[index]["spell1Id"].asInt()];
-		summoner.summonerSpell2 = _spells[participants[index]["spell2Id"].asInt()];
-		summoner.team = participants[index]["teamId"].asInt() == 100;
+		summoner._name = participants[index]["summonerName"].asString();
+		summoner._champion = _champions[participants[index]["championId"].asInt()];
+		summoner._summonerSpell1 = _spells[participants[index]["spell1Id"].asInt()];
+		summoner._summonerSpell2 = _spells[participants[index]["spell2Id"].asInt()];
+		summoner._team = participants[index]["teamId"].asInt() == 100;
 		result.push_back(summoner);
 	}
 
@@ -226,7 +226,7 @@ std::list<Summoner> LeagueLookup::getSummonerNamesFromJSON(const Json::Value &ro
 
 bool LeagueLookup::InitializeChampions()
 {
-	std::string apiRequest = "https://global.api.pvp.net/api/lol/static-data/" + _api.region + "/v1.2/champion?dataById=true&api_key=" + _api.key;
+	std::string apiRequest = "https://global.api.pvp.net/api/lol/static-data/" + _api._region + "/v1.2/champion?dataById=true&api_key=" + _api._key;
 
 	Json::Value response;
 	if (RiotAPIRequest(apiRequest, response) != RiotAPIResponse::OK)
@@ -245,7 +245,7 @@ bool LeagueLookup::InitializeChampions()
 
 bool LeagueLookup::InitializeSpells()
 {
-	std::string apiRequest = "https://global.api.pvp.net/api/lol/static-data/" + _api.region + "/v1.2/summoner-spell?api_key=" + _api.key;
+	std::string apiRequest = "https://global.api.pvp.net/api/lol/static-data/" + _api._region + "/v1.2/summoner-spell?api_key=" + _api._key;
 
 	Json::Value response;
 	if (RiotAPIRequest(apiRequest, response) != RiotAPIResponse::OK)
@@ -264,7 +264,7 @@ bool LeagueLookup::InitializeSpells()
 
 std::string LeagueLookup::GetSummonerNameByID(const std::string &id)
 {
-	std::string apiRequest = "https://" + _api.region + ".api.pvp.net/api/lol/" + _api.region + "/v1.4/summoner/" + id + "?api_key=" + _api.key;
+	std::string apiRequest = "https://" + _api._region + ".api.pvp.net/api/lol/" + _api._region + "/v1.4/summoner/" + id + "?api_key=" + _api._key;
 
 	Json::Value response;
 	if (RiotAPIRequest(apiRequest, response) != RiotAPIResponse::OK)
@@ -273,7 +273,7 @@ std::string LeagueLookup::GetSummonerNameByID(const std::string &id)
 	return response[id]["name"].asString();
 }
 
-void LeagueLookup::LookupAllSummoners(LevelDBPersistentMap &starredSummoners, LeagueLookup *_parent, apiOptions &api)
+void LeagueLookup::LookupAllSummoners(LevelDBPersistentMap &starredSummoners, LeagueLookup *_parent, ApiOptions &api)
 {
 	int totalSummoners = 0;
 	std::list<std::string> inGame;
@@ -287,8 +287,8 @@ void LeagueLookup::LookupAllSummoners(LevelDBPersistentMap &starredSummoners, Le
 			return false;
 		}
 
-		std::string apiRequest = "https://" + api.region + ".api.pvp.net/observer-mode/rest/consumer/getSpectatorGameInfo/"
-				+ api.platformID + "/" + record.first + "?api_key=" + api.key;
+		std::string apiRequest = "https://" + api._region + ".api.pvp.net/observer-mode/rest/consumer/getSpectatorGameInfo/"
+				+ api._platformID + "/" + record.first + "?api_key=" + api._key;
 
 		Json::Value response;
 		switch (RiotAPIRequest(apiRequest, response))
@@ -377,7 +377,7 @@ void LeagueLookup::ListSummoners()
 
 bool operator==(const std::string &lhs, const Summoner &rhs)
 {
-	return rhs.name == lhs;
+	return rhs._name == lhs;
 }
 
 TEST(LeagueLookupTest, PlayerList)

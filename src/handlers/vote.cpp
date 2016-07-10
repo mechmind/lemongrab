@@ -45,16 +45,16 @@ void Voting::HandlePresence(const std::string &from, const std::string &jid, boo
 
 	for (auto &poll : _activePolls)
 	{
-		auto invite = poll.second.invitations.find(jid);
+		auto invite = poll.second._invitations.find(jid);
 
-		if (invite == poll.second.invitations.end())
-			invite = poll.second.invitations.find(from);
+		if (invite == poll.second._invitations.end())
+			invite = poll.second._invitations.find(from);
 
-		if (invite == poll.second.invitations.end())
+		if (invite == poll.second._invitations.end())
 			continue;
 
 		SendMessage(from + " you've been invited to vote on poll " + poll.first + "\n" + poll.second.Print(false));
-		poll.second.invitations.erase(invite);
+		poll.second._invitations.erase(invite);
 	}
 }
 
@@ -73,7 +73,7 @@ void Voting::ListPolls()
 {
 	std::string result;
 	for (const auto &poll : _activePolls)
-		result += poll.first + " :: " + poll.second.theme;
+		result += poll.first + " :: " + poll.second._theme;
 
 	if (_activePolls.empty())
 		result = "No active polls";
@@ -111,15 +111,15 @@ void Voting::Vote(const std::string &args, const std::string &voter)
 	}
 
 	auto vote = easy_stoll(tokens.at(1));
-	if (vote >= poll->second.options.size() || vote < 0)
+	if (vote >= poll->second._options.size() || vote < 0)
 	{
 		SendMessage("No such option");
 		return;
 	}
 
-	if (!poll->second.multioption)
+	if (!poll->second._multioption)
 	{
-		for (const auto &vote : poll->second.votes)
+		for (const auto &vote : poll->second._votes)
 			if (vote.count(voter) > 0)
 			{
 				SendMessage("This poll does not allow multiple option selection. Use !unvote to remove your vote first");
@@ -127,7 +127,7 @@ void Voting::Vote(const std::string &args, const std::string &voter)
 			}
 	}
 
-	poll->second.votes.at(vote).insert(voter);
+	poll->second._votes.at(vote).insert(voter);
 	SendMessage("Vote cast");
 }
 
@@ -140,7 +140,7 @@ void Voting::Unvote(const std::string &args, const std::string &voter)
 		return;
 	}
 
-	for (auto &vote : poll->second.votes)
+	for (auto &vote : poll->second._votes)
 		vote.erase(voter);
 }
 
@@ -154,19 +154,19 @@ void Voting::AddPoll(const std::string &description, const std::string &owner)
 	}
 
 	Poll newPoll;
-	newPoll.theme = *tokens.begin();
-	newPoll.owner = owner;
+	newPoll._theme = *tokens.begin();
+	newPoll._owner = owner;
 
-	if (newPoll.theme.at(0) == '#')
-		newPoll.multioption = true;
+	if (newPoll._theme.at(0) == '#')
+		newPoll._multioption = true;
 
 	for (size_t index = 1; index < tokens.size(); index++)
-		newPoll.options.push_back(tokens.at(index));
+		newPoll._options.push_back(tokens.at(index));
 
-	newPoll.votes.resize(newPoll.options.size());
+	newPoll._votes.resize(newPoll._options.size());
 
 	std::hash<std::string>hashfn;
-	auto hash = hashfn(newPoll.theme);
+	auto hash = hashfn(newPoll._theme);
 	auto id = std::to_string(hash);
 	id.resize(4);
 	_activePolls[id] = newPoll;
@@ -183,7 +183,7 @@ void Voting::ClosePoll(const std::string &args, const std::string &requester)
 		return;
 	}
 
-	if (poll->second.owner != requester)
+	if (poll->second._owner != requester)
 	{
 		SendMessage("Only owner can close a poll");
 		return;
@@ -210,19 +210,19 @@ void Voting::Invite(const std::string &args, const std::string &requester)
 	}
 
 	for (size_t index = 1; index < tokens.size(); index++)
-		poll->second.invitations.insert(tokens.at(index));
+		poll->second._invitations.insert(tokens.at(index));
 }
 
 std::string Poll::Print(bool votecount) const
 {
 	std::string result;
-	result = theme;
+	result = _theme;
 
-	for (size_t index = 0; index < options.size(); index++)
+	for (size_t index = 0; index < _options.size(); index++)
 	{
-		result += "\n" + std::to_string(index) + ") " + options.at(index);
+		result += "\n" + std::to_string(index) + ") " + _options.at(index);
 		if (votecount)
-			result += " [" + std::to_string(votes.at(index).size()) + "]";
+			result += " [" + std::to_string(_votes.at(index).size()) + "]";
 	}
 
 	return result;

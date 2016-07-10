@@ -21,5 +21,7 @@ CheckOptions:
     value:           camelBack
   - key:             readability-identifier-naming.MemberPrefix
     value:           '_'
+  - key:             readability-identifier-naming.MemberSuffix
+    value:           ''
   - key:             readability-identifier-naming.ClassConstantCase
     value:           camelBack

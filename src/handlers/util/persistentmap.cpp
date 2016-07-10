@@ -51,15 +51,15 @@ bool LevelDBPersistentMap::init(const std::string &name)
 	options.create_if_missing = true;
 	options.comparator = _comparator.get();
 
-	leveldb::DB *DB = nullptr;
-	auto status = leveldb::DB::Open(options, "db/" + _name, &DB);
+	leveldb::DB *db = nullptr;
+	auto status = leveldb::DB::Open(options, "db/" + _name, &db);
 	if (!status.ok())
 	{
 		LOG(ERROR) << "Failed to open database \"" << _name << "\": " << status.ToString();
 		return false;
 	}
 
-	_database.reset(DB);
+	_database.reset(db);
 	return true;
 }
 

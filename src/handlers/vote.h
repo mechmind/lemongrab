@@ -11,13 +11,13 @@
 class Poll
 {
 public:
-	std::string theme;
-	std::vector<std::unordered_set<std::string>> votes;
-	std::vector<std::string> options;
-	std::unordered_set<std::string> invitations;
-	std::string owner;
+	std::string _theme;
+	std::vector<std::unordered_set<std::string>> _votes;
+	std::vector<std::string> _options;
+	std::unordered_set<std::string> _invitations;
+	std::string _owner;
 
-	bool multioption = false;
+	bool _multioption = false;
 
 	std::string Print(bool votecount) const;
 };

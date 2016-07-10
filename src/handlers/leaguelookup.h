@@ -19,19 +19,19 @@ namespace Json
 class Summoner
 {
 public:
-	std::string name;
-	bool team;
-	std::string champion;
-	std::string summonerSpell1;
-	std::string summonerSpell2;
+	std::string _name;
+	bool _team;
+	std::string _champion;
+	std::string _summonerSpell1;
+	std::string _summonerSpell2;
 };
 
-class apiOptions
+class ApiOptions
 {
 public:
-	std::string region;
-	std::string platformID;
-	std::string key;
+	std::string _region;
+	std::string _platformID;
+	std::string _key;
 };
 
 class LeagueLookup : public LemonHandler
@@ -63,7 +63,7 @@ private:
 	bool InitializeSpells();
 	std::string GetSummonerNameByID(const std::string &id);
 
-	static void LookupAllSummoners(LevelDBPersistentMap &starredSummoners, LeagueLookup *_parent, apiOptions &api);
+	static void LookupAllSummoners(LevelDBPersistentMap &starredSummoners, LeagueLookup *_parent, ApiOptions &api);
 	void AddSummoner(const std::string &id);
 	void DeleteSummoner(const std::string &id);
 	void ListSummoners();
@@ -74,7 +74,7 @@ private:
 
 	static constexpr int maxSummoners = 500;
 
-	apiOptions _api;
+	ApiOptions _api;
 	LevelDBPersistentMap _starredSummoners;
 
 #ifdef _BUILD_TESTS

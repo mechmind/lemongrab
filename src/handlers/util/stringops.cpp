@@ -64,9 +64,9 @@ std::list<URL> findURLs(const std::string &input)
 {
 	std::list<URL> output;
 
-	static const std::regex trivial_url("(https?://(?:www.)?([[:alnum:].]+)/?[[:alnum:]\\-._~:/?#\\[\\]@!$&'()*+,;=%]*)");
+	static const std::regex trivialUrl("(https?://(?:www.)?([[:alnum:].]+)/?[[:alnum:]\\-._~:/?#\\[\\]@!$&'()*+,;=%]*)");
 
-	for (std::sregex_iterator i(input.begin(), input.end(), trivial_url);
+	for (std::sregex_iterator i(input.begin(), input.end(), trivialUrl);
 		 i != std::sregex_iterator(); ++i)
 		output.push_back(URL(i->str(1), i->str(2)));
 
@@ -131,8 +131,8 @@ TEST(StringOps, findURLs)
 
 	urls = findURLs("https://www.youtube.com/watch?v=lxQjwbUiM9w");
 	ASSERT_EQ(1, urls.size());
-	EXPECT_EQ("https://www.youtube.com/watch?v=lxQjwbUiM9w", urls.begin()->url);
-	EXPECT_EQ("youtube.com", urls.begin()->hostname);
+	EXPECT_EQ("https://www.youtube.com/watch?v=lxQjwbUiM9w", urls.begin()->_url);
+	EXPECT_EQ("youtube.com", urls.begin()->_hostname);
 }
 
 TEST(StringOps, beginsWith)
