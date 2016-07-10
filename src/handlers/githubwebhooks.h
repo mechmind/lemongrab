@@ -14,8 +14,8 @@ class GithubWebhooks : public LemonHandler
 {
 public:
 	GithubWebhooks(LemonBot *bot);
-	~GithubWebhooks();
-	ProcessingResult HandleMessage(const std::string &from, const std::string &body);
+	~GithubWebhooks() override;
+	ProcessingResult HandleMessage(const std::string &from, const std::string &body) override;
 
 private:
 	bool InitLibeventServer();

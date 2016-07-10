@@ -11,7 +11,7 @@
 class PseudoNaturalSorting
 		: public leveldb::Comparator {
 public:
-	int Compare(const leveldb::Slice& a, const leveldb::Slice& b) const {
+	int Compare(const leveldb::Slice& a, const leveldb::Slice& b) const override {
 		long long ai = 0;
 		long long bi = 0;
 		try {
@@ -32,9 +32,9 @@ public:
 		return a.ToString().compare(b.ToString());
 	}
 
-	const char* Name() const { return "leveldb.BytewiseComparator"; }
-	void FindShortestSeparator(std::string*, const leveldb::Slice&) const { }
-	void FindShortSuccessor(std::string*) const { }
+	const char* Name() const override { return "leveldb.BytewiseComparator"; }
+	void FindShortestSeparator(std::string*, const leveldb::Slice&) const override { }
+	void FindShortSuccessor(std::string*) const override { }
 };
 
 bool LevelDBPersistentMap::init(const std::string &name)

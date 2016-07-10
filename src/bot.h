@@ -26,17 +26,17 @@ public:
 	void UnregisterAllHandlers();
 
 	// XMPPHandler interface
-	void OnConnect();
-	void OnMessage(const std::string &nick, const std::string &text);
-	void OnPresence(const std::string &nick, const std::string &jid, bool online, const std::string &newNick);
+	void OnConnect() override;
+	void OnMessage(const std::string &nick, const std::string &text) override;
+	void OnPresence(const std::string &nick, const std::string &jid, bool online, const std::string &newNick) override;
 
 	// Nick/jid maps
-	std::string GetNickByJid(const std::string &jid) const;
-	std::string GetJidByNick(const std::string &nick) const;
+	std::string GetNickByJid(const std::string &jid) const override;
+	std::string GetJidByNick(const std::string &nick) const override;
 
 	// LemonBot interface
-	void SendMessage(const std::string &text);
-	std::string GetRawConfigValue(const std::string &name) const;
+	void SendMessage(const std::string &text) override;
+	std::string GetRawConfigValue(const std::string &name) const override;
 
 private:
 	template <class LemonHandler> void RegisterHandler()

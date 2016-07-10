@@ -13,11 +13,11 @@ public:
 	ConsoleClient(const std::string &fakeUserJid);
 
 	// XMPPClient interface
-	void SetXMPPHandler(XMPPHandler *handler);
-	bool Connect(const std::string &jid, const std::string &password);
-	bool Disconnect();
-	bool JoinRoom(const std::string &jid);
-	void SendMessage(const std::string &message);
+	void SetXMPPHandler(XMPPHandler *handler) override;
+	bool Connect(const std::string &jid, const std::string &password) override;
+	bool Disconnect() override;
+	bool JoinRoom(const std::string &jid) override;
+	void SendMessage(const std::string &message) override;
 
 	void FakeMessage(const std::string &message);
 	void FakeJoin(const std::string &nick, const std::string &jid);

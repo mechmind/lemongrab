@@ -4,7 +4,8 @@ Checks: >
     misc-*,-misc-unused-parameters,
     cppcoreguidelines-*,
     readability-identifier-naming,
-    google-readability-casting, google-readability-redundant-smartptr-get
+    google-readability-casting, google-readability-redundant-smartptr-get,
+    modernize-use-override
 
 CheckOptions:
   - key:             readability-identifier-naming.ClassCase

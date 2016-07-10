@@ -10,9 +10,9 @@ class LastSeen : public LemonHandler
 {
 public:
 	LastSeen(LemonBot *bot);
-	ProcessingResult HandleMessage(const std::string &from, const std::string &body);
-	void HandlePresence(const std::string &from, const std::string &jid, bool connected);
-	const std::string GetHelp() const;
+	ProcessingResult HandleMessage(const std::string &from, const std::string &body) override;
+	void HandlePresence(const std::string &from, const std::string &jid, bool connected) override;
+	const std::string GetHelp() const override;
 
 private:
 	static constexpr int maxSearchResults = 20;

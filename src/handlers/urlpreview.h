@@ -12,8 +12,8 @@ class UrlPreview
 {
 public:
 	UrlPreview(LemonBot *bot);
-	ProcessingResult HandleMessage(const std::string &from, const std::string &body);
-	const std::string GetHelp() const;
+	ProcessingResult HandleMessage(const std::string &from, const std::string &body) override;
+	const std::string GetHelp() const override;
 
 private:
 	bool getTitle(const std::string &content, std::string &title);

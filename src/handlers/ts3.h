@@ -15,8 +15,8 @@ class TS3 : public LemonHandler
 {
 public:
 	TS3(LemonBot *bot);
-	ProcessingResult HandleMessage(const std::string &from, const std::string &body);
-	const std::string GetHelp() const;
+	ProcessingResult HandleMessage(const std::string &from, const std::string &body) override;
+	const std::string GetHelp() const override;
 
 private:
 	void StartServerQueryClient();
