@@ -72,7 +72,7 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from
 
 	for (auto &site : sites)
 	{
-		auto page = cpr::Get(site._url);
+		auto page = cpr::Get(cpr::Url(site._url), cpr::Timeout(2000));
 
 		std::string title = "";
 		if (page.status_code != 200)

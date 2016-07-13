@@ -68,7 +68,12 @@ std::list<URL> findURLs(const std::string &input)
 
 	for (std::sregex_iterator i(input.begin(), input.end(), trivialUrl);
 		 i != std::sregex_iterator(); ++i)
-		output.push_back(URL(i->str(1), i->str(2)));
+	{
+		const auto &url = i->str(1);
+		output.push_back(URL(url.substr(0, url.find('#')), i->str(2)));
+	}
+
+	output.erase(std::unique(output.begin(), output.end()), output.end());
 
 	return output;
 }
@@ -123,7 +128,7 @@ TEST(StringOps, findURLs)
 	std::list<URL> expectedURLs = {
 		{"https://example.com/test/", "example.com"},
 		{"http://ya.ru/", "ya.ru"},
-		{"http://goo.gl/allo/this?is=a&test#thingy", "goo.gl"},
+		{"http://goo.gl/allo/this?is=a&test", "goo.gl"},
 		{"https://www.youtube.com/watch?v=abcde", "youtube.com"},
 	};
 	ASSERT_EQ(expectedURLs.size(), urls.size());
