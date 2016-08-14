@@ -15,9 +15,9 @@ LeagueLookup::LeagueLookup(LemonBot *bot)
 {
 	if (bot)
 	{
-		_api._key = bot->GetRawConfigValue("RiotApiKey");
-		_api._region = bot->GetRawConfigValue("RiotRegion");
-		_api._platformID = bot->GetRawConfigValue("RiotPlatform");
+		_api._key = bot->GetRawConfigValue("LOL.ApiKey");
+		_api._region = bot->GetRawConfigValue("LOL.Region");
+		_api._platformID = bot->GetRawConfigValue("LOL.Platform");
 	}
 
 	if (_api._key.empty())

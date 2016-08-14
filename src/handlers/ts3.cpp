@@ -17,12 +17,18 @@ std::string ReplaceTS3Spaces(const std::string &input, bool backwards = false);
 TS3::TS3(LemonBot *bot)
 	: LemonHandler("ts3", bot)
 {
-	_nickname = GetRawConfigValue("ts3name");
+
+}
+
+bool TS3::Init()
+{
+	_nickname = GetRawConfigValue("Teamspeak.Name");
 	if (_nickname.empty())
 		_nickname = "Unseen\\svoice";
 
-	_channelID = GetRawConfigValue("ts3channel");
+	_channelID = GetRawConfigValue("Teamspeak.Channel");
 	StartServerQueryClient();
+	return true;
 }
 
 LemonHandler::ProcessingResult TS3::HandleMessage(const ChatMessage &msg)
@@ -103,8 +109,8 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 			LOG(INFO) << "Connected to ServerQuery interface";
 			parent->_sqState = TS3::State::ServerQueryConnected;
 			evbuffer_add_printf(bufferevent_get_output(bev), "login %s %s\n",
-								parent->GetRawConfigValue("TS3QueryLogin").c_str(),
-								parent->GetRawConfigValue("TS3QueryPassword").c_str());
+								parent->GetRawConfigValue("Teamspeak.Login").c_str(),
+								parent->GetRawConfigValue("Teamspeak.Password").c_str());
 		}
 		break;
 
@@ -216,7 +222,7 @@ void TS3::telnetClientThread(TS3 * parent, std::string server)
 
 void TS3::StartServerQueryClient()
 {
-	auto serverAddress = GetRawConfigValue("ts3server");
+	auto serverAddress = GetRawConfigValue("Teamspeak.Server");
 	if (!serverAddress.empty())
 		_telnetClient = std::thread (&telnetClientThread, this, serverAddress);
 	else

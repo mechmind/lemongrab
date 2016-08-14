@@ -46,15 +46,18 @@ int main(int argc, char **argv)
 	InitGLOG(argv);
 
 	Settings settings;
-	if (!settings.Open("config.ini"))
-		LOG(FATAL) << "Failed to read config file";
+	if (!settings.Open("config.toml"))
+	{
+		LOG(ERROR) << "Failed to read config file";
+		return -1;
+	}
 
 	std::shared_ptr<Bot> botPtr;
 
 	if (!cliTestMode)
 		botPtr = std::make_shared<Bot>(new GlooxClient(), settings);
 	else
-		botPtr = std::make_shared<Bot>(new ConsoleClient(settings.GetRawString("admin")), settings);
+		botPtr = std::make_shared<Bot>(new ConsoleClient(), settings);
 
 	botPtr->Run();
 

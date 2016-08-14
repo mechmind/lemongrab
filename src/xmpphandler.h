@@ -24,6 +24,7 @@ public:
 	std::string _roomjid;
 	std::string _body;
 	bool _isPrivate = false;
+	bool _isAdmin = false;
 };
 
 class XMPPHandler

@@ -14,6 +14,7 @@ class GithubWebhooks : public LemonHandler
 {
 public:
 	GithubWebhooks(LemonBot *bot);
+	bool Init();
 	~GithubWebhooks() override;
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 

@@ -88,7 +88,7 @@ void GlooxClient::handleMUCParticipantPresence(gloox::MUCRoom *room, const gloox
 
 void GlooxClient::handleMUCMessage(gloox::MUCRoom *room, const gloox::Message &msg, bool priv)
 {
-	if (msg.when() == 0) // history
+	if (msg.when() != 0) // history
 		return;
 
 	ChatMessage message(msg.from().resource(), "", msg.from().bareJID().full(), msg.body(), priv);

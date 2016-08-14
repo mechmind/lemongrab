@@ -5,8 +5,7 @@
 
 #include <iostream>
 
-ConsoleClient::ConsoleClient(const std::string &fakeUserJid)
-	: _jid(fakeUserJid)
+ConsoleClient::ConsoleClient()
 {
 
 }
@@ -71,6 +70,7 @@ void ConsoleClient::FakeMessage(const std::string &message)
 	ChatMessage msg;
 	msg._body = message;
 	msg._nick = _nick;
+	msg._isAdmin = true;
 	_handler->OnMessage(msg);
 }
 

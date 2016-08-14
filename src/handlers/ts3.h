@@ -15,6 +15,7 @@ class TS3 : public LemonHandler
 {
 public:
 	TS3(LemonBot *bot);
+	bool Init() final;
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	const std::string GetHelp() const override;
 

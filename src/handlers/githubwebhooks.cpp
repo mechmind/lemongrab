@@ -17,7 +17,13 @@
 GithubWebhooks::GithubWebhooks(LemonBot *bot)
 	: LemonHandler("github", bot)
 {
+
+}
+
+bool GithubWebhooks::Init()
+{
 	InitLibeventServer();
+	return true;
 }
 
 GithubWebhooks::~GithubWebhooks()
@@ -108,7 +114,7 @@ void httpServerThread(GithubWebhooks * parent, std::uint16_t port)
 
 bool GithubWebhooks::InitLibeventServer()
 {
-	auto portFromOptions = GetRawConfigValue("GithubWebhookPort");
+	auto portFromOptions = GetRawConfigValue("Github.Port");
 
 	std::uint16_t port = 5555;
 	if (!portFromOptions.empty())
@@ -116,7 +122,7 @@ bool GithubWebhooks::InitLibeventServer()
 		try {
 			port = std::stol(portFromOptions);
 		} catch (std::exception &e) {
-			LOG(WARNING) << "Invalid GithubWebhookPort in config.ini (" << e.what() << ")";
+			LOG(WARNING) << "Invalid Github.Port in config.ini (" << e.what() << ")";
 		}
 	}
 

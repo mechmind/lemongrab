@@ -50,12 +50,14 @@ void Bot::RegisterAllHandlers()
 
 	for (const auto &handler : _handlersByName)
 		LOG(INFO) << "Handler loaded: " << handler.first;
+
+	EnableHandlers(_settings.GetStringList("General.Modules"), _settings.GetStringSet("General.ModulesBlacklist"));
 }
 
 void Bot::UnregisterAllHandlers()
 {
 	_handlersByName.clear();
-	_messageHandlers.clear();
+	_chatEventHandlers.clear();
 }
 
 void Bot::OnConnect()
@@ -71,8 +73,8 @@ void Bot::OnMessage(ChatMessage &msg)
 	if (msg._jid.empty())
 		msg._jid = GetJidByNick(msg._nick);
 
-	auto isAdmin = !msg._jid.empty()
-			&& GetRawConfigValue("admin") == msg._jid;
+	msg._isAdmin |= !msg._jid.empty()
+			&& GetRawConfigValue("General.admin") == msg._jid;
 
 	auto &text = msg._body;
 
@@ -83,15 +85,15 @@ void Bot::OnMessage(ChatMessage &msg)
 		return SendMessage(uptime);
 	}
 
-	if (text == "!die" && isAdmin)
+	if (text == "!die" && msg._isAdmin)
 	{
 		LOG(INFO) << "Termination requested";
-		_messageHandlers.clear();
+		_chatEventHandlers.clear();
 		_xmpp->Disconnect();
 		return;
 	}
 
-	if (text == "!reload" && isAdmin)
+	if (text == "!reload" && msg._isAdmin)
 	{
 		LOG(INFO) << "Config reload requested";
 		if (_settings.Reload())
@@ -112,7 +114,7 @@ void Bot::OnMessage(ChatMessage &msg)
 		return SendMessage(GetHelp(module));
 	}
 
-	for (auto &handler : _messageHandlers)
+	for (auto &handler : _chatEventHandlers)
 		if (handler->HandleMessage(msg) == LemonHandler::ProcessingResult::StopProcessing)
 			break;
 }
@@ -137,7 +139,7 @@ void Bot::OnPresence(const std::string &nick, const std::string &jid, bool onlin
 		}
 	}
 
-	for (auto &handler : _messageHandlers)
+	for (auto &handler : _chatEventHandlers)
 		handler->HandlePresence(nick, jid, newConnection);
 }
 
@@ -174,6 +176,47 @@ std::string Bot::GetRawConfigValue(const std::string &name) const
 	return _settings.GetRawString(name);
 }
 
+void Bot::EnableHandlers(const std::list<std::string> &whitelist, const std::set<std::string> &blacklist)
+{
+	if (whitelist.empty())
+	{
+		LOG(WARNING) << "No handlers are set, enabling them all";
+		for (const auto &handler : _handlersByName)
+		{
+			if (blacklist.count(handler.first) == 0)
+				EnableHandler(handler.first);
+		}
+
+		return;
+	}
+
+	for (const auto &name : whitelist)
+	{
+		if (blacklist.count(name) == 0)
+			EnableHandler(name);
+	}
+}
+
+bool Bot::EnableHandler(const std::string &name)
+{
+	auto handler = _handlersByName.find(name);
+	if (handler == _handlersByName.end())
+	{
+		LOG(WARNING) << "Handler not found: " << name;
+		return false;
+	}
+
+	if (!handler->second->Init())
+	{
+		LOG(WARNING) << "Init for handler " << name << " failed";
+		return false;
+	}
+
+	_chatEventHandlers.push_back(handler->second);
+	LOG(INFO) << "Handler enabled: " << name;
+	return true;
+}
+
 const std::string Bot::GetHelp(const std::string &module) const
 {
 	auto handler = _handlersByName.find(module);
@@ -181,7 +224,7 @@ const std::string Bot::GetHelp(const std::string &module) const
 	if (handler == _handlersByName.end())
 	{
 		std::string help = "Use !help %module_name%, where module_name is one of:";
-		for (auto handlerPtr : _messageHandlers)
+		for (auto handlerPtr : _chatEventHandlers)
 		{
 			help.append(" " + handlerPtr->GetName());
 		}

@@ -10,7 +10,7 @@ class ConsoleClient
 		: public XMPPClient
 {
 public:
-	ConsoleClient(const std::string &fakeUserJid);
+	ConsoleClient();
 
 	// XMPPClient interface
 	void SetXMPPHandler(XMPPHandler *handler) override;

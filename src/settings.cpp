@@ -1,8 +1,7 @@
 #include "settings.h"
 
-#include <fstream>
-
 #include <glog/logging.h>
+#include <cpptoml.h>
 
 Settings::Settings()
 {
@@ -11,36 +10,27 @@ Settings::Settings()
 bool Settings::Open(const std::string &path)
 {
 	_originalPath = path;
-	_rawSettings.clear();
 
-	std::ifstream ini(path, std::ifstream::in);
-
-	std::string line;
-	while (std::getline(ini, line))
-	{
-		auto loc = line.find_first_of('=');
-		if (loc != line.npos)
-		{
-			auto name = line.substr(0, loc);
-			auto value = line.substr(loc + 1, line.npos);
-			LOG(INFO) << "Config: " << name << " = " << value;
-			_rawSettings[name] = value;
-		}
+	try {
+		_config = cpptoml::parse_file(path);
+	} catch (const cpptoml::parse_exception &e) {
+		LOG(ERROR) << "Failed to read config file (" << e.what() << ")";
+		return false;
 	}
 
-	// Parsing config
-	_JID = _rawSettings["JID"];
-	if (_JID.empty())
-		return false;
+	auto jid = _config->get_qualified_as<std::string>("General.JID");
+	auto password = _config->get_qualified_as<std::string>("General.Password");
+	auto muc = _config->get_qualified_as<std::string>("General.MUC");
 
-	_password = _rawSettings["Password"];
-	if (_password.empty())
+	if (!jid || !password || !muc)
+	{
+		LOG(ERROR) << "General.JID, Password and MUC parameters are mandatory";
 		return false;
+	}
 
-	_MUC = _rawSettings["MUC"];
-	if (_MUC.empty())
-		return false;
-
+	_JID = *jid;
+	_password = *password;
+	_MUC = *muc;
 	return true;
 }
 
@@ -69,9 +59,43 @@ const std::string &Settings::GetPassword() const
 
 std::string Settings::GetRawString(const std::string &name) const
 {
-	auto it = _rawSettings.find(name);
-	if (it == _rawSettings.end())
-		return "";
+	return _config->get_qualified_as<std::string>(name).value_or("");
+}
 
-	return it->second;
+std::list<std::string> Settings::GetStringList(const std::string &name) const
+{
+	std::list<std::string> result;
+
+	auto array = _config->get_array_qualified(name);
+	if (!array)
+		return result;
+
+	auto values = array->array_of<std::string>();
+
+	for (const auto& value : values)
+	{
+		if (value)
+			result.push_back(value->get());
+	}
+
+	return result;
+}
+
+std::set<std::string> Settings::GetStringSet(const std::string &name) const
+{
+	std::set<std::string> result;
+
+	auto array = _config->get_array_qualified(name);
+	if (!array)
+		return result;
+
+	auto values = array->array_of<std::string>();
+
+	for (const auto& value : values)
+	{
+		if (value)
+			result.insert(value->get());
+	}
+
+	return result;
 }

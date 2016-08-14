@@ -5,6 +5,7 @@
 #include <mutex>
 #include <memory>
 #include <list>
+#include <set>
 #include <unordered_map>
 
 #include "xmpphandler.h"
@@ -41,10 +42,14 @@ public:
 private:
 	template <class LemonHandler> void RegisterHandler()
 	{
-		_messageHandlers.push_back(std::make_shared<LemonHandler>(this));
-		_handlersByName[_messageHandlers.back()->GetName()] = _messageHandlers.back();
+		auto handler = std::make_shared<LemonHandler>(this);
+		_handlersByName[handler->GetName()] = handler;
 	}
 
+	void EnableHandlers(const std::list<std::string> &whitelist, const std::set<std::string> &blacklist);
+	bool EnableHandler(const std::string &name);
+
+	// Global commands
 	const std::string GetHelp(const std::string &module) const;
 
 private:
@@ -53,7 +58,7 @@ private:
 	std::unordered_map<std::string, std::string> _nick2jid;
 	std::unordered_map<std::string, std::string> _jid2nick;
 
-	std::list<std::shared_ptr<LemonHandler>> _messageHandlers;
+	std::list<std::shared_ptr<LemonHandler>> _chatEventHandlers;
 	std::unordered_map<std::string, std::shared_ptr<LemonHandler>> _handlersByName;
 
 	std::chrono::system_clock::time_point _startTime;

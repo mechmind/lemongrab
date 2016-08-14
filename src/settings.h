@@ -1,12 +1,19 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
+#include <list>
+#include <memory>
+#include <set>
+
+namespace cpptoml {
+	class table;
+}
 
 class Settings
 {
 public:
 	Settings();
+
 	bool Open(const std::string &path);
 	bool Reload();
 
@@ -16,12 +23,15 @@ public:
 	const std::string &GetPassword() const;
 
 	std::string GetRawString(const std::string &name) const;
+	std::list<std::string> GetStringList(const std::string &name) const;
+	std::set<std::string> GetStringSet(const std::string &name) const;
 
 private:
-	std::string _originalPath;
+	std::shared_ptr<cpptoml::table> _config;
+
 	std::string _JID;
 	std::string _MUC;
 	std::string _password;
 
-	std::unordered_map<std::string, std::string> _rawSettings;
+	std::string _originalPath;
 };

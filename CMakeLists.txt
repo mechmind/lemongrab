@@ -19,6 +19,7 @@ find_package(Glog REQUIRED)
 find_package(LibEvent REQUIRED)
 find_package(JsonCpp REQUIRED)
 find_package(LevelDB REQUIRED)
+find_package(CppToml REQUIRED)
 find_package(Boost COMPONENTS locale REQUIRED)
 
 find_program(iwyu_path NAMES include-what-you-use iwyu)
@@ -31,6 +32,7 @@ include_directories(
     ${CPR_INCLUDE_DIRS}
     ${GLOOX_INCLUDE_DIR}
     ${GLOG_INCLUDE_DIR}
+    ${CPPTOML_INCLUDE_DIR}
     ${JSONCPP_INCLUDE_DIR}
     ${LIBEVENT_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}

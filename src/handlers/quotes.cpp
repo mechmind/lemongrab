@@ -32,7 +32,7 @@ LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)
 
 	if (getCommandArguments(msg._body, "!dq", arg) && !arg.empty())
 	{
-		if (msg._jid != GetRawConfigValue("admin"))
+		if (msg._isAdmin)
 		{
 			SendMessage(msg._nick + ": only admin can delete quotes");
 			return ProcessingResult::StopProcessing;
@@ -51,7 +51,7 @@ LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)
 
 	if (msg._body == "!regenquotes")
 	{
-		if (msg._jid != GetRawConfigValue("admin"))
+		if (msg._isAdmin)
 		{
 			SendMessage(msg._nick + ": only admin can regenerate index");
 			return ProcessingResult::StopProcessing;
@@ -66,7 +66,9 @@ LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)
 
 const std::string Quotes::GetHelp() const
 {
-	return "!aq %text% - add quote, !dq %id% - delete quote, !fq %regex% - find quote, !gq %id% - get quote, if id is empty then quote is random, !regenquotes - regenerate index";
+	return "!aq %text% - add quote, !dq %id% - delete quote\n"
+		   "!fq %regex% - find quote, !gq %id% - get quote, if id is empty then quote is random\n"
+		   "!regenquotes - regenerate index";
 }
 
 std::string Quotes::GetQuote(const std::string &id)

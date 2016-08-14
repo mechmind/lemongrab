@@ -28,6 +28,13 @@ public:
 		KeepGoing,
 		StopProcessing,
 	};
+
+	/**
+	 * @brief Called once when module is enabled
+	 * @return True if init was successful
+	 */
+	virtual bool Init() { return true; }
+
 	/**
 	 * @brief Receives and handles MUC messages
 	 * @param from Sender nickname
