@@ -61,14 +61,17 @@ bool ConsoleClient::JoinRoom(const std::string &jid)
 	return true;
 }
 
-void ConsoleClient::SendMessage(const std::string &message)
+void ConsoleClient::SendMessage(const std::string &message, const std::string &recipient)
 {
 	std::cout << "Bot> " << message << std::endl;
 }
 
 void ConsoleClient::FakeMessage(const std::string &message)
 {
-	_handler->OnMessage(_nick, message);
+	ChatMessage msg;
+	msg._body = message;
+	msg._nick = _nick;
+	_handler->OnMessage(msg);
 }
 
 void ConsoleClient::FakeJoin(const std::string &nick, const std::string &jid)

@@ -17,7 +17,7 @@ public:
 	bool Connect(const std::string &jid, const std::string &password) override;
 	bool Disconnect() override;
 	bool JoinRoom(const std::string &jid) override;
-	void SendMessage(const std::string &message) override;
+	void SendMessage(const std::string &message, const std::string &recipient) override;
 
 	void FakeMessage(const std::string &message);
 	void FakeJoin(const std::string &nick, const std::string &jid);

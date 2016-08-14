@@ -15,7 +15,7 @@ class TS3 : public LemonHandler
 {
 public:
 	TS3(LemonBot *bot);
-	ProcessingResult HandleMessage(const std::string &from, const std::string &body) override;
+	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	const std::string GetHelp() const override;
 
 private:
@@ -24,7 +24,7 @@ private:
 	void TS3Disconnected(const std::string &clid);
 	void TS3Message(const std::string &nick, const std::string &text);
 
-	void SendTS3Message(const std::string &nick, const std::string &text);
+	void SendTS3Message(const std::string &nick, const std::string &jid, const std::string &text);
 
 private:
 	enum class State

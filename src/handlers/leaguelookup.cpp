@@ -46,13 +46,13 @@ LeagueLookup::~LeagueLookup()
 		_lookupHelper->join();
 }
 
-LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const ChatMessage &msg)
 {
 	if (_api._key.empty())
 		return ProcessingResult::KeepGoing;
 
 	std::string args;
-	if (getCommandArguments(body, "!ll", args))
+	if (getCommandArguments(msg._body, "!ll", args))
 	{
 		if (!args.empty())
 			SendMessage(lookupCurrentGame(args));
@@ -67,19 +67,19 @@ LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const std::string &fr
 		return ProcessingResult::StopProcessing;
 	}
 
-	if (getCommandArguments(body, "!addsummoner", args))
+	if (getCommandArguments(msg._body, "!addsummoner", args))
 	{
 		AddSummoner(args);
 		return ProcessingResult::StopProcessing;
 	}
 
-	if (getCommandArguments(body, "!delsummoner", args))
+	if (getCommandArguments(msg._body, "!delsummoner", args))
 	{
 		DeleteSummoner(args);
 		return ProcessingResult::StopProcessing;
 	}
 
-	if (body == "!listsummoners")
+	if (msg._body == "!listsummoners")
 	{
 		ListSummoners();
 		return ProcessingResult::StopProcessing;

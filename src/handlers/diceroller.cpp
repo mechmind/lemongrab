@@ -110,9 +110,9 @@ DiceRoller::DiceRoller(LemonBot *bot)
 	ResetRNG();
 }
 
-LemonHandler::ProcessingResult DiceRoller::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult DiceRoller::HandleMessage(const ChatMessage &msg)
 {
-	auto diceTokens = GetDiceTokens(body);
+	auto diceTokens = GetDiceTokens(msg._body);
 
 	if (diceTokens.empty())
 		return ProcessingResult::KeepGoing;
@@ -180,7 +180,7 @@ LemonHandler::ProcessingResult DiceRoller::HandleMessage(const std::string &from
 	if (diceTokens.size() > 1)
 		resultDescription.append("= " + std::to_string(result));
 
-	SendMessage(from + ": " + resultDescription);
+	SendMessage(msg._nick + ": " + resultDescription);
 
 	return ProcessingResult::StopProcessing;
 }
@@ -265,20 +265,20 @@ TEST(DiceTest, DiceRolls)
 	DiceTestBot testbot;
 	DiceRoller r(&testbot);
 
-	r.HandleMessage("test", ".1d1");
+	r.HandleMessage(ChatMessage("test", "", "", ".1d1", false));
 	EXPECT_EQ(1, testbot._lastResult);
 
-	r.HandleMessage("test", ".1d1 + 7 - 12 + 3d1");
+	r.HandleMessage(ChatMessage("test", "", "", ".1d1 + 7 - 12 + 3d1", false));
 	EXPECT_EQ(1+7-12+3, testbot._lastResult);
 
 	r.ResetRNG(1);
-	r.HandleMessage("test", ".1d6");
+	r.HandleMessage(ChatMessage("test", "", "", ".1d6", false));
 	EXPECT_EQ(1, testbot._lastResult);
 
-	r.HandleMessage("test", ".1d30");
+	r.HandleMessage(ChatMessage("test", "", "", ".1d30", false));
 	EXPECT_EQ(5, testbot._lastResult);
 
-	r.HandleMessage("test", ".10d10 - 5d8 + 100d3");
+	r.HandleMessage(ChatMessage("test", "", "", ".10d10 - 5d8 + 100d3", false));
 	EXPECT_EQ(228, testbot._lastResult);
 }
 

@@ -27,7 +27,7 @@ GithubWebhooks::~GithubWebhooks()
 	_httpServer.join();
 }
 
-LemonHandler::ProcessingResult GithubWebhooks::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult GithubWebhooks::HandleMessage(const ChatMessage &msg)
 {
 	return ProcessingResult::KeepGoing;
 }

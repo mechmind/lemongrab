@@ -9,7 +9,7 @@ namespace {
 	std::string response = "https://youtu.be/WgYhYw-lS_s";
 }
 
-LemonHandler::ProcessingResult GoodEnough::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult GoodEnough::HandleMessage(const ChatMessage &msg)
 {
 	static std::list<std::string> magicPhrases = {
 		"так сойдет",
@@ -19,14 +19,14 @@ LemonHandler::ProcessingResult GoodEnough::HandleMessage(const std::string &from
 		"good enough"
 	};
 
-	auto lowercase = toLower(body);
+	auto lowercase = toLower(msg._body);
 
 	for (auto &phrase : magicPhrases)
 	{
 		auto loc = lowercase.find(phrase);
 		if (loc != lowercase.npos)
 		{
-			SendMessage(from + ": " + response);
+			SendMessage(msg._nick + ": " + response);
 			return ProcessingResult::StopProcessing;
 		}
 	}
@@ -54,7 +54,7 @@ TEST(GoodEnoughTest, SimpleTrigger)
 	GoodEnoughBot testbot;
 	GoodEnough test(&testbot);
 
-	test.HandleMessage("TestUser", "This test shoud be good enough");
+	test.HandleMessage(ChatMessage("TestUser", "", "", "This test shoud be good enough", false));
 	EXPECT_TRUE(testbot._success);
 }
 

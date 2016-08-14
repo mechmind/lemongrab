@@ -21,9 +21,10 @@ UrlPreview::UrlPreview(LemonBot *bot)
 	_urlBlacklist.init("urlblacklist");
 }
 
-LemonHandler::ProcessingResult UrlPreview::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)
 {
 	std::string args;
+	auto &body = msg._body;
 	if (getCommandArguments(body, "!url", args))
 	{
 		SendMessage(findUrlsInHistory(args));

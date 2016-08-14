@@ -14,10 +14,10 @@ LastSeen::LastSeen(LemonBot *bot)
 	_nick2jidDB.init("nick2jid");
 }
 
-LemonHandler::ProcessingResult LastSeen::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 {
 	std::string wantedUser;
-	if (!getCommandArguments(body, "!seen", wantedUser))
+	if (!getCommandArguments(msg._body, "!seen", wantedUser))
 		return ProcessingResult::KeepGoing;
 
 	if (!_nick2jidDB.isOK() || !_lastSeenDB.isOK())

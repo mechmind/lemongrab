@@ -39,7 +39,7 @@ class LeagueLookup : public LemonHandler
 public:
 	LeagueLookup(LemonBot *bot);
 	~LeagueLookup() override;
-	ProcessingResult HandleMessage(const std::string &from, const std::string &body) override;
+	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	const std::string GetHelp() const override;
 
 private:

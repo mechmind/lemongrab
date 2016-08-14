@@ -27,7 +27,7 @@ public:
 	bool Disconnect() override;
 
 	bool JoinRoom(const std::string &jid) override;
-	void SendMessage(const std::string &message) override;
+	void SendMessage(const std::string &message, const std::string &recipient) override;
 
 public:
 	// Connection callbacks

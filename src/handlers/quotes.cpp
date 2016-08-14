@@ -14,46 +14,46 @@ Quotes::Quotes(LemonBot *bot)
 	_quotesDB.init("quotes");
 }
 
-LemonHandler::ProcessingResult Quotes::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)
 {
 	std::string arg;
-	if (getCommandArguments(body, "!gq", arg))
+	if (getCommandArguments(msg._body, "!gq", arg))
 	{
-		SendMessage(from + ": " + GetQuote(arg));
+		SendMessage(msg._nick + ": " + GetQuote(arg));
 		return ProcessingResult::StopProcessing;
 	}
 
-	if (getCommandArguments(body, "!aq", arg) && !arg.empty())
+	if (getCommandArguments(msg._body, "!aq", arg) && !arg.empty())
 	{
 		auto id = AddQuote(arg);
-		id.empty() ? SendMessage(from + ": can't add quote") : SendMessage(from + ": quote added with id " + id);
+		id.empty() ? SendMessage(msg._nick + ": can't add quote") : SendMessage(msg._nick + ": quote added with id " + id);
 		return ProcessingResult::StopProcessing;
 	}
 
-	if (getCommandArguments(body, "!dq", arg) && !arg.empty())
+	if (getCommandArguments(msg._body, "!dq", arg) && !arg.empty())
 	{
-		if (_bot && _bot->GetJidByNick(from) != GetRawConfigValue("admin"))
+		if (msg._jid != GetRawConfigValue("admin"))
 		{
-			SendMessage(from + ": only admin can delete quotes");
+			SendMessage(msg._nick + ": only admin can delete quotes");
 			return ProcessingResult::StopProcessing;
 		}
 
-		DeleteQuote(arg) ? SendMessage(from + ": quote deleted") : SendMessage(from + ": quote doesn't exist or access denied");
+		DeleteQuote(arg) ? SendMessage(msg._nick + ": quote deleted") : SendMessage(msg._nick + ": quote doesn't exist or access denied");
 		return ProcessingResult::StopProcessing;
 	}
 
-	if (getCommandArguments(body, "!fq", arg) && !arg.empty())
+	if (getCommandArguments(msg._body, "!fq", arg) && !arg.empty())
 	{
 		auto searchResults = FindQuote(arg);
-		SendMessage(from + ": " + searchResults);
+		SendMessage(msg._nick + ": " + searchResults);
 		return ProcessingResult::StopProcessing;
 	}
 
-	if (body == "!regenquotes")
+	if (msg._body == "!regenquotes")
 	{
-		if (_bot && _bot->GetJidByNick(from) != GetRawConfigValue("admin"))
+		if (msg._jid != GetRawConfigValue("admin"))
 		{
-			SendMessage(from + ": only admin can regenerate index");
+			SendMessage(msg._nick + ": only admin can regenerate index");
 			return ProcessingResult::StopProcessing;
 		}
 

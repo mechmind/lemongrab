@@ -27,7 +27,7 @@ public:
 
 	// XMPPHandler interface
 	void OnConnect() override;
-	void OnMessage(const std::string &nick, const std::string &text) override;
+	void OnMessage(ChatMessage &msg) final;
 	void OnPresence(const std::string &nick, const std::string &jid, bool online, const std::string &newNick) override;
 
 	// Nick/jid maps

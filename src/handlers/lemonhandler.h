@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "../xmpphandler.h" // FIXME we need chatmessage only
+
 class LemonBot
 {
 public:
@@ -32,7 +34,7 @@ public:
 	 * @param body Message body
 	 * @return True if message shoud not be passed to another handler
 	 */
-	virtual ProcessingResult HandleMessage(const std::string &from, const std::string &body) = 0;
+	virtual ProcessingResult HandleMessage(const ChatMessage &msg) = 0;
 	virtual void HandlePresence(const std::string &from, const std::string &jid, bool connected) { }
 
 	/**

@@ -54,9 +54,9 @@ bool GlooxClient::JoinRoom(const std::string &jid)
 	return true;
 }
 
-void GlooxClient::SendMessage(const std::string &message)
+void GlooxClient::SendMessage(const std::string &message, const std::string &recipient)
 {
-	if (_room)
+	if (_room && recipient.empty())
 		_room->send(message);
 }
 
@@ -88,13 +88,16 @@ void GlooxClient::handleMUCParticipantPresence(gloox::MUCRoom *room, const gloox
 
 void GlooxClient::handleMUCMessage(gloox::MUCRoom *room, const gloox::Message &msg, bool priv)
 {
-	if (msg.from().resource() == _room->nick()
-			|| msg.from().resource() == ""
-			|| msg.when()
-			|| priv)
+	if (msg.when() == 0) // history
 		return;
 
-	_handler->OnMessage(msg.from().resource(), msg.body());
+	ChatMessage message(msg.from().resource(), "", msg.from().bareJID().full(), msg.body(), priv);
+	if (message._nick == _room->nick()
+			|| message._nick.empty()
+			|| message._isPrivate)
+		return;
+
+	_handler->OnMessage(message);
 }
 
 void GlooxClient::handleMUCError(gloox::MUCRoom *room, gloox::StanzaError error)

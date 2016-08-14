@@ -15,7 +15,7 @@ class Pager : public LemonHandler
 {
 public:
 	Pager(LemonBot *bot);
-	ProcessingResult HandleMessage(const std::string &from, const std::string &body) override;
+	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	void HandlePresence(const std::string &from, const std::string &jid, bool connected) override;
 	const std::string GetHelp() const override;
 

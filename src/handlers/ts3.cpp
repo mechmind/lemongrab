@@ -25,16 +25,16 @@ TS3::TS3(LemonBot *bot)
 	StartServerQueryClient();
 }
 
-LemonHandler::ProcessingResult TS3::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult TS3::HandleMessage(const ChatMessage &msg)
 {
 	std::string message;
-	if (getCommandArguments(body, "!tsay", message))
+	if (getCommandArguments(msg._body, "!tsay", message))
 	{
-		SendTS3Message(from, message);
+		SendTS3Message(msg._nick, msg._jid, message);
 		return ProcessingResult::StopProcessing;
 	}
 
-	if (body != "!ts")
+	if (msg._body != "!ts")
 		return ProcessingResult::KeepGoing;
 
 	if (_clients.empty())
@@ -243,12 +243,8 @@ void TS3::TS3Message(const std::string &nick, const std::string &text)
 		SendMessage("TS <" + nick + "> " + text);
 }
 
-void TS3::SendTS3Message(const std::string &nick, const std::string &text)
+void TS3::SendTS3Message(const std::string &nick, const std::string &jid, const std::string &text)
 {
-	std::string jid = "null";
-	if (_botPtr)
-		jid = _botPtr->GetJidByNick(nick);
-
 	_outgoingMessage = "<" + nick + " [" + jid + "] > " + text;
 	if (_msg_event)
 		event_active(_msg_event, EV_READ, 0);

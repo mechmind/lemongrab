@@ -8,30 +8,31 @@ Voting::Voting(LemonBot *bot)
 
 }
 
-LemonHandler::ProcessingResult Voting::HandleMessage(const std::string &from, const std::string &body)
+LemonHandler::ProcessingResult Voting::HandleMessage(const ChatMessage &msg)
 {
 	std::string args;
+	auto &body = msg._body;
 	if (body == "!polls")
 	{
 		ListPolls();
 		return ProcessingResult::StopProcessing;
 	} else if (getCommandArguments(body, "!addpoll", args)) {
-		AddPoll(args, _botPtr->GetJidByNick(from));
+		AddPoll(args, msg._jid);
 		return ProcessingResult::StopProcessing;
 	} else if (getCommandArguments(body, "!pollinfo", args)) {
 		PrintPoll(args);
 		return ProcessingResult::StopProcessing;
 	} else if (getCommandArguments(body, "!vote", args)) {
-		Vote(args, _botPtr->GetJidByNick(from));
+		Vote(args, msg._jid);
 		return ProcessingResult::StopProcessing;
 	} else if (getCommandArguments(body, "!unvote", args)) {
-		Unvote(args, _botPtr->GetJidByNick(from));
+		Unvote(args, msg._jid);
 		return ProcessingResult::StopProcessing;
 	} else if (getCommandArguments(body, "!closepoll", args)) {
-		ClosePoll(args, _botPtr->GetJidByNick(from));
+		ClosePoll(args, msg._jid);
 		return ProcessingResult::StopProcessing;
 	} else if (getCommandArguments(body, "!invite", args)) {
-		Invite(args, _botPtr->GetJidByNick(from));
+		Invite(args, msg._jid);
 		return ProcessingResult::StopProcessing;
 	}
 

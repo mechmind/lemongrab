@@ -66,12 +66,15 @@ void Bot::OnConnect()
 	_xmpp->JoinRoom(muc);
 }
 
-void Bot::OnMessage(const std::string &nick, const std::string &text)
+void Bot::OnMessage(ChatMessage &msg)
 {
-	bool isAdmin = false;
-	auto admin = GetRawConfigValue("admin");
-	if (!admin.empty() && GetJidByNick(nick) == admin)
-		isAdmin = true;
+	if (msg._jid.empty())
+		msg._jid = GetJidByNick(msg._nick);
+
+	auto isAdmin = !msg._jid.empty()
+			&& GetRawConfigValue("admin") == msg._jid;
+
+	auto &text = msg._body;
 
 	if (text == "!uptime")
 	{
@@ -110,7 +113,7 @@ void Bot::OnMessage(const std::string &nick, const std::string &text)
 	}
 
 	for (auto &handler : _messageHandlers)
-		if (handler->HandleMessage(nick, text) == LemonHandler::ProcessingResult::StopProcessing)
+		if (handler->HandleMessage(msg) == LemonHandler::ProcessingResult::StopProcessing)
 			break;
 }
 
@@ -162,7 +165,7 @@ void Bot::SendMessage(const std::string &text)
 		_sendMessageThrottle = 1;
 	}
 
-	_xmpp->SendMessage(text);
+	_xmpp->SendMessage(text, "");
 	_lastMessage = std::chrono::system_clock::now();
 }
 
