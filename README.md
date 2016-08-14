@@ -40,7 +40,7 @@ cmake ..
 make
 ```
 
-Rename config.ini.default to config.ini, edit according to your needs (config file should be self-explanatory) and put it in the work directory
+Rename config.toml.default to config.toml, edit according to your needs (config file should be self-explanatory) and put it in the work directory
 Create a `logs` folder in work directory
 Create a `db` folder in work directory and run bot executable: ./lemongrab
 

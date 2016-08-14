@@ -25,6 +25,7 @@ before_install:
   - bash travis/install_cmake.sh
   - bash travis/install_jsoncpp.sh
   - bash travis/install_cpr.sh
+  - bash travis/install_cpptoml.sh
 
 script:
   - mkdir build
