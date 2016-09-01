@@ -32,7 +32,7 @@ LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)
 
 	if (getCommandArguments(msg._body, "!dq", arg) && !arg.empty())
 	{
-		if (msg._isAdmin)
+		if (!msg._isAdmin)
 		{
 			SendMessage(msg._nick + ": only admin can delete quotes");
 			return ProcessingResult::StopProcessing;
@@ -51,7 +51,7 @@ LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)
 
 	if (msg._body == "!regenquotes")
 	{
-		if (msg._isAdmin)
+		if (!msg._isAdmin)
 		{
 			SendMessage(msg._nick + ": only admin can regenerate index");
 			return ProcessingResult::StopProcessing;
