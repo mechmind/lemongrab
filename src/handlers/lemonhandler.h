@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <list>
 
 #include "../xmpphandler.h" // FIXME we need chatmessage only
 
@@ -59,6 +60,7 @@ protected:
 	 */
 	void SendMessage(const std::string &text);
 	const std::string GetRawConfigValue(const std::string &name) const;
+	const std::list<std::int64_t> GetIntList(const std::string &name) const;
 	std::string _moduleName;
 	LemonBot *_botPtr;
 };

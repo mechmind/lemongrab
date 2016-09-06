@@ -20,5 +20,6 @@ private:
 
 private:
 	LevelDBPersistentMap _lastSeenDB;
+	LevelDBPersistentMap _lastActiveDB;
 	LevelDBPersistentMap _nick2jidDB;
 };

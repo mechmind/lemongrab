@@ -81,6 +81,10 @@ std::list<URL> findURLs(const std::string &input)
 std::string CustomTimeFormat(std::chrono::system_clock::duration input)
 {
 	std::string output;
+
+	if (std::chrono::duration_cast<std::chrono::seconds>(input).count() == 0)
+		return "a moment";
+
 	output += std::to_string(std::chrono::duration_cast<std::chrono::hours>  (input).count() / 24) + "d ";
 	output += std::to_string(std::chrono::duration_cast<std::chrono::hours>  (input).count() % 24) + "h ";
 	output += std::to_string(std::chrono::duration_cast<std::chrono::minutes>(input).count() % 60) + "m ";

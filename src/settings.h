@@ -23,8 +23,10 @@ public:
 	const std::string &GetPassword() const;
 
 	std::string GetRawString(const std::string &name) const;
-	std::list<std::string> GetStringList(const std::string &name) const;
 	std::set<std::string> GetStringSet(const std::string &name) const;
+
+	template <template<class...> class Container, class Element>
+	Container<Element> GetArray(const std::string &name) const;
 
 private:
 	std::shared_ptr<cpptoml::table> _config;

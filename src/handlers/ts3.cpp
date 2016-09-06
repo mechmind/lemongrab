@@ -4,6 +4,7 @@
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
 #include <event2/event.h>
+#include <event2/thread.h>
 
 #include <glog/logging.h>
 
@@ -26,7 +27,8 @@ bool TS3::Init()
 	if (_nickname.empty())
 		_nickname = "Unseen\\svoice";
 
-	_channelID = GetRawConfigValue("Teamspeak.Channel");
+	_channelID = easy_stoll(_botPtr->GetRawConfigValue("Teamspeak.Channel"));
+
 	StartServerQueryClient();
 	return true;
 }
@@ -99,6 +101,8 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 	else
 		LOG(ERROR) << "Received telnet line that is too short!";
 
+	LOG(INFO) << s;
+
 	switch (parent->_sqState)
 	{
 	case TS3::State::NotConnected:
@@ -148,8 +152,7 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 		{
 			LOG(INFO) << "Subscribed to connects/disconnects";
 			parent->_sqState = TS3::State::Subscribed;
-			if (!parent->_channelID.empty())
-				evbuffer_add_printf(bufferevent_get_output(bev), "servernotifyregister event=textchannel id=%s\n", parent->_channelID.c_str());
+			evbuffer_add_printf(bufferevent_get_output(bev), "servernotifyregister event=textchannel id=%ld\n", parent->_channelID);
 		}
 		break;
 
@@ -199,6 +202,9 @@ void TS3::telnetClientThread(TS3 * parent, std::string server)
 	int port = 10011;
 	parent->_base = event_base_new();
 	parent->_dns_base = evdns_base_new(parent->_base, 1);
+
+	evthread_use_pthreads();
+	evthread_make_base_notifiable(parent->_base);
 
 	parent->_msg_event = event_new(parent->_base, -1, EV_READ, sendTS3message, parent);
 	event_add(parent->_msg_event, nullptr);
@@ -259,7 +265,8 @@ void TS3::SendTS3Message(const std::string &nick, const std::string &jid, const 
 void TS3::sendTS3message(int, short, void *parentPtr)
 {
 	auto parent = static_cast<TS3*>(parentPtr);
-	std::string message = "sendtextmessage targetmode=2 target=" + parent->_channelID + " msg=" + ReplaceTS3Spaces(parent->_outgoingMessage, true) + "\n";
+
+	std::string message = "sendtextmessage targetmode=2 target=" + std::to_string(parent->_channelID) + " msg=" + ReplaceTS3Spaces(parent->_outgoingMessage, true) + "\n";
 	bufferevent_write(parent->_bev, message.c_str(), message.size());
 }
 

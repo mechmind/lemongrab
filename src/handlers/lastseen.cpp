@@ -12,21 +12,30 @@ LastSeen::LastSeen(LemonBot *bot)
 {
 	_lastSeenDB.init("lastseen");
 	_nick2jidDB.init("nick2jid");
+	_lastActiveDB.init("lastmsg");
 }
 
 LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 {
+	if (_lastActiveDB.isOK())
+	{
+		auto now = std::chrono::system_clock::now();
+		_lastActiveDB.Set(msg._jid, std::to_string(std::chrono::system_clock::to_time_t(now)));
+	}
+
 	std::string wantedUser;
+
 	if (!getCommandArguments(msg._body, "!seen", wantedUser))
 		return ProcessingResult::KeepGoing;
 
-	if (!_nick2jidDB.isOK() || !_lastSeenDB.isOK())
+	if (!_nick2jidDB.isOK() || !_lastSeenDB.isOK() || !_lastActiveDB.isOK())
 	{
 		SendMessage("Database connection error");
 		return ProcessingResult::KeepGoing;
 	}
 
 	std::string lastSeenRecord = "0";
+	std::string lastActiveRecord = "0";
 	std::string jidRecord = wantedUser;
 
 	if (!_lastSeenDB.Get(wantedUser, lastSeenRecord))
@@ -58,13 +67,31 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 		}
 	}
 
+	std::string lastActiveMessage;
+	{
+		if (_lastActiveDB.Get(jidRecord, lastActiveRecord))
+		{
+			std::chrono::system_clock::duration lastActiveDiff;
+			try {
+				auto now = std::chrono::system_clock::now();
+				auto lastActiveTime = std::chrono::system_clock::from_time_t(std::stol(lastActiveRecord));
+				lastActiveDiff = now - lastActiveTime;
+			} catch (std::exception &e) {
+				SendMessage("Something broke: " + std::string(e.what()));
+				return ProcessingResult::StopProcessing;
+			}
+
+			lastActiveMessage = "; last active " + CustomTimeFormat(lastActiveDiff) + " ago";
+		}
+	}
+
 	auto currentNick = _botPtr->GetNickByJid(jidRecord);
 	if (!currentNick.empty())
 	{
 		if (wantedUser != currentNick)
-			SendMessage(wantedUser + " (" + jidRecord + ") is still here as " + currentNick);
+			SendMessage(wantedUser + " (" + jidRecord + ") is still here as " + currentNick + lastActiveMessage);
 		else
-			SendMessage(wantedUser + " is still here");
+			SendMessage(wantedUser + " is still here" + lastActiveMessage);
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -78,7 +105,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 		return ProcessingResult::StopProcessing;
 	}
 
-	SendMessage(wantedUser + " (" + jidRecord + ") last seen " + CustomTimeFormat(lastSeenDiff) + " ago");
+	SendMessage(wantedUser + " (" + jidRecord + ") last seen " + CustomTimeFormat(lastSeenDiff) + " ago" + lastActiveMessage);
 	return ProcessingResult::StopProcessing;
 }
 

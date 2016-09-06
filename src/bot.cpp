@@ -17,6 +17,8 @@
 
 #include <glog/logging.h>
 
+#include <algorithm>
+
 Bot::Bot(XMPPClient *client, Settings &settings)
 	: _xmpp(client)
 	, _settings(settings)
@@ -51,7 +53,7 @@ void Bot::RegisterAllHandlers()
 	for (const auto &handler : _handlersByName)
 		LOG(INFO) << "Handler loaded: " << handler.first;
 
-	EnableHandlers(_settings.GetStringList("General.Modules"), _settings.GetStringSet("General.ModulesBlacklist"));
+	EnableHandlers(_settings.GetArray<std::list, std::string>("General.Modules"), _settings.GetArray<std::list, std::string>("General.ModulesBlacklist"));
 }
 
 void Bot::UnregisterAllHandlers()
@@ -173,17 +175,18 @@ void Bot::SendMessage(const std::string &text)
 
 std::string Bot::GetRawConfigValue(const std::string &name) const
 {
+	// FIXME expose _settings instead
 	return _settings.GetRawString(name);
 }
 
-void Bot::EnableHandlers(const std::list<std::string> &whitelist, const std::set<std::string> &blacklist)
+void Bot::EnableHandlers(const std::list<std::string> &whitelist, const std::list<std::string> &blacklist)
 {
 	if (whitelist.empty())
 	{
 		LOG(WARNING) << "No handlers are set, enabling them all";
 		for (const auto &handler : _handlersByName)
 		{
-			if (blacklist.count(handler.first) == 0)
+			if (std::find(blacklist.begin(), blacklist.end(), handler.first) == blacklist.end())
 				EnableHandler(handler.first);
 		}
 
@@ -192,7 +195,7 @@ void Bot::EnableHandlers(const std::list<std::string> &whitelist, const std::set
 
 	for (const auto &name : whitelist)
 	{
-		if (blacklist.count(name) == 0)
+		if (std::find(blacklist.begin(), blacklist.end(), name) == blacklist.end())
 			EnableHandler(name);
 	}
 }

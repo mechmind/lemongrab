@@ -2,6 +2,7 @@
 
 #include <thread>
 #include <string>
+#include <list>
 #include <unordered_map>
 
 #include "lemonhandler.h"
@@ -42,7 +43,7 @@ private:
 	std::string _outgoingMessage;
 
 	std::string _nickname = "Lemongrab";
-	std::string _channelID = "1";
+	std::int64_t _channelID;
 	std::thread _telnetClient;
 	State _sqState = State::NotConnected;
 	std::unordered_map<std::string, std::string> _clients;

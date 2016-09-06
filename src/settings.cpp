@@ -3,6 +3,8 @@
 #include <glog/logging.h>
 #include <cpptoml.h>
 
+template std::list<std::string> Settings::GetArray(const std::string &name) const;
+
 Settings::Settings()
 {
 }
@@ -62,25 +64,6 @@ std::string Settings::GetRawString(const std::string &name) const
 	return _config->get_qualified_as<std::string>(name).value_or("");
 }
 
-std::list<std::string> Settings::GetStringList(const std::string &name) const
-{
-	std::list<std::string> result;
-
-	auto array = _config->get_array_qualified(name);
-	if (!array)
-		return result;
-
-	auto values = array->array_of<std::string>();
-
-	for (const auto& value : values)
-	{
-		if (value)
-			result.push_back(value->get());
-	}
-
-	return result;
-}
-
 std::set<std::string> Settings::GetStringSet(const std::string &name) const
 {
 	std::set<std::string> result;
@@ -95,6 +78,26 @@ std::set<std::string> Settings::GetStringSet(const std::string &name) const
 	{
 		if (value)
 			result.insert(value->get());
+	}
+
+	return result;
+}
+
+template <template<class...> class Container, class Element>
+Container<Element> Settings::GetArray(const std::string &name) const
+{
+	Container<Element> result;
+
+	auto array = _config->get_array_qualified(name);
+	if (!array)
+		return result;
+
+	auto values = array->array_of<Element>();
+
+	for (const auto& value : values)
+	{
+		if (value)
+			result.push_back(value->get());
 	}
 
 	return result;

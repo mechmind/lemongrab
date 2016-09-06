@@ -46,7 +46,7 @@ private:
 		_handlersByName[handler->GetName()] = handler;
 	}
 
-	void EnableHandlers(const std::list<std::string> &whitelist, const std::set<std::string> &blacklist);
+	void EnableHandlers(const std::list<std::string> &whitelist, const std::list<std::string> &blacklist);
 	bool EnableHandler(const std::string &name);
 
 	// Global commands
