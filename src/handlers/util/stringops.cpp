@@ -40,9 +40,16 @@ bool getCommandArguments(const std::string &input, const std::string &command, s
 	return true;
 }
 
-std::vector<std::string> tokenize(const std::string &input, char separator)
+std::vector<std::string> tokenize(const std::string &input, char separator, int limit)
 {
 	std::vector<std::string> tokens;
+	if (limit == 1)
+	{
+		tokens.push_back(input);
+		return tokens;
+	}
+
+	int count = 0;
 
 	size_t prevPos = 0;
 	for (size_t pos = 0; pos < input.length(); pos++)
@@ -50,8 +57,17 @@ std::vector<std::string> tokenize(const std::string &input, char separator)
 		if (input.at(pos) == separator)
 		{
 			auto token = input.substr(prevPos, pos - prevPos);
-			tokens.push_back(token);
+			count++;
 			prevPos = pos + 1;
+
+			if (count == limit - 1)
+			{
+				tokens.push_back(token);
+				tokens.push_back(input.substr(prevPos));
+				return tokens;
+			}
+
+			tokens.push_back(token);
 		}
 	}
 	if (prevPos != input.length())
@@ -152,6 +168,14 @@ TEST(StringOps, beginsWith)
 	EXPECT_TRUE(beginsWith("!test!", "!test"));
 	EXPECT_FALSE(beginsWith("!tes", "!test"));
 	EXPECT_FALSE(beginsWith("?test", "!test"));
+}
+
+TEST(StringOps, tokenizeLimit)
+{
+	std::string input = "Test test 123";
+	EXPECT_EQ(3, tokenize(input, ' ').size());
+	EXPECT_EQ(2, tokenize(input, ' ', 2).size());
+	EXPECT_EQ(1, tokenize(input, ' ', 1).size());
 }
 
 TEST(StringOps, getArguments)

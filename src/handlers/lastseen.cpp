@@ -20,7 +20,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 	if (_lastActiveDB.isOK())
 	{
 		auto now = std::chrono::system_clock::now();
-		_lastActiveDB.Set(msg._jid, std::to_string(std::chrono::system_clock::to_time_t(now)));
+		_lastActiveDB.Set(msg._jid, std::to_string(std::chrono::system_clock::to_time_t(now)) + " " + msg._body);
 	}
 
 	std::string wantedUser;
@@ -67,10 +67,17 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 		}
 	}
 
-	std::string lastActiveMessage;
+	std::string lastActiveMessageResponse;
+	std::string lastActiveMessageText;
 	{
 		if (_lastActiveDB.Get(jidRecord, lastActiveRecord))
 		{
+			auto data = tokenize(lastActiveRecord, ' ', 2);
+			lastActiveRecord = data.at(0);
+
+			if (data.size() > 1)
+				lastActiveMessageText = data.at(1);
+
 			std::chrono::system_clock::duration lastActiveDiff;
 			try {
 				auto now = std::chrono::system_clock::now();
@@ -81,7 +88,9 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 				return ProcessingResult::StopProcessing;
 			}
 
-			lastActiveMessage = "; last active " + CustomTimeFormat(lastActiveDiff) + " ago";
+			lastActiveMessageResponse = "; last active " + CustomTimeFormat(lastActiveDiff) + " ago";
+			if (!lastActiveMessageText.empty())
+				lastActiveMessageResponse.append(": \"" + lastActiveMessageText + "\"");
 		}
 	}
 
@@ -89,9 +98,9 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 	if (!currentNick.empty())
 	{
 		if (wantedUser != currentNick)
-			SendMessage(wantedUser + " (" + jidRecord + ") is still here as " + currentNick + lastActiveMessage);
+			SendMessage(wantedUser + " (" + jidRecord + ") is still here as " + currentNick + lastActiveMessageResponse);
 		else
-			SendMessage(wantedUser + " is still here" + lastActiveMessage);
+			SendMessage(wantedUser + " is still here" + lastActiveMessageResponse);
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -105,7 +114,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 		return ProcessingResult::StopProcessing;
 	}
 
-	SendMessage(wantedUser + " (" + jidRecord + ") last seen " + CustomTimeFormat(lastSeenDiff) + " ago" + lastActiveMessage);
+	SendMessage(wantedUser + " (" + jidRecord + ") last seen " + CustomTimeFormat(lastSeenDiff) + " ago" + lastActiveMessageResponse);
 	return ProcessingResult::StopProcessing;
 }
 
