@@ -23,6 +23,12 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 		_lastActiveDB.Set(msg._jid, std::to_string(std::chrono::system_clock::to_time_t(now)) + " " + msg._body);
 	}
 
+	if (msg._body == "!seenstat")
+	{
+		PrintSeenStat();
+		return ProcessingResult::KeepGoing;
+	}
+
 	std::string wantedUser;
 
 	if (!getCommandArguments(msg._body, "!seen", wantedUser))
@@ -34,6 +40,42 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 		return ProcessingResult::KeepGoing;
 	}
 
+	PrintUserInfo(wantedUser);
+	return ProcessingResult::KeepGoing;
+}
+
+void LastSeen::HandlePresence(const std::string &from, const std::string &jid, bool connected)
+{
+	auto now = std::chrono::system_clock::now();
+
+	if (_nick2jidDB.isOK())
+		_nick2jidDB.Set(from, jid);
+
+	if (_lastSeenDB.isOK())
+		_lastSeenDB.Set(jid, std::to_string(std::chrono::system_clock::to_time_t(now)));
+}
+
+const std::string LastSeen::GetHelp() const
+{
+	return "Use !seen %nickname% or !seen %jid%; use !seen %regex% or !seenjid %regex% to search users by regex\n"
+		   "!seenstat - show statistics";
+}
+
+void LastSeen::PrintSeenStat()
+{
+	if (!_nick2jidDB.isOK() || !_lastSeenDB.isOK() || !_lastActiveDB.isOK())
+	{
+		SendMessage("Database connection error");
+		return;
+	}
+
+	std::string response = "Seen nicks: " + std::to_string(_nick2jidDB.Size()) + " | Seen users: " + std::to_string(_lastSeenDB.Size());
+
+	SendMessage(response);
+}
+
+void LastSeen::PrintUserInfo(const std::__cxx11::string &wantedUser)
+{
 	std::string lastSeenRecord = "0";
 	std::string lastActiveRecord = "0";
 	std::string jidRecord = wantedUser;
@@ -57,13 +99,13 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 			}
 
 			SendMessage(message);
-			return ProcessingResult::StopProcessing;
+			return;
 		}
 
 		if (!_lastSeenDB.Get(jidRecord, lastSeenRecord))
 		{
 			SendMessage("Well this is weird, " + wantedUser + " resolved to " + jidRecord + " but I have no record for this jid");
-			return ProcessingResult::StopProcessing;
+			return;
 		}
 	}
 
@@ -85,7 +127,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 				lastActiveDiff = now - lastActiveTime;
 			} catch (std::exception &e) {
 				SendMessage("Something broke: " + std::string(e.what()));
-				return ProcessingResult::StopProcessing;
+				return;
 			}
 
 			lastActiveMessageResponse = "; last active " + CustomTimeFormat(lastActiveDiff) + " ago";
@@ -101,7 +143,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 			SendMessage(wantedUser + " (" + jidRecord + ") is still here as " + currentNick + lastActiveMessageResponse);
 		else
 			SendMessage(wantedUser + " is still here" + lastActiveMessageResponse);
-		return ProcessingResult::StopProcessing;
+		return;
 	}
 
 	std::chrono::system_clock::duration lastSeenDiff;
@@ -111,27 +153,10 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 		lastSeenDiff = now - lastSeenTime;
 	} catch (std::exception &e) {
 		SendMessage("Something broke: " + std::string(e.what()));
-		return ProcessingResult::StopProcessing;
+		return;
 	}
 
 	SendMessage(wantedUser + " (" + jidRecord + ") last seen " + CustomTimeFormat(lastSeenDiff) + " ago" + lastActiveMessageResponse);
-	return ProcessingResult::StopProcessing;
-}
-
-void LastSeen::HandlePresence(const std::string &from, const std::string &jid, bool connected)
-{
-	auto now = std::chrono::system_clock::now();
-
-	if (_nick2jidDB.isOK())
-		_nick2jidDB.Set(from, jid);
-
-	if (_lastSeenDB.isOK())
-		_lastSeenDB.Set(jid, std::to_string(std::chrono::system_clock::to_time_t(now)));
-}
-
-const std::string LastSeen::GetHelp() const
-{
-	return "Use !seen %nickname% or !seen %jid%; use !seen %regex% or !seenjid %regex% to search users by regex";
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
