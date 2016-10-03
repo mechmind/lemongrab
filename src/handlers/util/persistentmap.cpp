@@ -94,6 +94,20 @@ bool LevelDBPersistentMap::Set(const std::string &key, const std::string &value)
 	return true;
 }
 
+bool LevelDBPersistentMap::Exists(const std::string &key) const
+{
+	std::string value;
+	auto status = _database->Get(leveldb::ReadOptions(), key, &value);
+
+	if (!status.ok())
+	{
+		LOG(ERROR) << "Get for database \"" << _name << "\" failed: " << status.ToString();
+		return false;
+	}
+
+	return true;
+}
+
 bool LevelDBPersistentMap::Delete(const std::string &key)
 {
 	auto status = _database->Delete(leveldb::WriteOptions(), key);

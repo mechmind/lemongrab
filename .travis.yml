@@ -19,6 +19,7 @@ addons:
     - libleveldb-dev
     - libevent-dev
     - libboost-locale-dev
+    - libpugixml-dev
 
 before_install:
   - export CXX="g++-4.9"

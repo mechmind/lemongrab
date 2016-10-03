@@ -27,6 +27,7 @@ public:
 	virtual bool isOK() const = 0;
 	virtual bool Get(const std::string &key, std::string &value) const = 0;
 	virtual bool Set(const std::string &key, const std::string &value) = 0;
+	virtual bool Exists(const std::string &key) const = 0;
 	virtual bool Delete(const std::string &key) = 0;
 	virtual void ForEach(std::function<bool (std::pair<std::string, std::string>)> call) const = 0;
 	virtual std::pair<std::string, std::string> GetLastRecord() const = 0;
@@ -52,6 +53,7 @@ public:
 	bool isOK() const override;
 	bool Get(const std::string &key, std::string &value) const override;
 	bool Set(const std::string &key, const std::string &value) override;
+	bool Exists(const std::string &key) const override;
 	bool Delete(const std::string &key) override;
 	void ForEach(std::function<bool (std::pair<std::string, std::string>)> call) const override;
 	std::pair<std::string, std::string> GetLastRecord() const override;

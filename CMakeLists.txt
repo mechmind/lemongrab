@@ -20,6 +20,7 @@ find_package(LibEvent REQUIRED)
 find_package(JsonCpp REQUIRED)
 find_package(LevelDB REQUIRED)
 find_package(CppToml REQUIRED)
+find_package(PugiXML REQUIRED)
 find_package(Boost COMPONENTS locale REQUIRED)
 
 find_program(iwyu_path NAMES include-what-you-use iwyu)
@@ -28,12 +29,12 @@ if(CHECK_INCLUDES AND NOT iwyu_path)
 endif()
 
 include_directories(
-    ${CURL_INCLUDE_DIRS}
     ${CPR_INCLUDE_DIRS}
     ${GLOOX_INCLUDE_DIR}
     ${GLOG_INCLUDE_DIR}
     ${CPPTOML_INCLUDE_DIR}
     ${JSONCPP_INCLUDE_DIR}
+    ${PUGIXML_INCLUDE_DIR}
     ${LIBEVENT_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     ${LEVELDB_INCLUDE_DIR}
@@ -65,6 +66,7 @@ target_link_libraries(${PROJECT_NAME}
     ${GLOOX_LIBRARY}
     ${GLOG_LIBRARY}
     ${JSONCPP_LIBRARY}
+    ${PUGIXML_LIBRARY}
     ${LIBEVENT_LIBRARY}
     ${LIBEVENT_PTHREADS_LIBRARY}
     ${Boost_LIBRARIES}

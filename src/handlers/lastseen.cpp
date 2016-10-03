@@ -74,7 +74,7 @@ void LastSeen::PrintSeenStat()
 	SendMessage(response);
 }
 
-void LastSeen::PrintUserInfo(const std::__cxx11::string &wantedUser)
+void LastSeen::PrintUserInfo(const std::string &wantedUser)
 {
 	std::string lastSeenRecord = "0";
 	std::string lastActiveRecord = "0";
