@@ -143,6 +143,8 @@ RSSItem RSSWatcher::GetLatestItem(const std::string &feedURL)
 	RSSItem result;
 	auto feedContent = cpr::Get(cpr::Url(feedURL), cpr::Timeout(2000));
 
+	LOG(INFO) << "Checking feed: " << feedURL << " | Result: " << feedContent.status_code;
+
 	if (feedContent.status_code != 200)
 	{
 		result._error = "Status code is not 200 OK: " + std::to_string(feedContent.status_code);
