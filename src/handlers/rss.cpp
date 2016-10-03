@@ -35,6 +35,9 @@ RSSWatcher::RSSWatcher(LemonBot *bot)
 	}
 
 	_updateSecondsMax = updateRate;
+
+	UpdateFeeds();
+
 	_updateThread = std::thread(&UpdateThread, this);
 }
 
@@ -51,6 +54,7 @@ LemonHandler::ProcessingResult RSSWatcher::HandleMessage(const ChatMessage &msg)
 			&& msg._isAdmin)
 	{
 		RegisterFeed(args);
+		UpdateFeeds();
 		return ProcessingResult::StopProcessing;
 	} else if (getCommandArguments(msg._body, "!delrss", args)
 			   && msg._isAdmin) {
@@ -89,12 +93,15 @@ void RSSWatcher::RegisterFeed(const std::string &feed)
 	}
 
 	_feeds.Set(feed, "");
+	SendMessage("Feed " + feed + " added");
 }
 
 void RSSWatcher::UnregisterFeed(const std::string &feed)
 {
 	if (!_feeds.Delete(feed))
 		SendMessage("No such feed");
+	else
+		SendMessage("Feed " + feed + " removed");
 }
 
 void RSSWatcher::ListRSSFeeds()
