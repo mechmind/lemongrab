@@ -19,7 +19,6 @@ addons:
     - libleveldb-dev
     - libevent-dev
     - libboost-locale-dev
-    - libpugixml-dev
 
 before_install:
   - export CXX="g++-4.9"
@@ -27,6 +26,7 @@ before_install:
   - bash travis/install_jsoncpp.sh
   - bash travis/install_cpr.sh
   - bash travis/install_cpptoml.sh
+  - bash travis/install_pugixml.sh
 
 script:
   - mkdir build
