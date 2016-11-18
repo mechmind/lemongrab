@@ -54,14 +54,14 @@ private:
 
 	static RiotAPIResponse RiotAPIRequest(const std::string &request, Json::Value &output);
 
-	std::string lookupCurrentGame(const std::string &name);
-	int getSummonerIDFromName(const std::string &name);
-	int getSummonerIdFromJSON(const std::string &name, const Json::Value &root);
-	std::list<Summoner> getSummonerNamesFromJSON(const Json::Value &root);
+	std::string lookupCurrentGame(const std::string &name) const;
+	int getSummonerIDFromName(const std::string &name) const;
+	int getSummonerIdFromJSON(const std::string &name, const Json::Value &root) const;
+	std::list<Summoner> getSummonerNamesFromJSON(const Json::Value &root) const;
 
 	bool InitializeChampions();
 	bool InitializeSpells();
-	std::string GetSummonerNameByID(const std::string &id);
+	std::string GetSummonerNameByID(const std::string &id) const;
 
 	static void LookupAllSummoners(LevelDBPersistentMap &starredSummoners, LeagueLookup *_parent, ApiOptions &api);
 	void AddSummoner(const std::string &id);

@@ -18,8 +18,8 @@ public:
 private:
 	static constexpr int maxSearchResults = 20;
 
-	void PrintSeenStat();
-	void PrintUserInfo(const std::string &wantedUser);
+	std::string GetStats() const;
+	std::string GetUserInfo(const std::string &wantedUser) const;
 
 private:
 	LevelDBPersistentMap _lastSeenDB;

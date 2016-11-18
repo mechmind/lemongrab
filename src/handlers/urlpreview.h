@@ -16,12 +16,12 @@ public:
 	const std::string GetHelp() const override;
 
 private:
-	bool getTitle(const std::string &content, std::string &title);
+	std::string getTitle(const std::string &content) const;
 	std::string findUrlsInHistory(const std::string &request, bool withIndices = false);
 	void StoreRecord(const std::string &record);
 
-	bool shouldPrintTitle(const std::string &url);
-	bool isFoundInRules(const std::string &url, const LevelDBPersistentMap &ruleset);
+	bool shouldPrintTitle(const std::string &url) const;
+	bool isFoundInRules(const std::string &url, const LevelDBPersistentMap &ruleset) const;
 	bool addRuleToRuleset(const std::string &rule, LevelDBPersistentMap &ruleset);
 	bool delRuleFromRuleset(const std::string &ruleID, LevelDBPersistentMap &ruleset);
 	void ShowURLRules();

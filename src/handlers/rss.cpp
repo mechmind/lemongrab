@@ -61,14 +61,14 @@ LemonHandler::ProcessingResult RSSWatcher::HandleMessage(const ChatMessage &msg)
 		UnregisterFeed(args);
 		return ProcessingResult::StopProcessing;
 	} else if (msg._body == "!listrss") {
-		ListRSSFeeds();
+		SendMessage(ListRSSFeeds());
 	} else if (msg._body == "!updaterss"
 			   && msg._isAdmin) {
 		UpdateFeeds();
 		return ProcessingResult::StopProcessing;
 	} else if (getCommandArguments(msg._body, "!readrss", args)) {
 		auto item = GetLatestItem(args);
-		item._valid ? PrintNews(item) : SendMessage(item._error);
+		SendMessage(item.Format());
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -104,14 +104,14 @@ void RSSWatcher::UnregisterFeed(const std::string &feed)
 		SendMessage("Feed " + feed + " removed");
 }
 
-void RSSWatcher::ListRSSFeeds()
+std::string RSSWatcher::ListRSSFeeds() const
 {
 	std::string result = "Registered feeds: ";
 	_feeds.ForEach([&](std::pair<std::string, std::string> record)->bool{
 		result.append("\n" + record.first + " | GUID: " + record.second);
 		return true;
 	});
-	SendMessage(result);
+	return result;
 }
 
 void RSSWatcher::UpdateFeeds()
@@ -131,18 +131,11 @@ void RSSWatcher::UpdateFeeds()
 		if (oldGuid != item.guid)
 		{
 			_feeds.Set(record.first, item.guid);
-			PrintNews(item);
+			SendMessage(item.Format());
 		}
 
 		return true;
 	});
-}
-
-void RSSWatcher::PrintNews(const RSSItem &item)
-{
-	SendMessage(item.title + " @ " + item.pubDate + \
-				" ( " + item.link + " )" + \
-				"\n\n" + item.description);
 }
 
 RSSItem RSSWatcher::GetLatestItem(const std::string &feedURL)
@@ -184,4 +177,14 @@ RSSItem RSSWatcher::GetLatestItem(const std::string &feedURL)
 
 	result._error = "Invalid XML in feed";
 	return result;
+}
+
+std::string RSSItem::Format() const
+{
+	if (_valid)
+		return title + " @ " + pubDate + \
+				" ( " + link + " )" + \
+				"\n\n" + description;
+	else
+		return _error;
 }

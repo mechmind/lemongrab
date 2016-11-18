@@ -19,6 +19,8 @@ public:
 	std::string link;
 	std::string description;
 	std::string guid;
+
+	std::string Format() const;
 };
 
 class RSSWatcher : public LemonHandler
@@ -32,10 +34,9 @@ public:
 private:
 	void RegisterFeed(const std::string &feed);
 	void UnregisterFeed(const std::string &feed);
-	void ListRSSFeeds();
+	std::string ListRSSFeeds() const;
 
 	void UpdateFeeds();
-	void PrintNews(const RSSItem &item);
 
 	RSSItem GetLatestItem(const std::string &feedURL);
 

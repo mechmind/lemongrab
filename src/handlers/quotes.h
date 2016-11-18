@@ -21,7 +21,7 @@ private:
 	std::string GetQuote(const std::string &id);
 	std::string AddQuote(const std::string &text);
 	bool DeleteQuote(const std::string &id);
-	std::string FindQuote(const std::string &request);
+	std::string FindQuote(const std::string &request) const;
 	void RegenerateIndex();
 
 private:

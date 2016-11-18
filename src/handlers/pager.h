@@ -22,7 +22,7 @@ public:
 private:
 	void StoreMessage(const std::string &to, const std::string &from, const std::string &text);
 	void PurgeMessageFromDB(long long id);
-	void PrintPagerStats();
+	std::string GetPagerStats() const;
 
 private:
 	class Message

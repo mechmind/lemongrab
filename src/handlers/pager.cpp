@@ -96,7 +96,7 @@ LemonHandler::ProcessingResult Pager::HandleMessage(const ChatMessage &msg)
 {
 	if (msg._body == "!pager_stats")
 	{
-		PrintPagerStats();
+		SendMessage(GetPagerStats());
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -164,7 +164,7 @@ void Pager::PurgeMessageFromDB(long long id)
 		_persistentMessages.Delete(std::to_string(id));
 }
 
-void Pager::PrintPagerStats()
+std::string Pager::GetPagerStats() const
 {
 	std::map<std::string, int> messageStats;
 	for (auto &message : _messages)
@@ -177,7 +177,7 @@ void Pager::PrintPagerStats()
 	if (messageStatsString.empty())
 		messageStatsString = " none";
 
-	SendMessage("Paged messages:" + messageStatsString);
+	return "Paged messages:" + messageStatsString;
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START

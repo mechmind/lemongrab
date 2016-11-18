@@ -81,7 +81,7 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)
 			LOG(INFO) << "URL: " << site._url << " | Server responded with unexpected code: " << page.status_code;
 		} else {
 			const auto &siteContent = page.text;
-			getTitle(siteContent, title);
+			title = getTitle(siteContent);
 		}
 
 		auto id = easy_stoll(_urlHistory.GetLastRecord().first);
@@ -109,20 +109,20 @@ const std::string UrlPreview::GetHelp() const
 			"!wdelisturl %id% and !bdelisturl %id% - delete existing rules. !urlrules - print existing rules and their ids";
 }
 
-bool UrlPreview::getTitle(const std::string &content, std::string &title)
+std::string UrlPreview::getTitle(const std::string &content) const
 {
 	// FIXME: maybe should use actual HTML parser here?
 	auto titleBegin = content.find("<title>");
 	if (titleBegin == content.npos)
-		return false;
+		return "";
 
 	auto titleEnd = content.find("</title>", titleBegin);
 	if (titleEnd == content.npos)
-		return false;
+		return "";
 
-	title = content.substr(titleBegin + 7, titleEnd - titleBegin - 7);
+	auto title = content.substr(titleBegin + 7, titleEnd - titleBegin - 7);
 	boost::trim(title);
-	return true;
+	return title;
 }
 
 std::string UrlPreview::findUrlsInHistory(const std::string &request, bool withIndices)
@@ -153,7 +153,7 @@ std::string UrlPreview::findUrlsInHistory(const std::string &request, bool withI
 	return searchResults;
 }
 
-bool UrlPreview::shouldPrintTitle(const std::string &url)
+bool UrlPreview::shouldPrintTitle(const std::string &url) const
 {
 	bool whitelisted = isFoundInRules(url, _urlWhitelist);
 	bool blacklisted = isFoundInRules(url, _urlBlacklist);
@@ -161,7 +161,7 @@ bool UrlPreview::shouldPrintTitle(const std::string &url)
 	return !blacklisted || whitelisted;
 }
 
-bool UrlPreview::isFoundInRules(const std::string &url, const LevelDBPersistentMap &ruleset)
+bool UrlPreview::isFoundInRules(const std::string &url, const LevelDBPersistentMap &ruleset) const
 {
 	if (!ruleset.isOK() || ruleset.isEmpty())
 		return false;
@@ -285,8 +285,7 @@ TEST(URLPreview, GetTitle)
 							"<head><title>This is a test title</title></head>\n"
 							"<body><p>Test</p></body>"
 							"</html>\n");
-		std::string title;
-		testUnit.getTitle(content, title);
+		std::string title = testUnit.getTitle(content);
 		EXPECT_EQ("This is a test title", formatHTMLchars(title));
 	}
 }

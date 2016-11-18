@@ -127,7 +127,7 @@ LeagueLookup::RiotAPIResponse LeagueLookup::RiotAPIRequest(const std::string &re
 	}
 }
 
-std::string LeagueLookup::lookupCurrentGame(const std::string &name)
+std::string LeagueLookup::lookupCurrentGame(const std::string &name) const
 {
 	auto id = getSummonerIDFromName(name);
 	if (id == -1)
@@ -175,7 +175,7 @@ std::string LeagueLookup::lookupCurrentGame(const std::string &name)
 	return "This should never happen";
 }
 
-int LeagueLookup::getSummonerIDFromName(const std::string &name)
+int LeagueLookup::getSummonerIDFromName(const std::string &name) const
 {
 	std::string apiRequest = "https://" + _api._region + ".api.pvp.net/api/lol/" + _api._region + "/v1.4/summoner/by-name/" + name + "?api_key=" + _api._key;
 
@@ -197,12 +197,12 @@ int LeagueLookup::getSummonerIDFromName(const std::string &name)
 	return -2;
 }
 
-int LeagueLookup::getSummonerIdFromJSON(const std::string &name, const Json::Value &root)
+int LeagueLookup::getSummonerIdFromJSON(const std::string &name, const Json::Value &root) const
 {
 	return root[toLower(name)]["id"].asInt();
 }
 
-std::list<Summoner> LeagueLookup::getSummonerNamesFromJSON(const Json::Value &root)
+std::list<Summoner> LeagueLookup::getSummonerNamesFromJSON(const Json::Value &root) const
 {
 	std::list<Summoner> result;
 
@@ -214,9 +214,14 @@ std::list<Summoner> LeagueLookup::getSummonerNamesFromJSON(const Json::Value &ro
 	{
 		Summoner summoner;
 		summoner._name = participants[index]["summonerName"].asString();
-		summoner._champion = _champions[participants[index]["championId"].asInt()];
-		summoner._summonerSpell1 = _spells[participants[index]["spell1Id"].asInt()];
-		summoner._summonerSpell2 = _spells[participants[index]["spell2Id"].asInt()];
+		try {
+			summoner._champion = _champions.at(participants[index]["championId"].asInt());
+			summoner._summonerSpell1 = _spells.at(participants[index]["spell1Id"].asInt());
+			summoner._summonerSpell2 = _spells.at(participants[index]["spell2Id"].asInt());
+		} catch (...) {
+			LOG(WARNING) << "Unknown Champion ID or Spell ID";
+		}
+
 		summoner._team = participants[index]["teamId"].asInt() == 100;
 		result.push_back(summoner);
 	}
@@ -262,7 +267,7 @@ bool LeagueLookup::InitializeSpells()
 	return true;
 }
 
-std::string LeagueLookup::GetSummonerNameByID(const std::string &id)
+std::string LeagueLookup::GetSummonerNameByID(const std::string &id) const
 {
 	std::string apiRequest = "https://" + _api._region + ".api.pvp.net/api/lol/" + _api._region + "/v1.4/summoner/" + id + "?api_key=" + _api._key;
 

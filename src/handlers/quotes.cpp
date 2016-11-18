@@ -131,7 +131,7 @@ bool Quotes::DeleteQuote(const std::string &id)
 	return _quotesDB.Delete(id);
 }
 
-std::string Quotes::FindQuote(const std::string &request)
+std::string Quotes::FindQuote(const std::string &request) const
 {
 	if (!_quotesDB.isOK())
 		return "database connection error";
