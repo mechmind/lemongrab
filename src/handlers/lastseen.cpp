@@ -3,7 +3,6 @@
 #include <glog/logging.h>
 
 #include <ctime>
-#include <chrono>
 
 #include "util/stringops.h"
 
@@ -71,80 +70,90 @@ std::string LastSeen::GetStats() const
 
 std::string LastSeen::GetUserInfo(const std::string &wantedUser) const
 {
-	std::string lastSeenRecord = "0";
-	std::string lastActiveRecord = "0";
-	std::string jidRecord = wantedUser;
+	auto lastStatus = GetLastStatus(wantedUser);
 
-	if (!_lastSeenDB.Get(wantedUser, lastSeenRecord))
-	{
-		if (!_nick2jidDB.Get(wantedUser, jidRecord))
-		{
-			auto similarUsers = _nick2jidDB.Find(wantedUser, LevelDBPersistentMap::FindOptions::All);
-			std::string message;
+	if (!lastStatus._error.empty())
+		return lastStatus._error;
 
-			if (similarUsers.empty())
-				message = wantedUser + "? Who's that?";
-			else if (similarUsers.size() > maxSearchResults)
-				message = "Too many matches";
-			else
-			{
-				message = "Similar users:";
-				for (const auto &user : similarUsers)
-					message += " " + user.first + " (" + user.second + ")";
-			}
+	auto lastActivity = GetLastActive(lastStatus.jid);
+	std::string lastActiveMessageResponse = "; last active " + CustomTimeFormat(lastActivity.when) + " ago";
+	if (!lastActivity.what.empty())
+		lastActiveMessageResponse.append(": \"" + lastActivity.what + "\"");
 
-			return message;
-		}
-
-		if (!_lastSeenDB.Get(jidRecord, lastSeenRecord))
-			return "Well this is weird, " + wantedUser + " resolved to " + jidRecord + " but I have no record for this jid";
-	}
-
-	std::string lastActiveMessageResponse;
-	std::string lastActiveMessageText;
-	{
-		if (_lastActiveDB.Get(jidRecord, lastActiveRecord))
-		{
-			auto data = tokenize(lastActiveRecord, ' ', 2);
-			lastActiveRecord = data.at(0);
-
-			if (data.size() > 1)
-				lastActiveMessageText = data.at(1);
-
-			std::chrono::system_clock::duration lastActiveDiff;
-			try {
-				auto now = std::chrono::system_clock::now();
-				auto lastActiveTime = std::chrono::system_clock::from_time_t(std::stol(lastActiveRecord));
-				lastActiveDiff = now - lastActiveTime;
-			} catch (std::exception &e) {
-				return "Something broke: " + std::string(e.what());
-			}
-
-			lastActiveMessageResponse = "; last active " + CustomTimeFormat(lastActiveDiff) + " ago";
-			if (!lastActiveMessageText.empty())
-				lastActiveMessageResponse.append(": \"" + lastActiveMessageText + "\"");
-		}
-	}
-
-	auto currentNick = _botPtr->GetNickByJid(jidRecord);
+	auto currentNick = _botPtr->GetNickByJid(lastStatus.jid);
 	if (!currentNick.empty())
 	{
 		if (wantedUser != currentNick)
-			return wantedUser + " (" + jidRecord + ") is still here as " + currentNick + lastActiveMessageResponse;
+			return wantedUser + " (" + lastStatus.jid + ") is still here as " + currentNick + lastActiveMessageResponse;
 		else
 			return wantedUser + " is still here" + lastActiveMessageResponse;
 	}
 
-	std::chrono::system_clock::duration lastSeenDiff;
+	return wantedUser + " (" + lastStatus.jid + ") last seen " + CustomTimeFormat(lastStatus.when) + " ago" + lastActiveMessageResponse;
+}
+
+LastSeen::LastStatus LastSeen::GetLastStatus(const std::string &name) const
+{
+	LastStatus result;
+	std::string lastSeenRecord = "0";
+
+	if (!_lastSeenDB.Get(name, lastSeenRecord))
+	{
+		if (!_nick2jidDB.Get(name, result.jid))
+		{
+			auto similarUsers = _nick2jidDB.Find(name, LevelDBPersistentMap::FindOptions::All);
+			if (similarUsers.empty())
+				result._error = name + "? Who's that?";
+			else if (similarUsers.size() > maxSearchResults)
+				result._error = "Too many matches";
+			else
+			{
+				result._error = "Similar users:";
+				for (const auto &user : similarUsers)
+					result._error += " " + user.first + " (" + user.second + ")";
+			}
+
+			return result;
+		}
+
+		if (!_lastSeenDB.Get(result.jid, lastSeenRecord))
+			result._error = "Well this is weird, " + name + " resolved to " + result.jid + " but I have no record for this jid";
+	}
+
 	try {
 		auto now = std::chrono::system_clock::now();
 		auto lastSeenTime = std::chrono::system_clock::from_time_t(std::stol(lastSeenRecord));
-		lastSeenDiff = now - lastSeenTime;
+		result.when = now - lastSeenTime;
 	} catch (std::exception &e) {
-		return "Something broke: " + std::string(e.what());
+		result._error = "Something broke: " + std::string(e.what());
 	}
 
-	return wantedUser + " (" + jidRecord + ") last seen " + CustomTimeFormat(lastSeenDiff) + " ago" + lastActiveMessageResponse;
+	return result;
+}
+
+LastSeen::LastActivity LastSeen::GetLastActive(const std::string &jid) const
+{
+	LastSeen::LastActivity result;
+	std::string lastActiveRecord = "0";
+	if (!_lastActiveDB.Get(jid, lastActiveRecord))
+		return result;
+
+	auto data = tokenize(lastActiveRecord, ' ', 2);
+	lastActiveRecord = data.at(0);
+
+	if (data.size() > 1)
+		result.what = data.at(1);
+
+	try {
+		auto now = std::chrono::system_clock::now();
+		auto lastActiveTime = std::chrono::system_clock::from_time_t(std::stol(lastActiveRecord));
+		result.when = now - lastActiveTime;
+	} catch (std::exception &e) {
+		LOG(WARNING) << "Something broke: " + std::string(e.what());
+		return result;
+	}
+
+	return result;
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START

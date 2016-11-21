@@ -5,6 +5,7 @@
 #include "util/persistentmap.h"
 
 #include <string>
+#include <chrono>
 
 class LastSeen : public LemonHandler
 {
@@ -18,8 +19,26 @@ public:
 private:
 	static constexpr int maxSearchResults = 20;
 
+	class LastStatus
+	{
+	public:
+		std::chrono::system_clock::duration when;
+		std::string jid;
+		std::string _error;
+	};
+
+	class LastActivity
+	{
+	public:
+		std::chrono::system_clock::duration when;
+		std::string what;
+	};
+
 	std::string GetStats() const;
 	std::string GetUserInfo(const std::string &wantedUser) const;
+
+	LastStatus GetLastStatus(const std::string &name) const;
+	LastActivity GetLastActive(const std::string &jid) const;
 
 private:
 	LevelDBPersistentMap _lastSeenDB;
