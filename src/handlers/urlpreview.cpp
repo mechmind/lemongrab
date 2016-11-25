@@ -73,7 +73,9 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)
 
 	for (auto &site : sites)
 	{
-		auto page = cpr::Get(cpr::Url(site._url), cpr::Timeout(2000));
+		auto page = cpr::Get(cpr::Url{site._url},
+							 cpr::Timeout{2000},
+							 cpr::Header{{"Accept-Language", "ru,en"}}); // FIXME shouldn't be hard-coded
 
 		std::string title = "";
 		if (page.status_code != 200)
@@ -105,8 +107,8 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)
 const std::string UrlPreview::GetHelp() const
 {
 	return "!url %regex% - search in URL history by title or url\n"
-			"!wlisturl %regex% and !blisturl %regex% - enable/disable notifications for specific urls\n"
-			"!wdelisturl %id% and !bdelisturl %id% - delete existing rules. !urlrules - print existing rules and their ids";
+		   "!wlisturl %regex% and !blisturl %regex% - enable/disable notifications for specific urls\n"
+		   "!wdelisturl %id% and !bdelisturl %id% - delete existing rules. !urlrules - print existing rules and their ids";
 }
 
 std::string UrlPreview::getTitle(const std::string &content) const
