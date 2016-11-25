@@ -7,6 +7,10 @@
 #include <string>
 #include <chrono>
 
+#ifdef _BUILD_TESTS
+#include <gtest/gtest_prod.h>
+#endif
+
 class LastSeen : public LemonHandler
 {
 public:
@@ -22,6 +26,13 @@ private:
 	class LastStatus
 	{
 	public:
+		LastStatus()
+		{ }
+
+		LastStatus(const std::string &JID)
+			: jid(JID)
+		{ }
+
 		std::chrono::system_clock::duration when;
 		std::string jid;
 		std::string _error;
@@ -32,6 +43,7 @@ private:
 	public:
 		std::chrono::system_clock::duration when;
 		std::string what;
+		bool _valid = false;
 	};
 
 	std::string GetStats() const;
@@ -44,4 +56,8 @@ private:
 	LevelDBPersistentMap _lastSeenDB;
 	LevelDBPersistentMap _lastActiveDB;
 	LevelDBPersistentMap _nick2jidDB;
+
+#ifdef _BUILD_TESTS
+	FRIEND_TEST(LastSeen, GetLastStatus_OnlineOffline);
+#endif
 };

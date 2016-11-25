@@ -71,30 +71,34 @@ std::string LastSeen::GetStats() const
 std::string LastSeen::GetUserInfo(const std::string &wantedUser) const
 {
 	auto lastStatus = GetLastStatus(wantedUser);
-
 	if (!lastStatus._error.empty())
 		return lastStatus._error;
 
-	auto lastActivity = GetLastActive(lastStatus.jid);
-	std::string lastActiveMessageResponse = "; last active " + CustomTimeFormat(lastActivity.when) + " ago";
-	if (!lastActivity.what.empty())
-		lastActiveMessageResponse.append(": \"" + lastActivity.what + "\"");
-
+	std::string result;
 	auto currentNick = _botPtr->GetNickByJid(lastStatus.jid);
 	if (!currentNick.empty())
 	{
-		if (wantedUser != currentNick)
-			return wantedUser + " (" + lastStatus.jid + ") is still here as " + currentNick + lastActiveMessageResponse;
-		else
-			return wantedUser + " is still here" + lastActiveMessageResponse;
+		result = wantedUser != currentNick
+				? wantedUser + " (" + lastStatus.jid + ") is still here as " + currentNick
+				: wantedUser + " is still here";
+	} else {
+		result = wantedUser + " (" + lastStatus.jid + ") last seen " + CustomTimeFormat(lastStatus.when) + " ago";
 	}
 
-	return wantedUser + " (" + lastStatus.jid + ") last seen " + CustomTimeFormat(lastStatus.when) + " ago" + lastActiveMessageResponse;
+	auto lastActivity = GetLastActive(lastStatus.jid);
+	if (lastActivity._valid)
+	{
+		result.append("; last active " + CustomTimeFormat(lastActivity.when) + " ago");
+		if (!lastActivity.what.empty())
+			result.append(": \"" + lastActivity.what + "\"");
+	}
+
+	return result;
 }
 
 LastSeen::LastStatus LastSeen::GetLastStatus(const std::string &name) const
 {
-	LastStatus result;
+	LastStatus result(name);
 	std::string lastSeenRecord = "0";
 
 	if (!_lastSeenDB.Get(name, lastSeenRecord))
@@ -134,7 +138,7 @@ LastSeen::LastStatus LastSeen::GetLastStatus(const std::string &name) const
 LastSeen::LastActivity LastSeen::GetLastActive(const std::string &jid) const
 {
 	LastSeen::LastActivity result;
-	std::string lastActiveRecord = "0";
+	std::string lastActiveRecord = "";
 	if (!_lastActiveDB.Get(jid, lastActiveRecord))
 		return result;
 
@@ -148,6 +152,7 @@ LastSeen::LastActivity LastSeen::GetLastActive(const std::string &jid) const
 		auto now = std::chrono::system_clock::now();
 		auto lastActiveTime = std::chrono::system_clock::from_time_t(std::stol(lastActiveRecord));
 		result.when = now - lastActiveTime;
+		result._valid = true;
 	} catch (std::exception &e) {
 		LOG(WARNING) << "Something broke: " + std::string(e.what());
 		return result;
@@ -165,6 +170,36 @@ TEST(LastSeen, DurationFormat)
 	time_t diff = 93784; // 1 day 2 hours 3 minutes 4 seconds
 	std::chrono::system_clock::duration dur = std::chrono::system_clock::from_time_t(diff) - std::chrono::system_clock::from_time_t(0);
 	EXPECT_EQ("1d 2h 3m 4s", CustomTimeFormat(dur));
+}
+
+TEST(LastSeen, GetLastStatus_OnlineOffline)
+{
+	LastSeen test(nullptr);
+
+	{
+		EXPECT_FALSE(test.GetLastStatus("test_user")._error.empty());
+		EXPECT_FALSE(test.GetLastStatus("test@test.com")._error.empty());
+	}
+
+	{
+		test.HandlePresence("test_user", "test@test.com", true);
+
+		EXPECT_TRUE(test.GetLastStatus("test_user")._error.empty());
+		EXPECT_EQ("test@test.com", test.GetLastStatus("test_user").jid);
+
+		EXPECT_TRUE(test.GetLastStatus("test@test.com")._error.empty());
+		EXPECT_EQ("test@test.com", test.GetLastStatus("test@test.com").jid);
+	}
+
+	{
+		test.HandlePresence("test_user", "test@test.com", false);
+
+		EXPECT_TRUE(test.GetLastStatus("test_user")._error.empty());
+		EXPECT_EQ("test@test.com", test.GetLastStatus("test_user").jid);
+
+		EXPECT_TRUE(test.GetLastStatus("test@test.com")._error.empty());
+		EXPECT_EQ("test@test.com", test.GetLastStatus("test@test.com").jid);
+	}
 }
 
 #endif // LCOV_EXCL_STOP
