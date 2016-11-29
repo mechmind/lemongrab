@@ -1,0 +1,9 @@
+[General]
+JID="jid_value"
+Password="password_value"
+MUC="muc_value"
+
+[TestGroup]
+StringName="StringValue"
+StringSetName=["StringValue1","StringValue2"]
+NumArray=[4,5,6]
