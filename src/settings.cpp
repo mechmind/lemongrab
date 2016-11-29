@@ -102,3 +102,53 @@ Container<Element> Settings::GetArray(const std::string &name) const
 
 	return result;
 }
+
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
+
+#include <gtest/gtest.h>
+
+TEST(Settings, Read)
+{
+	Settings test;
+	ASSERT_TRUE(test.Open("test/config.toml.test"));
+
+	EXPECT_EQ("jid_value", test.GetUserJID());
+	EXPECT_EQ("password_value", test.GetPassword());
+	EXPECT_EQ("muc_value", test.GetMUC());
+
+	EXPECT_EQ("StringValue", test.GetRawString("TestGroup.StringName"));
+	auto stringSet = test.GetStringSet("TestGroup.StringSetName");
+
+	EXPECT_EQ(2, stringSet.size());
+	EXPECT_EQ("StringValue1", *stringSet.begin());
+	EXPECT_EQ("StringValue2", *stringSet.rbegin());
+
+	auto set = test.GetArray<std::vector, std::int64_t>("TestGroup.NumArray");
+	EXPECT_EQ(3, set.size());
+	EXPECT_EQ(4, set.at(0));
+	EXPECT_EQ(5, set.at(1));
+	EXPECT_EQ(6, set.at(2));
+}
+
+TEST(Settings, Reload)
+{
+	Settings test;
+	ASSERT_TRUE(test.Open("test/config.toml.test"));
+	ASSERT_TRUE(test.Reload());
+}
+
+TEST(Settings, Errors)
+{
+	Settings test;
+
+	EXPECT_FALSE(test.Open("non-existent"));
+	ASSERT_TRUE(test.Open("test/config.toml.test"));
+
+	EXPECT_TRUE(test.GetRawString("NonExistent").empty());
+	EXPECT_TRUE(test.GetStringSet("NonExistent").empty());
+
+	auto isEmpty = test.GetArray<std::list, std::string>("NonExistent").empty();
+	EXPECT_TRUE(isEmpty);
+}
+
+#endif // LCOV_EXCL_STOP

@@ -99,6 +99,13 @@ std::string LastSeen::GetUserInfo(const std::string &wantedUser) const
 LastSeen::LastStatus LastSeen::GetLastStatus(const std::string &name) const
 {
 	LastStatus result(name);
+
+	if (!_lastSeenDB.isOK() || !_nick2jidDB.isOK())
+	{
+		result._error = "Database connection error";
+		return result;
+	}
+
 	std::string lastSeenRecord = "0";
 
 	if (!_lastSeenDB.Get(name, lastSeenRecord))
