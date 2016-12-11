@@ -121,7 +121,8 @@ void RSSWatcher::UpdateFeeds()
 
 		if (!item._valid)
 		{
-			LOG(WARNING) << "Failed to update feed " << record.first << " : " << record.second;
+			LOG(WARNING) << "Failed to update feed " << record.first << " : " << record.second
+						 << " | Error: " << item._error;
 			return true;
 		}
 
@@ -143,11 +144,12 @@ RSSItem RSSWatcher::GetLatestItem(const std::string &feedURL)
 	RSSItem result;
 	auto feedContent = cpr::Get(cpr::Url(feedURL), cpr::Timeout(2000));
 
-	LOG(INFO) << "Checking feed: " << feedURL << " | Result: " << feedContent.status_code;
+	// Avoid INFO log clutter
+	// LOG(INFO) << "Checking feed: " << feedURL << " | Result: " << feedContent.status_code;
 
 	if (feedContent.status_code != 200)
 	{
-		result._error = "Status code is not 200 OK: " + std::to_string(feedContent.status_code);
+		result._error = "Status code is not 200 OK: " + std::to_string(feedContent.status_code) + " | " + feedContent.error.message;
 		return result;
 	}
 

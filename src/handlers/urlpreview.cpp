@@ -80,7 +80,8 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)
 		std::string title = "";
 		if (page.status_code != 200)
 		{
-			LOG(INFO) << "URL: " << site._url << " | Server responded with unexpected code: " << page.status_code;
+			LOG(INFO) << "URL: " << site._url << " | Status code: " << page.status_code
+					  << " | Error: " << page.error.message;
 		} else {
 			const auto &siteContent = page.text;
 			title = getTitle(siteContent);

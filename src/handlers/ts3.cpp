@@ -101,7 +101,8 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 	else
 		LOG(ERROR) << "Received telnet line that is too short!";
 
-	LOG(INFO) << s;
+	// Pong messages clutter INFO log badly
+	// LOG(INFO) << s;
 
 	switch (parent->_sqState)
 	{
