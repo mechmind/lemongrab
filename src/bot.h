@@ -21,7 +21,14 @@ class Bot
 public:
 	Bot(XMPPClient *client, Settings &settings);
 
-	void Run(); // Locks thread
+	enum class ExitCode
+	{
+		Error,
+		TerminationRequested,
+		RestartRequested,
+	};
+
+	ExitCode Run(); // Locks thread
 
 	void RegisterAllHandlers();
 	void UnregisterAllHandlers();
@@ -61,6 +68,7 @@ private:
 	std::list<std::shared_ptr<LemonHandler>> _chatEventHandlers;
 	std::unordered_map<std::string, std::shared_ptr<LemonHandler>> _handlersByName;
 
+	ExitCode _exitCode = ExitCode::Error;
 	std::chrono::system_clock::time_point _startTime;
 	std::chrono::system_clock::time_point _lastMessage;
 	std::mutex _sendMessageMutex;

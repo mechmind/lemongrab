@@ -9,6 +9,7 @@
 class event_base; // NOLINT
 class evhttp_request; // NOLINT
 class event; // NOLINT
+class evhttp; // NOLINT
 
 class GithubWebhooks : public LemonHandler
 {
@@ -24,6 +25,7 @@ private:
 	std::thread _httpServer;
 	event_base *_eventBase = nullptr;
 	event *_breakLoop = nullptr;
+	evhttp *_evhttp = nullptr;
 
 	friend void terminateServer(int, short int, void *arg);
 	friend void httpServerThread(GithubWebhooks * parent, std::uint16_t port);

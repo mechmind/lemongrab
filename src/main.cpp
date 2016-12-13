@@ -46,20 +46,22 @@ int main(int argc, char **argv)
 	InitGLOG(argv);
 
 	Settings settings;
-	if (!settings.Open("config.toml"))
-	{
-		LOG(ERROR) << "Failed to read config file";
-		return -1;
-	}
-
 	std::shared_ptr<Bot> botPtr;
+	Bot::ExitCode exitCode = Bot::ExitCode::Error;
+	do {
+		if (!settings.Open("config.toml"))
+		{
+			LOG(ERROR) << "Failed to read config file";
+			return -1;
+		}
 
-	if (!cliTestMode)
-		botPtr = std::make_shared<Bot>(new GlooxClient(), settings);
-	else
-		botPtr = std::make_shared<Bot>(new ConsoleClient(), settings);
+		botPtr = std::make_shared<Bot>(cliTestMode ?
+										   static_cast<XMPPClient*>(new ConsoleClient())
+										 : static_cast<XMPPClient*>(new GlooxClient()),
+									   settings);
 
-	botPtr->Run();
+		exitCode = botPtr->Run();
+	} while (exitCode != Bot::ExitCode::TerminationRequested);
 
 	LOG(INFO) << "Exiting...";
 	return 0;

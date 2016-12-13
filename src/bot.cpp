@@ -27,7 +27,7 @@ Bot::Bot(XMPPClient *client, Settings &settings)
 	_xmpp->SetXMPPHandler(this);
 }
 
-void Bot::Run()
+Bot::ExitCode Bot::Run()
 {
 	_startTime = std::chrono::system_clock::now();
 	_lastMessage = std::chrono::system_clock::now();
@@ -36,6 +36,8 @@ void Bot::Run()
 
 	LOG(INFO) << "Connecting to XMPP server";
 	_xmpp->Connect(_settings.GetUserJID(), _settings.GetPassword());
+
+	return _exitCode;
 }
 
 void Bot::RegisterAllHandlers()
@@ -91,8 +93,18 @@ void Bot::OnMessage(ChatMessage &msg)
 
 	if (text == "!die" && msg._isAdmin)
 	{
-		LOG(INFO) << "Termination requested";
-		_chatEventHandlers.clear();
+		LOG(WARNING) << "Termination requested";
+		_exitCode = ExitCode::TerminationRequested;
+//		_chatEventHandlers.clear();
+		_xmpp->Disconnect();
+		return;
+	}
+
+	if (text == "!restart" && msg._isAdmin)
+	{
+		LOG(WARNING) << "Restart requested";
+		_exitCode = ExitCode::RestartRequested;
+//		_chatEventHandlers.clear();
 		_xmpp->Disconnect();
 		return;
 	}

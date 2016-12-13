@@ -31,6 +31,8 @@ GithubWebhooks::~GithubWebhooks()
 	if (_breakLoop)
 		event_active(_breakLoop, EV_READ, 0);
 	_httpServer.join();
+	if (_evhttp)
+		evhttp_free(_evhttp);
 }
 
 LemonHandler::ProcessingResult GithubWebhooks::HandleMessage(const ChatMessage &msg)
@@ -95,15 +97,15 @@ void terminateServer(int, short int, void * arg)
 void httpServerThread(GithubWebhooks * parent, std::uint16_t port)
 {
 	parent->_eventBase = event_base_new();
-	auto httpServer = evhttp_new(parent->_eventBase);
+	parent->_evhttp = evhttp_new(parent->_eventBase);
 	parent->_breakLoop = event_new(parent->_eventBase, -1, EV_READ, terminateServer, parent);
 	event_add(parent->_breakLoop, nullptr);
-	if (evhttp_bind_socket(httpServer, "0.0.0.0", port) == -1)
+	if (evhttp_bind_socket(parent->_evhttp , "0.0.0.0", port) == -1)
 	{
 		LOG(ERROR) << "Can't bind socket on port " << port;
 		return;
 	}
-	evhttp_set_gencb(httpServer, httpHandler, parent);
+	evhttp_set_gencb(parent->_evhttp , httpHandler, parent);
 
 	evthread_use_pthreads();
 	evthread_make_base_notifiable(parent->_eventBase);
