@@ -32,6 +32,7 @@ public:
 		return a.ToString().compare(b.ToString());
 	}
 
+	// FIXME: actually illegal but is here because LevelDB has no mechanism for changing comparator for existing DB
 	const char* Name() const override { return "leveldb.BytewiseComparator"; }
 	void FindShortestSeparator(std::string*, const leveldb::Slice&) const override { }
 	void FindShortSuccessor(std::string*) const override { }

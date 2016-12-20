@@ -116,6 +116,9 @@ std::string RSSWatcher::ListRSSFeeds() const
 
 void RSSWatcher::UpdateFeeds()
 {
+	if (!_feeds.isOK())
+		return;
+
 	_feeds.ForEach([&](std::pair<std::string, std::string> record)->bool{
 		auto item = GetLatestItem(record.first);
 
