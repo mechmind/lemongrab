@@ -73,9 +73,11 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)
 
 	for (auto &site : sites)
 	{
+		auto acceptLanguage = GetRawConfigValue("URL.AcceptLanguage");
 		auto page = cpr::Get(cpr::Url{site._url},
 							 cpr::Timeout{2000},
-							 cpr::Header{{"Accept-Language", "ru,en"}}); // FIXME shouldn't be hard-coded
+							 cpr::Header{{"Accept-Language",
+										  acceptLanguage.empty() ? "ru,en" : acceptLanguage}});
 
 		std::string title = "";
 		if (page.status_code != 200)

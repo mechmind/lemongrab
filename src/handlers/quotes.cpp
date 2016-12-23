@@ -101,7 +101,7 @@ std::string Quotes::GetQuote(const std::string &id)
 	}
 
 	if (!_quotesDB.Get(id, quote))
-		return "Quote not found or something exploded";
+		return FindQuote(id);
 
 	return "(" + id + "/" + std::to_string(lastID) + ") " + quote;
 }

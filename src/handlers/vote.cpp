@@ -112,7 +112,7 @@ void Voting::Vote(const std::string &args, const std::string &voter)
 	}
 
 	auto vote = easy_stoll(tokens.at(1));
-	if (vote >= poll->second._options.size() || vote < 0)
+	if (vote < 0 || vote >= poll->second._options.size())
 	{
 		SendMessage("No such option");
 		return;

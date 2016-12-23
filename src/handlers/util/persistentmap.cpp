@@ -75,8 +75,9 @@ bool LevelDBPersistentMap::Get(const std::string &key, std::string &value) const
 
 	if (!status.ok())
 	{
-		// Don't error on "NotFound"?
-		// LOG(ERROR) << "Get for database \"" << _name << "\" failed: " << status.ToString();
+		if (!status.IsNotFound())
+			LOG(ERROR) << "Get for database \"" << _name << "\" failed: " << status.ToString();
+
 		return false;
 	}
 
@@ -103,8 +104,9 @@ bool LevelDBPersistentMap::Exists(const std::string &key) const
 
 	if (!status.ok())
 	{
-		// Don't error on NotFound?
-		// LOG(ERROR) << "Get for database \"" << _name << "\" failed: " << status.ToString();
+		if (!status.IsNotFound())
+			LOG(ERROR) << "Get for database \"" << _name << "\" failed: " << status.ToString();
+
 		return false;
 	}
 
