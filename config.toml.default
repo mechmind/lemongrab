@@ -16,5 +16,4 @@ Password=sqpassword
 
 [LOL]
 ApiKey=your-key-here
-Region=eune
-Platform=EUN1
+Region=eun1

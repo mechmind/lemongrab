@@ -30,7 +30,6 @@ class ApiOptions
 {
 public:
 	std::string _region;
-	std::string _platformID;
 	std::string _key;
 };
 
@@ -56,7 +55,6 @@ private:
 
 	std::string lookupCurrentGame(const std::string &name) const;
 	int getSummonerIDFromName(const std::string &name) const;
-	int getSummonerIdFromJSON(const std::string &name, const Json::Value &root) const;
 	std::list<Summoner> getSummonerNamesFromJSON(const Json::Value &root) const;
 
 	bool InitializeChampions();
