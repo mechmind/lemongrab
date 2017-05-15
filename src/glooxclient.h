@@ -49,8 +49,8 @@ public:
 	void handleMUCItems(gloox::MUCRoom *room, const gloox::Disco::ItemList &items) override;
 
 private:
-	std::shared_ptr<gloox::MUCRoom> _room;
 	std::shared_ptr<gloox::Client> _client;
+	std::shared_ptr<gloox::MUCRoom> _room;
 
 	XMPPHandler *_handler = nullptr;
 };
