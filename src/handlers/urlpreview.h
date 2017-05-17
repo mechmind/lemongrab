@@ -17,6 +17,8 @@ public:
 
 private:
 	std::string getTitle(const std::string &content) const;
+	std::string getMetaCodepage(const std::string &content) const;
+
 	std::string findUrlsInHistory(const std::string &request, bool withIndices = false);
 	void StoreRecord(const std::string &record);
 

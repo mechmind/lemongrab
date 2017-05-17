@@ -5,6 +5,7 @@
 
 #include <glog/logging.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/locale/encoding.hpp>
 #include <boost/locale/encoding_utf.hpp>
 #include <cpr/cpr.h>
 
@@ -118,22 +119,54 @@ const std::string UrlPreview::GetHelp() const
 std::string UrlPreview::getTitle(const std::string &content) const
 {
 	// FIXME: maybe should use actual HTML parser here?
-	auto titleBegin = content.find("<title>");
+	const std::string titleOp("<title>");
+	const std::string titleClose("</title>");
+	auto titleBegin = content.find(titleOp);
 	if (titleBegin == content.npos)
 		return "";
 
-	auto titleEnd = content.find("</title>", titleBegin);
+	auto titleEnd = content.find(titleClose, titleBegin);
 	if (titleEnd == content.npos)
 		return "";
 
-	auto title = content.substr(titleBegin + 7, titleEnd - titleBegin - 7);
+	auto title = content.substr(titleBegin + titleOp.size(), titleEnd - titleBegin - titleOp.size());
 	boost::trim(title);
 
 	try {
 		return boost::locale::conv::utf_to_utf<char>(title.c_str(), boost::locale::conv::stop);
 	} catch (boost::locale::conv::conversion_error &e) {
-		return "{Non-unicode header: " + std::string(e.what()) + "}";
+		LOG(INFO) << "Non-unicode header: " + std::string(e.what()) + "}";
 	}
+
+	auto codepage = getMetaCodepage(content);
+
+	if (!codepage.empty()) {
+		try {
+			return boost::locale::conv::to_utf<char>(title.c_str(), codepage);
+		} catch (boost::locale::conv::conversion_error &e) {
+			LOG(INFO) << "Failed to convert from " + codepage + ": " + std::string(e.what()) + "}";
+		}
+	}
+
+	return "{ Unsupported code page in title }";
+}
+
+std::string UrlPreview::getMetaCodepage(const std::string &content) const
+{
+	// Hack to support some old Russian websites
+	const std::string metaOp = "meta charset=\"";
+	auto codepageBegin = content.find(metaOp);
+	if (codepageBegin == content.npos)
+		return "";
+
+	auto codepageEnd = content.find("\"", codepageBegin + metaOp.size());
+	if (codepageEnd == content.npos)
+		return "";
+
+	auto codepage = content.substr(codepageBegin + metaOp.size(), codepageEnd - codepageBegin - metaOp.size());
+	boost::trim(codepage);
+
+	return codepage;
 }
 
 std::string UrlPreview::findUrlsInHistory(const std::string &request, bool withIndices)
