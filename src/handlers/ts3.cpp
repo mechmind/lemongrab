@@ -33,6 +33,14 @@ bool TS3::Init()
 	return true;
 }
 
+TS3::~TS3()
+{
+	if (_breakLoop) {
+		event_active(_breakLoop, EV_READ, 0);
+		_telnetClient.join();
+	}
+}
+
 LemonHandler::ProcessingResult TS3::HandleMessage(const ChatMessage &msg)
 {
 	std::string message;
@@ -198,6 +206,13 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 
 }
 
+void TS3::terminateClient(int, short int, void * arg)
+{
+	TS3 * parent = static_cast<TS3*>(arg);
+	LOG(INFO) << "Terminating Teamspeak client...";
+	event_base_loopbreak(parent->_base);
+}
+
 void TS3::telnetClientThread(TS3 * parent, std::string server)
 {
 	int port = 10011;
@@ -209,6 +224,9 @@ void TS3::telnetClientThread(TS3 * parent, std::string server)
 
 	parent->_msg_event = event_new(parent->_base, -1, EV_READ, sendTS3message, parent);
 	event_add(parent->_msg_event, nullptr);
+
+	parent->_breakLoop = event_new(parent->_base, -1, EV_READ, terminateClient, parent);
+	event_add(parent->_breakLoop, nullptr);
 
 	parent->_bev = bufferevent_socket_new(parent->_base, -1, BEV_OPT_CLOSE_ON_FREE);
 	bufferevent_setcb(parent->_bev, telnetMessage, nullptr, telnetEvent, parent);

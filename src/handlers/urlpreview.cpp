@@ -5,6 +5,7 @@
 
 #include <glog/logging.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/locale/encoding_utf.hpp>
 #include <cpr/cpr.h>
 
 #include "util/stringops.h"
@@ -127,7 +128,12 @@ std::string UrlPreview::getTitle(const std::string &content) const
 
 	auto title = content.substr(titleBegin + 7, titleEnd - titleBegin - 7);
 	boost::trim(title);
-	return title;
+
+	try {
+		return boost::locale::conv::utf_to_utf<char>(title.c_str(), boost::locale::conv::stop);
+	} catch (boost::locale::conv::conversion_error &e) {
+		return "{Non-unicode header: " + std::string(e.what()) + "}";
+	}
 }
 
 std::string UrlPreview::findUrlsInHistory(const std::string &request, bool withIndices)

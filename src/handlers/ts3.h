@@ -17,6 +17,7 @@ class TS3 : public LemonHandler
 public:
 	TS3(LemonBot *bot);
 	bool Init() final;
+	~TS3();
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	const std::string GetHelp() const override;
 
@@ -52,6 +53,7 @@ private:
 	evdns_base *_dns_base = nullptr;
 	event *_msg_event = nullptr;
 	bufferevent *_bev = nullptr;
+	event *_breakLoop = nullptr;
 
 	// custom events
 	static void terminateClient(int, short int, void *arg);

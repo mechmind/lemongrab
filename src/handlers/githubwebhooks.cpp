@@ -28,9 +28,10 @@ bool GithubWebhooks::Init()
 
 GithubWebhooks::~GithubWebhooks()
 {
-	if (_breakLoop)
+	if (_breakLoop) {
 		event_active(_breakLoop, EV_READ, 0);
-	_httpServer.join();
+		_httpServer.join();
+	}
 	if (_evhttp)
 		evhttp_free(_evhttp);
 }
