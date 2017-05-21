@@ -40,6 +40,6 @@ private:
 
 	std::string _originalPath;
 
-	std::string _logPrefixPath = "logs/";
-	std::string _dbPrefixPath = "db/";
+	std::string _logPrefixPath = "/var/logs/lemongrab";
+	std::string _dbPrefixPath = "/var/lib/lemongrab";
 };
