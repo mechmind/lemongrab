@@ -173,6 +173,8 @@ public:
 		_received.push_back(text);
 	}
 
+	std::string GetDBPathPrefix() const { return "testdb/"; }
+
 	std::vector<std::string> _received;
 };
 
