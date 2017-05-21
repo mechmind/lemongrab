@@ -36,7 +36,7 @@ LeagueLookup::LeagueLookup(LemonBot *bot)
 		_api._region = "eun1";
 	}
 
-	_starredSummoners.init("leaguelookup");
+	_starredSummoners.init("leaguelookup", bot->GetDBPathPrefix());
 }
 
 LeagueLookup::~LeagueLookup()

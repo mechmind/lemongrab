@@ -62,7 +62,7 @@ bool Pager::Message::operator==(const Pager::Message &rhs)
 Pager::Pager(LemonBot *bot)
 	: LemonHandler("pager", bot)
 {
-	if (!_persistentMessages.init("pager"))
+	if (!_persistentMessages.init("pager", bot->GetDBPathPrefix()))
 		return;
 
 	int loadedMessages = 0;

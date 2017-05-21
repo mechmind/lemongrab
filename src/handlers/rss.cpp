@@ -24,7 +24,7 @@ void UpdateThread(RSSWatcher *parent)
 RSSWatcher::RSSWatcher(LemonBot *bot)
 	: LemonHandler("rss", bot)
 {
-	_feeds.init("rss");
+	_feeds.init("rss", bot->GetDBPathPrefix());
 
 	auto updateRate = easy_stoll(GetRawConfigValue("RSS.UpdateSeconds"));
 

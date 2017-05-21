@@ -38,7 +38,7 @@ public:
 	void FindShortSuccessor(std::string*) const override { }
 };
 
-bool LevelDBPersistentMap::init(const std::string &name)
+bool LevelDBPersistentMap::init(const std::string &name, const std::string &path)
 {
 	if (name.empty())
 	{
@@ -53,10 +53,10 @@ bool LevelDBPersistentMap::init(const std::string &name)
 	options.comparator = _comparator.get();
 
 	leveldb::DB *db = nullptr;
-	auto status = leveldb::DB::Open(options, "db/" + _name, &db);
+	auto status = leveldb::DB::Open(options, path + "/" + _name, &db);
 	if (!status.ok())
 	{
-		LOG(ERROR) << "Failed to open database \"" << _name << "\": " << status.ToString();
+		LOG(ERROR) << "Failed to open database \"" << _name << "\" in " + path + ": " << status.ToString();
 		return false;
 	}
 
@@ -266,7 +266,7 @@ TEST(LevelDB, SaveLoad)
 {
 	{
 		LevelDBPersistentMap testdb;
-		EXPECT_TRUE(testdb.init("testdb"));
+		EXPECT_TRUE(testdb.init("testdb", "testdb/"));
 		ASSERT_TRUE(testdb.isOK());
 		testdb.Clear();
 
@@ -275,7 +275,7 @@ TEST(LevelDB, SaveLoad)
 
 	{
 		LevelDBPersistentMap testdb;
-		EXPECT_TRUE(testdb.init("testdb"));
+		EXPECT_TRUE(testdb.init("testdb", "testdb/"));
 		ASSERT_TRUE(testdb.isOK());
 		std::string value;
 		EXPECT_TRUE(testdb.Get("key1", value));
@@ -287,7 +287,7 @@ TEST(LevelDB, SaveLoad)
 TEST(LevelDB, SetGetDelete)
 {
 	LevelDBPersistentMap testdb;
-	ASSERT_TRUE(testdb.init("testdb"));
+	ASSERT_TRUE(testdb.init("testdb", "testdb/"));
 	testdb.Clear();
 
 	std::string output;
@@ -305,7 +305,7 @@ TEST(LevelDB, SetGetDelete)
 TEST(LevelDB, Size)
 {
 	LevelDBPersistentMap testdb;
-	ASSERT_TRUE(testdb.init("testdb"));
+	ASSERT_TRUE(testdb.init("testdb", "testdb/"));
 	testdb.Clear();
 	EXPECT_TRUE(testdb.isEmpty());
 	EXPECT_EQ(0, testdb.Size());
@@ -328,7 +328,7 @@ TEST(LevelDB, Size)
 TEST(LevelDB, Search)
 {
 	LevelDBPersistentMap testdb;
-	ASSERT_TRUE(testdb.init("testdb"));
+	ASSERT_TRUE(testdb.init("testdb", "testdb/"));
 	testdb.Clear();
 
 	ASSERT_TRUE(testdb.Set("key1", "value1"));
@@ -373,7 +373,7 @@ TEST(LevelDB, Search)
 TEST(LevelDB, IndexGenerator)
 {
 	LevelDBPersistentMap testdb;
-	ASSERT_TRUE(testdb.init("testdb"));
+	ASSERT_TRUE(testdb.init("testdb", "testdb/"));
 	testdb.Clear();
 
 	testdb.Set("2", "Test2");

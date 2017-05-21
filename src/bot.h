@@ -36,15 +36,16 @@ public:
 	// XMPPHandler interface
 	void OnConnect() override;
 	void OnMessage(ChatMessage &msg) final;
-	void OnPresence(const std::string &nick, const std::string &jid, bool online, const std::string &newNick) override;
+	void OnPresence(const std::string &nick, const std::string &jid, bool online, const std::string &newNick) final;
 
 	// Nick/jid maps
-	std::string GetNickByJid(const std::string &jid) const override;
-	std::string GetJidByNick(const std::string &nick) const override;
+	std::string GetNickByJid(const std::string &jid) const final;
+	std::string GetJidByNick(const std::string &nick) const final;
+	std::string GetDBPathPrefix() const final;
 
 	// LemonBot interface
-	void SendMessage(const std::string &text) override;
-	std::string GetRawConfigValue(const std::string &name) const override;
+	void SendMessage(const std::string &text) final;
+	std::string GetRawConfigValue(const std::string &name) const final;
 
 private:
 	template <class LemonHandler> void RegisterHandler()

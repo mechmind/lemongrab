@@ -11,7 +11,7 @@ Quotes::Quotes(LemonBot *bot)
 	, _bot(bot)
 	, _generator(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()))
 {
-	_quotesDB.init("quotes");
+	_quotesDB.init("quotes", bot->GetDBPathPrefix());
 }
 
 LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)

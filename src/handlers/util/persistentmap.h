@@ -23,7 +23,7 @@ public:
 	};
 
 	virtual ~PersistentMap();
-	virtual bool init(const std::string &name) = 0;
+	virtual bool init(const std::string &name, const std::string &path) = 0;
 	virtual bool isOK() const = 0;
 	virtual bool Get(const std::string &key, std::string &value) const = 0;
 	virtual bool Set(const std::string &key, const std::string &value) = 0;
@@ -49,7 +49,7 @@ class LevelDBPersistentMap
 		: public PersistentMap
 {
 public:
-	bool init(const std::string &name) override;
+	bool init(const std::string &name, const std::string &path) override;
 	bool isOK() const override;
 	bool Get(const std::string &key, std::string &value) const override;
 	bool Set(const std::string &key, const std::string &value) override;

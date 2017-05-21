@@ -171,6 +171,11 @@ std::string Bot::GetJidByNick(const std::string &nick) const
 	return jid != _nick2jid.end() ? jid->second : "";
 }
 
+std::string Bot::GetDBPathPrefix() const
+{
+	return _settings.GetDBPrefixPath();
+}
+
 void Bot::SendMessage(const std::string &text)
 {
 	std::lock_guard<std::mutex> lock(_sendMessageMutex);

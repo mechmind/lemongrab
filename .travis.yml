@@ -34,7 +34,7 @@ script:
   - cmake .. -DBUILD_TESTS=ON -DBUILD_COVER=ON
   - make
   - cp -R ../test test
-  - mkdir db
+  - mkdir testdb
   - ./lemongrab --test
   - lcov -c -d . -o coverage.info
   - lcov --remove coverage.info "/usr*" -o coverage.clean.info

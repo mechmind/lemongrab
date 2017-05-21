@@ -76,3 +76,5 @@ target_link_libraries(${PROJECT_NAME}
 if (CHECK_INCLUDES)
     set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 endif()
+
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)

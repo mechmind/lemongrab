@@ -22,6 +22,9 @@ public:
 	const std::string &GetMUC() const;
 	const std::string &GetPassword() const;
 
+	const std::string &GetLogPrefixPath() const;
+	const std::string &GetDBPrefixPath() const;
+
 	std::string GetRawString(const std::string &name) const;
 	std::set<std::string> GetStringSet(const std::string &name) const;
 
@@ -36,4 +39,7 @@ private:
 	std::string _password;
 
 	std::string _originalPath;
+
+	std::string _logPrefixPath = "logs/";
+	std::string _dbPrefixPath = "db/";
 };

@@ -9,9 +9,9 @@
 LastSeen::LastSeen(LemonBot *bot)
 	: LemonHandler("seen", bot)
 {
-	_lastSeenDB.init("lastseen");
-	_nick2jidDB.init("nick2jid");
-	_lastActiveDB.init("lastmsg");
+	_lastSeenDB.init("lastseen", bot ? bot->GetDBPathPrefix() : "testdb/");
+	_nick2jidDB.init("nick2jid", bot ? bot->GetDBPathPrefix() : "testdb/");
+	_lastActiveDB.init("lastmsg", bot ? bot->GetDBPathPrefix() : "testdb/");
 }
 
 LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)

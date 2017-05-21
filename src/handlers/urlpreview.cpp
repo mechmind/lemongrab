@@ -16,11 +16,11 @@ std::string formatHTMLchars(std::string input);
 UrlPreview::UrlPreview(LemonBot *bot)
 	: LemonHandler("url", bot)
 {
-	if (_urlHistory.init("urlhistory"))
+	if (_urlHistory.init("urlhistory", bot->GetDBPathPrefix()))
 		_historyLength = _urlHistory.Size();
 
-	_urlWhitelist.init("urlwhitelist");
-	_urlBlacklist.init("urlblacklist");
+	_urlWhitelist.init("urlwhitelist", bot->GetDBPathPrefix());
+	_urlBlacklist.init("urlblacklist", bot->GetDBPathPrefix());
 }
 
 LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)

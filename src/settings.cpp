@@ -1,6 +1,6 @@
 #include "settings.h"
 
-#include <glog/logging.h>
+#include <iostream>
 #include <cpptoml.h>
 
 template std::list<std::string> Settings::GetArray(const std::string &name) const;
@@ -16,7 +16,7 @@ bool Settings::Open(const std::string &path)
 	try {
 		_config = cpptoml::parse_file(path);
 	} catch (const cpptoml::parse_exception &e) {
-		LOG(ERROR) << "Failed to read config file (" << e.what() << ")";
+		std::cerr << "Failed to read config file (" << e.what() << ")";
 		return false;
 	}
 
@@ -26,13 +26,22 @@ bool Settings::Open(const std::string &path)
 
 	if (!jid || !password || !muc)
 	{
-		LOG(ERROR) << "General.JID, Password and MUC parameters are mandatory";
+		std::cerr << "General.JID, Password and MUC parameters are mandatory";
 		return false;
 	}
 
 	_JID = *jid;
 	_password = *password;
 	_MUC = *muc;
+
+	auto dbPath = _config->get_qualified_as<std::string>("General.DBPathPrefix");
+	if (dbPath)
+		_dbPrefixPath = *dbPath;
+
+	auto logPath = _config->get_qualified_as<std::string>("General.LogPathPrefix");
+	if (logPath)
+		_logPrefixPath = *logPath;
+
 	return true;
 }
 
@@ -57,6 +66,16 @@ const std::string &Settings::GetMUC() const
 const std::string &Settings::GetPassword() const
 {
 	return _password;
+}
+
+const std::string &Settings::GetLogPrefixPath() const
+{
+	return _logPrefixPath;
+}
+
+const std::string &Settings::GetDBPrefixPath() const
+{
+	return _dbPrefixPath;
 }
 
 std::string Settings::GetRawString(const std::string &name) const
