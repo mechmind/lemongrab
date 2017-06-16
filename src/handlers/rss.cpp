@@ -8,6 +8,7 @@
 #include <glog/logging.h>
 
 #include "util/stringops.h"
+#include "util/thread_util.h"
 
 void UpdateThread(RSSWatcher *parent)
 {
@@ -39,6 +40,7 @@ RSSWatcher::RSSWatcher(LemonBot *bot)
 	UpdateFeeds();
 
 	_updateThread = std::thread(&UpdateThread, this);
+	nameThread(_updateThread, "RSS updater");
 }
 
 RSSWatcher::~RSSWatcher()

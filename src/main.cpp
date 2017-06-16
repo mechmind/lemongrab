@@ -13,6 +13,7 @@
 #include "cliclient.h"
 #include "settings.h"
 #include "handlers/util/stringops.h"
+#include "handlers/util/thread_util.h"
 
 void InitGLOG(char **argv, const std::string &prefix)
 {
@@ -58,6 +59,7 @@ int main(int argc, char **argv)
 	}
 
 	InitGLOG(argv, settings.GetLogPrefixPath());
+	nameThisThread("XMPP Client");
 
 	std::shared_ptr<Bot> botPtr;
 	Bot::ExitCode exitCode = Bot::ExitCode::Error;

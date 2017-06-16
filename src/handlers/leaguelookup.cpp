@@ -7,6 +7,7 @@
 #include <cpr/util.h>
 
 #include "util/stringops.h"
+#include "util/thread_util.h"
 
 #include <chrono>
 #include <thread>
@@ -62,6 +63,7 @@ LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const ChatMessage &ms
 				_lookupHelper->join();
 
 			_lookupHelper = std::make_shared<std::thread>([&]{ LookupAllSummoners(_starredSummoners, this, _api); });
+			nameThread(*_lookupHelper.get(), "League Lookup worker");
 		}
 		return ProcessingResult::StopProcessing;
 	}

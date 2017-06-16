@@ -13,6 +13,7 @@
 
 #include "util/github_webhook_formatter.h"
 #include "util/stringops.h"
+#include "util/thread_util.h"
 
 GithubWebhooks::GithubWebhooks(LemonBot *bot)
 	: LemonHandler("github", bot)
@@ -130,5 +131,6 @@ bool GithubWebhooks::InitLibeventServer()
 	}
 
 	_httpServer = std::thread (&httpServerThread, this, port);
+	nameThread(_httpServer, "GitHub webhook listener");
 	return true;
 }

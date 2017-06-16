@@ -11,6 +11,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "util/stringops.h"
+#include "util/thread_util.h"
 
 std::string FormatTS3Name(const std::string &raw);
 std::string ReplaceTS3Spaces(const std::string &input, bool backwards = false);
@@ -248,8 +249,10 @@ void TS3::telnetClientThread(TS3 * parent, std::string server)
 void TS3::StartServerQueryClient()
 {
 	auto serverAddress = GetRawConfigValue("Teamspeak.Server");
-	if (!serverAddress.empty())
+	if (!serverAddress.empty()) {
 		_telnetClient = std::thread (&telnetClientThread, this, serverAddress);
+		nameThread(_telnetClient, "TeamSpeak client");
+	}
 	else
 		LOG(INFO) << "No ts3server option in config, TS3 module disabled";
 }
