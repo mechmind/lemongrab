@@ -1,8 +1,8 @@
 #!/bin/bash
 
-wget http://www.cmake.org/files/v3.3/cmake-3.3.2.tar.gz
-tar xf cmake-3.3.2.tar.gz
-cd cmake-3.3.2
+wget https://cmake.org/files/v3.9/cmake-3.9.0-rc1.tar.gz
+tar xf cmake-3.9.0-rc1.tar.gz
+cd cmake-3.9.0-rc1
 ./configure
 make
 sudo make install
