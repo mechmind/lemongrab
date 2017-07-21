@@ -25,8 +25,6 @@ void UpdateThread(RSSWatcher *parent)
 RSSWatcher::RSSWatcher(LemonBot *bot)
 	: LemonHandler("rss", bot)
 {
-	_feeds.init("rss", bot->GetDBPathPrefix());
-
 	auto updateRate = easy_stoll(GetRawConfigValue("RSS.UpdateSeconds"));
 
 	if (updateRate <= 0)
@@ -34,6 +32,8 @@ RSSWatcher::RSSWatcher(LemonBot *bot)
 		LOG(WARNING) << "Invalid RSS update rate, defaulting to 1 hour";
 		updateRate = 60 * 60;
 	}
+
+	Migrate();
 
 	_updateSecondsMax = updateRate;
 
@@ -60,7 +60,7 @@ LemonHandler::ProcessingResult RSSWatcher::HandleMessage(const ChatMessage &msg)
 		return ProcessingResult::StopProcessing;
 	} else if (getCommandArguments(msg._body, "!delrss", args)
 			   && msg._isAdmin) {
-		UnregisterFeed(args);
+		UnregisterFeed(easy_stoll(args));
 		return ProcessingResult::StopProcessing;
 	} else if (msg._body == "!listrss") {
 		SendMessage(ListRSSFeeds());
@@ -88,60 +88,72 @@ const std::string RSSWatcher::GetHelp() const
 
 void RSSWatcher::RegisterFeed(const std::string &feed)
 {
-	if (_feeds.Exists(feed))
+	using namespace sqlite_orm;
+	DB::RssFeed newFeed { -1, feed };
+
+	auto feeds = _botPtr->_storage.get_all<DB::RssFeed>(where(is_equal(&DB::RssFeed::URL, feed)));
+	if (feeds.size() > 0)
 	{
 		SendMessage("Feed already exists");
 		return;
 	}
 
-	_feeds.Set(feed, "");
+	try {
+		_botPtr->_storage.insert(newFeed);
+	} catch (std::exception &e) {
+		SendMessage("Can't insert feed: " + std::string(e.what()));
+		return;
+	}
+
 	SendMessage("Feed " + feed + " added");
 }
 
-void RSSWatcher::UnregisterFeed(const std::string &feed)
+void RSSWatcher::UnregisterFeed(const int id)
 {
-	if (!_feeds.Delete(feed))
-		SendMessage("No such feed");
-	else
-		SendMessage("Feed " + feed + " removed");
+	try {
+		_botPtr->_storage.remove<DB::RssFeed>(id);
+	} catch (std::exception &e) {
+		SendMessage("Failed to remove feed: " + std::string(e.what()));
+	}
+
+	SendMessage("Feed removed");
 }
 
 std::string RSSWatcher::ListRSSFeeds() const
 {
 	std::string result = "Registered feeds: ";
-	_feeds.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		result.append("\n" + record.first + " | GUID: " + record.second);
-		return true;
-	});
+	for (auto &feed : _botPtr->_storage.get_all<DB::RssFeed, std::list<DB::RssFeed>>())
+	{
+		result.append("\n" + _botPtr->_storage.dump(feed));
+	}
+
 	return result;
 }
 
 void RSSWatcher::UpdateFeeds()
 {
-	if (!_feeds.isOK())
-		return;
-
-	_feeds.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		auto item = GetLatestItem(record.first);
-
-		if (!item._valid)
+	try {
+		for (auto &feed : _botPtr->_storage.get_all<DB::RssFeed, std::list<DB::RssFeed>>())
 		{
-			LOG(WARNING) << "Failed to update feed " << record.first << " : " << record.second
-						 << " | Error: " << item._error;
-			return true;
+			auto item = GetLatestItem(feed.URL);
+
+			if (!item._valid)
+			{
+				LOG(WARNING) << "Failed to update feed " << feed.URL
+							 << " | Error: " << item._error;
+				continue;
+			}
+
+			if (feed.GUID != item.guid)
+			{
+				feed.GUID = item.guid;
+				_botPtr->_storage.update(feed);
+				SendMessage(item.Format());
+			}
 		}
-
-		std::string oldGuid;
-		_feeds.Get(record.first, oldGuid);
-
-		if (oldGuid != item.guid)
-		{
-			_feeds.Set(record.first, item.guid);
-			SendMessage(item.Format());
-		}
-
-		return true;
-	});
+	} catch (std::exception &e) {
+		SendMessage("UpdateFeeds failed: " + std::string(e.what()));
+	}
 }
 
 RSSItem RSSWatcher::GetLatestItem(const std::string &feedURL)
@@ -184,6 +196,35 @@ RSSItem RSSWatcher::GetLatestItem(const std::string &feedURL)
 
 	result._error = "Invalid XML in feed";
 	return result;
+}
+
+void RSSWatcher::Migrate()
+{
+	LevelDBPersistentMap feeds;
+	if (!feeds.init("rss", _botPtr->GetDBPathPrefix()))
+		return;
+
+	if (feeds.isEmpty())
+		return;
+
+	bool success = true;
+	int recordCount = 0;
+	feeds.ForEach([&](std::pair<std::string, std::string> record)->bool{
+		try {
+			DB::RssFeed feed = { -1, record.first, record.second };
+			_botPtr->_storage.insert(feed);
+			recordCount++;
+		} catch (std::exception &e) {
+			SendMessage("Migration failed: " + std::string(e.what()));
+			success = false;
+		}
+		return true;
+	});
+
+	if (success) {
+		feeds.Clear();
+		SendMessage("RSS Migration done: " + std::to_string(recordCount));
+	}
 }
 
 std::string RSSItem::Format() const

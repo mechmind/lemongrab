@@ -33,17 +33,18 @@ public:
 
 private:
 	void RegisterFeed(const std::string &feed);
-	void UnregisterFeed(const std::string &feed);
+	void UnregisterFeed(const int id);
 	std::string ListRSSFeeds() const;
 
 	void UpdateFeeds();
 
 	RSSItem GetLatestItem(const std::string &feedURL);
 
-	LevelDBPersistentMap _feeds;
 	std::thread _updateThread;
 	bool _isRunning = true;
 	std::uint64_t _updateSecondsCurrent = 0;
 	std::uint64_t _updateSecondsMax = 0;
 	friend void UpdateThread(RSSWatcher *parent);
+
+	void Migrate();
 };

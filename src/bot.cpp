@@ -21,9 +21,11 @@
 #include <algorithm>
 
 Bot::Bot(XMPPClient *client, Settings &settings)
-	: _xmpp(client)
+	: LemonBot(settings.GetDBPrefixPath() + "/local.db")
+	, _xmpp(client)
 	, _settings(settings)
 {
+	_storage.sync_schema(true);
 	_xmpp->SetXMPPHandler(this);
 }
 

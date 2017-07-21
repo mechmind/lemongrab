@@ -5,15 +5,23 @@
 
 #include "../xmpphandler.h" // FIXME we need chatmessage only
 
+#include "util/sqlite_db.h"
+
 class LemonBot
 {
 public:
+	LemonBot(std::string storagePath)
+		: _storage(initStorage(storagePath))
+	{}
+
 	virtual void SendMessage(const std::string &text) = 0;
 	virtual std::string GetRawConfigValue(const std::string &name) const { return ""; }
 	virtual std::string GetNickByJid(const std::string &jid)  const { return ""; }
 	virtual std::string GetJidByNick(const std::string &nick) const { return ""; }
 	virtual std::string GetDBPathPrefix() const { return "db/"; }
 	virtual ~LemonBot() {}
+
+	Storage _storage;
 };
 
 class LemonHandler
