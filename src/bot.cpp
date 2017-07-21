@@ -84,6 +84,15 @@ void Bot::OnMessage(ChatMessage &msg)
 
 	auto &text = msg._body;
 
+	// FIXME: temporary workaround for discord mirror
+	if (msg._nick == "discord")
+	{
+		auto nickpos = msg._body.find_first_of('>');
+		if (nickpos != msg._body.npos
+				&& nickpos + 2 != msg._body.length())
+			msg._body = msg._body.substr(nickpos + 2);
+	}
+
 	if (text == "!uptime")
 	{
 		auto currentTime = std::chrono::system_clock::now();
@@ -95,7 +104,7 @@ void Bot::OnMessage(ChatMessage &msg)
 	{
 		LOG(WARNING) << "Termination requested";
 		_exitCode = ExitCode::TerminationRequested;
-//		_chatEventHandlers.clear();
+		// _chatEventHandlers.clear();
 		_xmpp->Disconnect();
 		return;
 	}
@@ -104,7 +113,7 @@ void Bot::OnMessage(ChatMessage &msg)
 	{
 		LOG(WARNING) << "Restart requested";
 		_exitCode = ExitCode::RestartRequested;
-//		_chatEventHandlers.clear();
+		// _chatEventHandlers.clear();
 		_xmpp->Disconnect();
 		return;
 	}
