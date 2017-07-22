@@ -5,7 +5,6 @@
 #include <thread>
 
 #include "lemonhandler.h"
-#include "util/persistentmap.h"
 
 #ifdef _BUILD_TESTS
 #include <gtest/gtest_prod.h>
@@ -51,6 +50,7 @@ private:
 		InvalidJSON,
 	};
 
+	void Migrate();
 	static RiotAPIResponse RiotAPIRequest(const std::string &request, Json::Value &output);
 
 	std::string lookupCurrentGame(const std::string &name) const;
@@ -61,10 +61,10 @@ private:
 	bool InitializeSpells();
 	std::string GetSummonerNameByID(const std::string &id) const;
 
-	static void LookupAllSummoners(LevelDBPersistentMap &starredSummoners, LeagueLookup *_parent, ApiOptions &api);
+	static void LookupAllSummoners(LeagueLookup *_parent, ApiOptions &api);
 	void AddSummoner(const std::string &id);
 	void DeleteSummoner(const std::string &id);
-	void ListSummoners();
+	std::string ListSummoners();
 private:
 	std::shared_ptr<std::thread> _lookupHelper;
 	std::unordered_map<int, std::string> _champions;
@@ -73,7 +73,6 @@ private:
 	static constexpr int maxSummoners = 500;
 
 	ApiOptions _api;
-	LevelDBPersistentMap _starredSummoners;
 
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(LeagueLookupTest, PlayerList);

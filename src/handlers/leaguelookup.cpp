@@ -9,12 +9,16 @@
 #include "util/stringops.h"
 #include "util/thread_util.h"
 
+#include "util/persistentmap.h"
+
 #include <chrono>
 #include <thread>
 
 LeagueLookup::LeagueLookup(LemonBot *bot)
 	: LemonHandler("leaugelookup", bot)
 {
+	Migrate();
+
 	if (bot)
 	{
 		_api._key = bot->GetRawConfigValue("LOL.ApiKey");
@@ -27,7 +31,6 @@ LeagueLookup::LeagueLookup(LemonBot *bot)
 		return;
 	}
 
-
 	if (!InitializeChampions() || !InitializeSpells())
 		LOG(ERROR) << "Failed to initialize static Riot API data";
 
@@ -36,8 +39,6 @@ LeagueLookup::LeagueLookup(LemonBot *bot)
 		LOG(WARNING) << "Region / platform are not set, defaulting to EUNE";
 		_api._region = "eun1";
 	}
-
-	_starredSummoners.init("leaguelookup", bot->GetDBPathPrefix());
 }
 
 LeagueLookup::~LeagueLookup()
@@ -62,7 +63,7 @@ LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const ChatMessage &ms
 			if (_lookupHelper && _lookupHelper->joinable())
 				_lookupHelper->join();
 
-			_lookupHelper = std::make_shared<std::thread>([&]{ LookupAllSummoners(_starredSummoners, this, _api); });
+			_lookupHelper = std::make_shared<std::thread>([&]{ LookupAllSummoners(this, _api); });
 			nameThread(*_lookupHelper.get(), "League Lookup worker");
 		}
 		return ProcessingResult::StopProcessing;
@@ -82,7 +83,7 @@ LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const ChatMessage &ms
 
 	if (msg._body == "!listsummoners")
 	{
-		ListSummoners();
+		SendMessage(ListSummoners());
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -95,7 +96,31 @@ const std::string LeagueLookup::GetHelp() const
 			"!ll without arguments - look up every summoner on the watchlist. This may take a while\n"
 			"!addsummoner %id% - add summoner to watchlist\n"
 			"!delsummoner %id% - remove summoner from watchlist\n"
-			"!listsummoners - list watchlist content";
+		   "!listsummoners - list watchlist content";
+}
+
+void LeagueLookup::Migrate()
+{
+	LevelDBPersistentMap summoners;
+	if (!summoners.init("leaguelookup", _botPtr->GetDBPathPrefix()))
+		return;
+
+	if (summoners.isEmpty())
+		return;
+
+	int recordCount = 0;
+	summoners.ForEach([&](std::pair<std::string, std::string> record)->bool{
+		try {
+			AddSummoner(record.first);
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+			recordCount++;
+		} catch (std::exception &e) {
+			LOG(ERROR) << e.what();
+		}
+	});
+
+	summoners.Clear();
+	SendMessage("Imported " + std::to_string(recordCount) + " summoners");
 }
 
 LeagueLookup::RiotAPIResponse LeagueLookup::RiotAPIRequest(const std::string &request, Json::Value &output)
@@ -273,21 +298,16 @@ std::string LeagueLookup::GetSummonerNameByID(const std::string &id) const
 	return response["name"].asString();
 }
 
-void LeagueLookup::LookupAllSummoners(LevelDBPersistentMap &starredSummoners, LeagueLookup *_parent, ApiOptions &api)
+void LeagueLookup::LookupAllSummoners(LeagueLookup *_parent, ApiOptions &api)
 {
-	int totalSummoners = 0;
 	std::list<std::string> inGame;
 	std::list<std::string> broken;
 
-	starredSummoners.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		totalSummoners++;
-		if (totalSummoners > maxSummoners)
-		{
-			_parent->SendMessage("Too many summoners");
-			return false;
-		}
-
-		std::string apiRequest = "https://" + api._region + ".api.riotgames.com/lol/spectator/v3/active-games/by-summoner/" + record.first + "?api_key=" + api._key;
+	using namespace sqlite_orm;
+	for (auto &summoner : _parent->getStorage().get_all<DB::LLSummoner>(limit(maxSummoners)))
+	{
+		std::string apiRequest = "https://" + api._region + ".api.riotgames.com/lol/spectator/v3/active-games/by-summoner/"
+				+ std::to_string(summoner.summonerID) + "?api_key=" + api._key;
 
 		Json::Value response;
 		switch (RiotAPIRequest(apiRequest, response))
@@ -296,20 +316,19 @@ void LeagueLookup::LookupAllSummoners(LevelDBPersistentMap &starredSummoners, Le
 			break;
 		case RiotAPIResponse::RateLimitReached:
 			_parent->SendMessage("Rate limit reached");
-			return false;
+			return;
 		case RiotAPIResponse::UnexpectedResponseCode:
 		case RiotAPIResponse::InvalidJSON:
-			broken.push_back(record.second);
+			broken.push_back(summoner.nickname);
 			break;
 		case RiotAPIResponse::OK:
-			inGame.push_back(record.second);
+			inGame.push_back(summoner.nickname);
 			break;
 		}
 
 		// to avoid breaking dev api key rates
 		std::this_thread::sleep_for(std::chrono::seconds(1));
-		return true;
-	});
+	}
 
 	std::string output;
 	if (inGame.empty())
@@ -338,7 +357,9 @@ void LeagueLookup::AddSummoner(const std::string &id)
 	{
 		SendMessage("Summoner not found");
 	} else {
-		if (_starredSummoners.Set(id, name))
+		DB::LLSummoner newSummoner = { -1, easy_stoll(id), name };
+
+		if (getStorage().insert(newSummoner))
 			SendMessage("Summoner with ID " + id + " added as " + name);
 		else
 			SendMessage("Failed to add summoner to database");
@@ -347,23 +368,26 @@ void LeagueLookup::AddSummoner(const std::string &id)
 
 void LeagueLookup::DeleteSummoner(const std::string &id)
 {
-	if (_starredSummoners.Delete(id))
-		SendMessage("Summoner with ID " + id + " deleted from watchlist");
-	else
-		SendMessage("Failde to delete the summoner from db");
+	using namespace sqlite_orm;
+	try {
+		getStorage().remove_all<DB::LLSummoner>(where(is_equal(&DB::LLSummoner::summonerID, easy_stoll(id))));
+		SendMessage("Summoner deleted");
+	} catch (std::exception &e) {
+		LOG(ERROR) << e.what();
+	}
 }
 
-void LeagueLookup::ListSummoners()
+std::string LeagueLookup::ListSummoners()
 {
 	std::string output;
-	_starredSummoners.ForEach([&output](std::pair<std::string, std::string> record)->bool{
-		output += record.first + " : " + record.second + "\n";
-		return true;
-	});
-	if (output.empty())
-		output = "Watchlist is empty";
 
-	SendMessage(output);
+	for (auto &summoner : getStorage().get_all<DB::LLSummoner>())
+		output.append(std::to_string(summoner.summonerID) + " : " + summoner.nickname + "\n");
+
+	if (output.empty())
+		return "Watchlist is empty";
+
+	return output;
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
@@ -379,9 +403,23 @@ bool operator==(const std::string &lhs, const Summoner &rhs)
 	return rhs._name == lhs;
 }
 
+class LeagueLookupBot : public LemonBot
+{
+public:
+	LeagueLookupBot() : LemonBot(":memory:") {
+		_storage.sync_schema();
+	}
+
+	void SendMessage(const std::string &text)
+	{
+
+	}
+};
+
 TEST(LeagueLookupTest, PlayerList)
 {
-	LeagueLookup t(nullptr);
+	LeagueLookupBot b;
+	LeagueLookup t(&b);
 
 	std::ifstream apiresponse("test/getSpectatorGameInfo.json");
 	std::vector<char> responseStr((std::istreambuf_iterator<char>(apiresponse)),

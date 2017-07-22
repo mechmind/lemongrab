@@ -48,6 +48,14 @@ namespace DB
 		std::string message = "";
 		int timepoint = 0;
 	};
+
+	class LLSummoner
+	{
+	public:
+		int id = -1;
+		int summonerID = -1;
+		std::string nickname = "";
+	};
 }
 
 inline auto initStorage(const std::string &path)
@@ -97,6 +105,11 @@ inline auto initStorage(const std::string &path)
 								   make_column("recepient", &DB::PagerMsg::recepient),
 								   make_column("message", &DB::PagerMsg::message),
 								   make_column("timepoint", &DB::PagerMsg::timepoint)
+								   ),
+						make_table("summoners",
+								   make_column("id", &DB::LLSummoner::id, autoincrement(), primary_key()),
+								   make_column("summonerID", &DB::LLSummoner::summonerID),
+								   make_column("nick", &DB::LLSummoner::nickname)
 								   )
 						);
 }

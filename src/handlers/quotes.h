@@ -4,8 +4,6 @@
 
 #include <random>
 
-#include "util/persistentmap.h"
-
 #ifdef _BUILD_TESTS
 #include <gtest/gtest_prod.h>
 #endif

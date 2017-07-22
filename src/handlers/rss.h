@@ -6,7 +6,6 @@
 #include <thread>
 
 #include "lemonhandler.h"
-#include "util/persistentmap.h"
 
 class RSSItem
 {

@@ -12,6 +12,8 @@
 
 #include "util/stringops.h"
 
+#include "util/persistentmap.h"
+
 std::string formatHTMLchars(std::string input);
 
 UrlPreview::UrlPreview(LemonBot *bot)

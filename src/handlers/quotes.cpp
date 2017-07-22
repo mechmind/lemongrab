@@ -6,6 +6,8 @@
 
 #include "util/stringops.h"
 
+#include "util/persistentmap.h"
+
 Quotes::Quotes(LemonBot *bot)
 	: LemonHandler("quotes", bot)
 	, _generator(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()))

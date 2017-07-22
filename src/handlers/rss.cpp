@@ -10,6 +10,8 @@
 #include "util/stringops.h"
 #include "util/thread_util.h"
 
+#include "util/persistentmap.h"
+
 void UpdateThread(RSSWatcher *parent)
 {
 	while (parent->_isRunning) {

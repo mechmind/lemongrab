@@ -112,7 +112,7 @@ std::string CustomTimeFormat(std::chrono::system_clock::duration input)
 long long easy_stoll(const std::string &input)
 {
 	if (input.empty())
-		return 0;
+		return -1;
 
 	try {
 		return std::stoll(input);
@@ -120,7 +120,7 @@ long long easy_stoll(const std::string &input)
 		LOG(INFO) << "stoll for " << input << " failed: " << e.what();
 	}
 
-	return 0;
+	return -1;
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
