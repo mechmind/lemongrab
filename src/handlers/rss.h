@@ -34,7 +34,7 @@ public:
 private:
 	void RegisterFeed(const std::string &feed);
 	void UnregisterFeed(const int id);
-	std::string ListRSSFeeds() const;
+	std::string ListRSSFeeds();
 
 	void UpdateFeeds();
 

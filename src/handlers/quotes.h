@@ -19,15 +19,14 @@ public:
 
 private:
 	std::string GetQuote(const std::string &id);
-	std::string AddQuote(const std::string &text);
+	bool AddQuote(const std::string &text);
 	bool DeleteQuote(const std::string &id);
-	std::string FindQuote(const std::string &request) const;
+	std::string FindQuote(const std::string &request);
 	void RegenerateIndex();
 
-private:
-	LevelDBPersistentMap _quotesDB;
-	LemonBot *_bot = nullptr;
+	void Migrate();
 
+private:
 	std::mt19937_64 _generator;
 
 	static constexpr int maxMatches = 10;

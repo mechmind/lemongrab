@@ -117,7 +117,7 @@ long long easy_stoll(const std::string &input)
 	try {
 		return std::stoll(input);
 	} catch (std::exception &e) {
-		LOG(ERROR) << "stoll for " << input << " failed: " << e.what();
+		LOG(INFO) << "stoll for " << input << " failed: " << e.what();
 	}
 
 	return 0;

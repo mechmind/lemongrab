@@ -8,10 +8,9 @@
 
 Quotes::Quotes(LemonBot *bot)
 	: LemonHandler("quotes", bot)
-	, _bot(bot)
 	, _generator(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()))
 {
-	_quotesDB.init("quotes", bot->GetDBPathPrefix());
+	Migrate();
 }
 
 LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)
@@ -25,8 +24,9 @@ LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)
 
 	if (getCommandArguments(msg._body, "!aq", arg) && !arg.empty())
 	{
-		auto id = AddQuote(arg);
-		id.empty() ? SendMessage(msg._nick + ": can't add quote") : SendMessage(msg._nick + ": quote added with id " + id);
+		AddQuote(arg)
+				? SendMessage(msg._nick + ": quote added")
+				: SendMessage(msg._nick + ": can't add quote");
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -38,7 +38,9 @@ LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)
 			return ProcessingResult::StopProcessing;
 		}
 
-		DeleteQuote(arg) ? SendMessage(msg._nick + ": quote deleted") : SendMessage(msg._nick + ": quote doesn't exist or access denied");
+		DeleteQuote(arg)
+				? SendMessage(msg._nick + ": quote deleted")
+				: SendMessage(msg._nick + ": quote doesn't exist or access denied");
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -73,73 +75,73 @@ const std::string Quotes::GetHelp() const
 
 std::string Quotes::GetQuote(const std::string &id)
 {
-	if (!_quotesDB.isOK())
-		return "database connection error";
-
-	std::string quote;
-	auto lastID = easy_stoll(_quotesDB.GetLastRecord().first);
-
-	if (lastID == 0)
-		return "Database is empty";
+	std::string LastID;
+	if (auto maxID = getStorage().max(&DB::Quote::humanIndex)) {
+		LastID = std::to_string(*maxID);
+	} else {
+		return "No quotes";
+	}
 
 	if (id.empty())
 	{
-		int attempts = 1;
-		const int maxAttempts = 100;
-		bool quoteFound = false;
-		std::string strId;
-		while (attempts < maxAttempts && !quoteFound)
-		{
-			attempts++;
-			std::uniform_int_distribution<int> dis(1, lastID);
-			auto randomID = dis(_generator);
-			strId = std::to_string(randomID);
-			quoteFound = _quotesDB.Get(strId, quote);
-		}
+		using namespace sqlite_orm;
+		auto quotes = getStorage().get_all<DB::Quote>(order_by(&DB::Quote::humanIndex).random());
 
-		return attempts < maxAttempts ? "(" + strId + "/" + std::to_string(lastID) + ") " + quote : "Too many deleted quotes or database is empty";
+		return "(" + std::to_string(quotes.at(0).humanIndex) + "/" + LastID + ") " + quotes.at(0).quote;
 	}
 
-	if (!_quotesDB.Get(id, quote))
-		return FindQuote(id);
+	if (auto quote = getStorage().get_no_throw<DB::Quote>(easy_stoll(id)))
+		return "(" + std::to_string(quote->humanIndex) + "/" + LastID + ") " + quote->quote;
 
-	return "(" + id + "/" + std::to_string(lastID) + ") " + quote;
+	return FindQuote(id);
 }
 
-std::string Quotes::AddQuote(const std::string &text)
+bool Quotes::AddQuote(const std::string &text)
 {
-	if (!_quotesDB.isOK())
-		return "";
+	int newID = 1;
+	if (auto maxID = getStorage().max(&DB::Quote::humanIndex)) {
+		newID = *maxID + 1;
+	}
 
-	auto lastID = easy_stoll(_quotesDB.GetLastRecord().first);
-	std::string id(std::to_string(++lastID));
-	if (!_quotesDB.Set(id, text))
-		return "";
+	DB::Quote newQuote = { -1, newID, text, "", "" };
 
-	return id;
+	try {
+		getStorage().insert(newQuote);
+		return true;
+	} catch (std::exception &e) {
+		LOG(ERROR) << "Failed to add quote: " << std::string(e.what());
+		return false;
+	}
 }
 
 bool Quotes::DeleteQuote(const std::string &id)
 {
-	if (!_quotesDB.isOK())
-		return false;
+	auto intId = easy_stoll(id);
 
-	std::string tmp;
-	if (!_quotesDB.Get(id, tmp))
+	try {
+		getStorage().remove<DB::Quote>(intId);
+		return true;
+	} catch (std::exception &e) {
+		LOG(ERROR) << "Failed to delete quote: " << std::string(e.what());
 		return false;
-
-	return _quotesDB.Delete(id);
+	}
 }
 
-std::string Quotes::FindQuote(const std::string &request) const
+std::string Quotes::FindQuote(const std::string &request) // FIXME const
 {
-	if (!_quotesDB.isOK())
-		return "database connection error";
+	using namespace sqlite_orm;
+	std::string lastID;
+	if (auto maxID = getStorage().max(&DB::Quote::humanIndex)) {
+		lastID = std::to_string(*maxID);
+	} else {
+		return "No matches";
+	}
 
-	auto lastID = _quotesDB.GetLastRecord().first;
-	auto quotes = _quotesDB.Find(request, LevelDBPersistentMap::FindOptions::ValuesOnly);
+	auto quotes = getStorage().get_all<DB::Quote>(
+				where(like(&DB::Quote::quote, "%" + request + "%")));
+
 	if (quotes.size() == 1)
-		return "(" + quotes.front().first + "/" + lastID + ") " + quotes.front().second;
+		return "(" + std::to_string(quotes.front().humanIndex) + "/" + lastID + ") " + quotes.front().quote;
 
 	if (quotes.size() == 0)
 		return "No matches";
@@ -149,16 +151,42 @@ std::string Quotes::FindQuote(const std::string &request) const
 
 	std::string searchResults("Matching quote IDs:");
 	for (const auto &match : quotes)
-		searchResults += " " + match.first;
+		searchResults.append(" " + std::to_string(match.humanIndex));
 	return searchResults;
 }
 
 void Quotes::RegenerateIndex()
 {
-	auto oldCount = _quotesDB.GetLastRecord().first;
-	_quotesDB.GenerateNumericIndex();
-	auto newCount = _quotesDB.GetLastRecord().first;
-	SendMessage("Index regenerated. Size: " + oldCount + " -> " + newCount);
+	int index = 0;
+	for (auto &quote : getStorage().get_all<DB::Quote>())
+	{
+		quote.humanIndex = ++index;
+		getStorage().update(quote);
+	}
+
+	SendMessage("Index regenerated. New count: " + std::to_string(index));
+}
+
+void Quotes::Migrate()
+{
+	LevelDBPersistentMap quotesDB;
+	if (!quotesDB.init("quotes", _botPtr->GetDBPathPrefix()))
+		return;
+
+	if (quotesDB.isEmpty())
+		return;
+
+	int recordCount = 0;
+	quotesDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
+		if (AddQuote(record.second))
+			recordCount++;
+		else
+			LOG(ERROR) << "Failed to import quote with id: " << record.first;
+		return true;
+	});
+
+	quotesDB.Clear();
+	SendMessage("Imported " + std::to_string(recordCount) + " strings");
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
@@ -168,7 +196,9 @@ void Quotes::RegenerateIndex()
 class QuoteTestBot : public LemonBot
 {
 public:
-	QuoteTestBot() : LemonBot(":memory:") { }
+	QuoteTestBot() : LemonBot(":memory:") {
+		_storage.sync_schema();
+	}
 
 	void SendMessage(const std::string &text)
 	{
@@ -186,14 +216,12 @@ TEST(QuotesTest, General)
 	Quotes q(&tb);
 
 	std::string testquote = "This is a test quote";
-	auto id = q.AddQuote(testquote);
-	ASSERT_FALSE(id.empty());
+	ASSERT_TRUE(q.AddQuote(testquote));
 
-	auto quote = q.GetQuote(id);
+	auto quote = q.GetQuote("1");
 	auto pos = quote.find(testquote);
 	EXPECT_NE(quote.npos, pos);
-	EXPECT_TRUE(q.DeleteQuote(id));
-	EXPECT_FALSE(q.DeleteQuote(id));
+	EXPECT_TRUE(q.DeleteQuote("1"));
 }
 
 TEST(QuotesTest, Search)
@@ -201,24 +229,22 @@ TEST(QuotesTest, Search)
 	QuoteTestBot tb;
 	Quotes q(&tb);
 
-	auto id1 = q.AddQuote("testquote1");
-	ASSERT_FALSE(id1.empty());
+	ASSERT_TRUE(q.AddQuote("testquote1"));
 
 	auto quote = q.FindQuote("test");
 	auto pos = quote.find("testquote1");
 	EXPECT_NE(quote.npos, pos);
 
-	auto id2 = q.AddQuote("testquote2");
-	ASSERT_FALSE(id2.empty());
+	ASSERT_TRUE(q.AddQuote("testquote2"));
 
 	auto quoteids = q.FindQuote("test");
-	auto pos1 = quoteids.find(id1);
-	auto pos2 = quoteids.find(id2);
+	auto pos1 = quoteids.find("1");
+	auto pos2 = quoteids.find("2");
 	EXPECT_NE(quoteids.npos, pos1);
 	EXPECT_NE(quoteids.npos, pos2);
 
-	EXPECT_TRUE(q.DeleteQuote(id1));
-	EXPECT_TRUE(q.DeleteQuote(id2));
+	EXPECT_TRUE(q.DeleteQuote("1"));
+	EXPECT_TRUE(q.DeleteQuote("2"));
 }
 
 #endif // LCOV_EXCL_STOP

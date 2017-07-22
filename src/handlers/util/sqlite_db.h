@@ -29,6 +29,16 @@ namespace DB
 		long timestamp = 0;
 		std::string fullText = "";
 	};
+
+	class Quote
+	{
+	public:
+		int id = -1;
+		int humanIndex = 0;
+		std::string quote = "";
+		std::string author = "";
+		std::string author_id = "";
+	};
 }
 
 inline auto initStorage(const std::string &path)
@@ -62,7 +72,15 @@ inline auto initStorage(const std::string &path)
 								   make_column("title", &DB::LoggedURL::title),
 								   make_column("time", &DB::LoggedURL::timestamp),
 								   make_column("fulltext", &DB::LoggedURL::fullText)
-								   ));
+								   ),
+						make_table("quotes",
+								   make_column("id", &DB::Quote::id, autoincrement(), primary_key()),
+								   make_column("index", &DB::Quote::humanIndex),
+								   make_column("quote", &DB::Quote::quote),
+								   make_column("author", &DB::Quote::author),
+								   make_column("author_id", &DB::Quote::author_id)
+								   )
+						);
 }
 
 typedef decltype(initStorage("")) Storage;

@@ -91,7 +91,7 @@ void RSSWatcher::RegisterFeed(const std::string &feed)
 	using namespace sqlite_orm;
 	DB::RssFeed newFeed { -1, feed };
 
-	auto feeds = _botPtr->_storage.get_all<DB::RssFeed>(where(is_equal(&DB::RssFeed::URL, feed)));
+	auto feeds = getStorage().get_all<DB::RssFeed>(where(is_equal(&DB::RssFeed::URL, feed)));
 	if (feeds.size() > 0)
 	{
 		SendMessage("Feed already exists");
@@ -99,7 +99,7 @@ void RSSWatcher::RegisterFeed(const std::string &feed)
 	}
 
 	try {
-		_botPtr->_storage.insert(newFeed);
+		getStorage().insert(newFeed);
 	} catch (std::exception &e) {
 		SendMessage("Can't insert feed: " + std::string(e.what()));
 		return;
@@ -111,7 +111,7 @@ void RSSWatcher::RegisterFeed(const std::string &feed)
 void RSSWatcher::UnregisterFeed(const int id)
 {
 	try {
-		_botPtr->_storage.remove<DB::RssFeed>(id);
+		getStorage().remove<DB::RssFeed>(id);
 	} catch (std::exception &e) {
 		SendMessage("Failed to remove feed: " + std::string(e.what()));
 	}
@@ -119,12 +119,12 @@ void RSSWatcher::UnregisterFeed(const int id)
 	SendMessage("Feed removed");
 }
 
-std::string RSSWatcher::ListRSSFeeds() const
+std::string RSSWatcher::ListRSSFeeds()// FIXME const
 {
 	std::string result = "Registered feeds: ";
-	for (auto &feed : _botPtr->_storage.get_all<DB::RssFeed, std::list<DB::RssFeed>>())
+	for (auto &feed : getStorage().get_all<DB::RssFeed, std::list<DB::RssFeed>>())
 	{
-		result.append("\n" + _botPtr->_storage.dump(feed));
+		result.append("\n" + getStorage().dump(feed));
 	}
 
 	return result;
@@ -133,7 +133,7 @@ std::string RSSWatcher::ListRSSFeeds() const
 void RSSWatcher::UpdateFeeds()
 {
 	try {
-		for (auto &feed : _botPtr->_storage.get_all<DB::RssFeed, std::list<DB::RssFeed>>())
+		for (auto &feed : getStorage().get_all<DB::RssFeed, std::list<DB::RssFeed>>())
 		{
 			auto item = GetLatestItem(feed.URL);
 
@@ -147,7 +147,7 @@ void RSSWatcher::UpdateFeeds()
 			if (feed.GUID != item.guid)
 			{
 				feed.GUID = item.guid;
-				_botPtr->_storage.update(feed);
+				getStorage().update(feed);
 				SendMessage(item.Format());
 			}
 		}
@@ -212,7 +212,7 @@ void RSSWatcher::Migrate()
 	feeds.ForEach([&](std::pair<std::string, std::string> record)->bool{
 		try {
 			DB::RssFeed feed = { -1, record.first, record.second };
-			_botPtr->_storage.insert(feed);
+			getStorage().insert(feed);
 			recordCount++;
 		} catch (std::exception &e) {
 			SendMessage("Migration failed: " + std::string(e.what()));
