@@ -2,8 +2,6 @@
 
 #include "lemonhandler.h"
 
-#include "util/persistentmap.h"
-
 #include <list>
 #include <chrono>
 
@@ -20,6 +18,7 @@ public:
 	const std::string GetHelp() const override;
 
 private:
+	void RestoreMessages();
 	void StoreMessage(const std::string &to, const std::string &from, const std::string &text);
 	void PurgeMessageFromDB(long long id);
 	std::string GetPagerStats() const;
@@ -28,8 +27,8 @@ private:
 	class Message
 	{
 	public:
-		Message(const std::string &serializedInput, long long id);
-		Message(const std::string &to, const std::string &text, long long id);
+		Message(const DB::PagerMsg &dbmsg);
+		Message(const std::string &to, const std::string &text);
 
 		bool isValid();
 		inline bool operator==(const Message &rhs);
@@ -39,14 +38,9 @@ private:
 		std::string _text;
 
 		std::chrono::system_clock::time_point _expiration;
-
-		std::string Serialize();
 	};
 
-	long long _lastId = 0;
 	std::list<Message> _messages;
-
-	LevelDBPersistentMap _persistentMessages;
 
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(PagerTest, MsgByNickCheckPresenseHandling);

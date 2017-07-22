@@ -39,6 +39,15 @@ namespace DB
 		std::string author = "";
 		std::string author_id = "";
 	};
+
+	class PagerMsg
+	{
+	public:
+		int id = -1;
+		std::string recepient = "";
+		std::string message = "";
+		int timepoint = 0;
+	};
 }
 
 inline auto initStorage(const std::string &path)
@@ -79,6 +88,15 @@ inline auto initStorage(const std::string &path)
 								   make_column("quote", &DB::Quote::quote),
 								   make_column("author", &DB::Quote::author),
 								   make_column("author_id", &DB::Quote::author_id)
+								   ),
+						make_table("pager",
+								   make_column("id",
+											   &DB::PagerMsg::id,
+											   autoincrement(),
+											   primary_key()),
+								   make_column("recepient", &DB::PagerMsg::recepient),
+								   make_column("message", &DB::PagerMsg::message),
+								   make_column("timepoint", &DB::PagerMsg::timepoint)
 								   )
 						);
 }

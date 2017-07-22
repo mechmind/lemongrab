@@ -16,7 +16,7 @@ bool Settings::Open(const std::string &path)
 	try {
 		_config = cpptoml::parse_file(path);
 	} catch (const cpptoml::parse_exception &e) {
-		std::cerr << "Failed to read config file (" << e.what() << ")";
+		std::cerr << "Failed to read config file (" << e.what() << ")" << std::endl;
 		return false;
 	}
 

@@ -8,38 +8,21 @@
 
 #include <glog/logging.h>
 
-Pager::Message::Message(const std::string &serializedInput, long long id)
+Pager::Message::Message(const DB::PagerMsg &dbmsg)
+	: _id(dbmsg.id)
+	, _recepient(dbmsg.recepient)
+	, _text(dbmsg.message)
 {
-	auto tokens = tokenize(serializedInput, '\n');
-	if (tokens.size() != 3)
-		return;
-
-	_id = id;
-	_recepient = tokens.at(0);
-	_text = tokens.at(1);
-	std::string expirationStr = tokens.at(2);
 	try {
-		time_t expirationTime = std::stoull(expirationStr);
-		_expiration = std::chrono::system_clock::from_time_t(expirationTime);
+		_expiration = std::chrono::system_clock::from_time_t(dbmsg.timepoint);
 	} catch (std::exception &e) {
 		LOG(ERROR) << "Exception: " << e.what();
 		_recepient.clear();
-		return;
 	}
 }
 
-std::string Pager::Message::Serialize()
-{
-	time_t expiration = std::chrono::system_clock::to_time_t(_expiration);
-	return _recepient + "\n"
-			+ _text + "\n"
-			+ std::to_string(expiration);
-}
-
-
-Pager::Message::Message(const std::string &to, const std::string &text, long long id)
-	: _id(id)
-	, _recepient(to)
+Pager::Message::Message(const std::string &to, const std::string &text)
+	: _recepient(to)
 	, _text(text)
 	, _expiration(std::chrono::system_clock::now() + std::chrono::hours(72))
 {
@@ -62,34 +45,7 @@ bool Pager::Message::operator==(const Pager::Message &rhs)
 Pager::Pager(LemonBot *bot)
 	: LemonHandler("pager", bot)
 {
-	if (!_persistentMessages.init("pager", bot->GetDBPathPrefix()))
-		return;
-
-	int loadedMessages = 0;
-	_persistentMessages.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		try {
-			_lastId = std::stoll(record.first);
-		} catch (std::exception &e) {
-			LOG(ERROR) << "Invalid pager id: " << record.first;
-			_persistentMessages.Delete(record.first);
-			return true;
-		}
-
-		Message m(record.second, _lastId);
-
-		if (!m.isValid())
-		{
-			LOG(ERROR) << "Invalid message: " << record.second;
-			_persistentMessages.Delete(record.first);
-			return true;
-		}
-
-		_messages.push_back(m);
-		loadedMessages++;
-		return true;
-	});
-
-	LOG(INFO) << "Loaded " << loadedMessages << " message(s) for pager";
+	RestoreMessages();
 }
 
 LemonHandler::ProcessingResult Pager::HandleMessage(const ChatMessage &msg)
@@ -151,17 +107,39 @@ const std::string Pager::GetHelp() const
 	return "Use !pager %jid% %message% or !pager %nick% %message%. Paged messages are lost after 72 hours. Use !pager_stats to get number of paged messages";
 }
 
+void Pager::RestoreMessages()
+{
+	for (auto &msg : getStorage().get_all<DB::PagerMsg>())
+	{
+		Message m(msg);
+
+		if (!m.isValid())
+			LOG(ERROR) << "Invalid message with ID: " << m._id;
+		else
+			_messages.push_back(m);
+	}
+}
+
 void Pager::StoreMessage(const std::string &to, const std::string &from, const std::string &text)
 {
-	_messages.emplace_back(to, from + ": " + text, ++_lastId);
-	if (_persistentMessages.isOK())
-		_persistentMessages.Set(std::to_string(_lastId), _messages.back().Serialize());
+	auto msgtext = from + ": " + text;
+	_messages.emplace_back(to, msgtext);
+
+	DB::PagerMsg newMsg = { -1, from, msgtext, std::chrono::system_clock::to_time_t(_messages.back()._expiration) };
+	try {
+		getStorage().insert(newMsg);
+	} catch (std::exception &e) {
+		LOG(ERROR) << "Failed to save message: " << e.what();
+	}
 }
 
 void Pager::PurgeMessageFromDB(long long id)
 {
-	if (_persistentMessages.isOK())
-		_persistentMessages.Delete(std::to_string(id));
+	try {
+		getStorage().remove<DB::PagerMsg>(id);
+	} catch (std::exception &e) {
+		LOG(ERROR) << "Failed to purge pager message with id " << id;
+	}
 }
 
 std::string Pager::GetPagerStats() const
@@ -187,7 +165,9 @@ std::string Pager::GetPagerStats() const
 class PagerTestBot : public LemonBot
 {
 public:
-	PagerTestBot() : LemonBot(":memory:") { }
+	PagerTestBot() : LemonBot(":memory:") {
+		_storage.sync_schema();
+	}
 
 	void SendMessage(const std::string &text)
 	{
@@ -257,19 +237,6 @@ TEST(PagerTest, MsgByJidCheckPresenseHandling)
 	pager.HandleMessage(ChatMessage("Bob", "", "", "!pager_stats", false));
 	EXPECT_EQ(5, testbot._received.size());
 	EXPECT_EQ("Paged messages: none", testbot._received.back());
-}
-
-TEST(PagerTest, MessageSerializer)
-{
-	Pager::Message m("Bob", "Hello!", 0);
-	m._expiration = std::chrono::system_clock::from_time_t(1234567);
-	auto m_s = m.Serialize();
-	Pager::Message m2(m_s, 0);
-	EXPECT_TRUE(m2.isValid());
-	EXPECT_TRUE(m2 == m);
-
-	Pager::Message m3("What\nis\nthis\nthing?", 1);
-	EXPECT_TRUE(!m3.isValid());
 }
 
 #endif // LCOV_EXCL_STOP
