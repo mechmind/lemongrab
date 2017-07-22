@@ -116,7 +116,7 @@ LastSeen::LastStatus LastSeen::GetLastStatus(const std::string &name) // FIXME c
 		if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(nick2jid->uniqueID))
 		{
 			auto lastSeenTime = std::chrono::system_clock::from_time_t(userRecord->timepoint_status);
-			return { now - lastSeenTime, userRecord->nick, "" };
+			return { now - lastSeenTime, userRecord->uniqueID, "" };
 		}
 
 		return { std::chrono::nanoseconds{0}, "", "User activity and nick database mismatch" };
@@ -128,9 +128,10 @@ LastSeen::LastStatus LastSeen::GetLastStatus(const std::string &name) // FIXME c
 		return { std::chrono::seconds{0}, "", name + "? Who's that?" };
 	else
 	{
-		std::string similarUsersStr = "Similar users:";
+		std::string similarUsersStr = "Similar nicks:";
 		for (const auto &user : similarUsers)
 			similarUsersStr.append(" " + user.nick + " (" + user.uniqueID + ")");
+		similarUsersStr.append("\n\nSimilar JIDs:");
 		for (const auto &user : similarUsersByJid)
 			similarUsersStr.append(" " + user.nick + " (" + user.uniqueID + ")");
 		return { std::chrono::seconds{0}, "", similarUsersStr };
