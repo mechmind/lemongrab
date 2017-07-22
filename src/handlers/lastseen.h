@@ -26,13 +26,6 @@ private:
 	class LastStatus
 	{
 	public:
-		LastStatus()
-		{ }
-
-		LastStatus(const std::string &JID)
-			: jid(JID)
-		{ }
-
 		std::chrono::system_clock::duration when;
 		std::string jid;
 		std::string _error;
@@ -43,19 +36,16 @@ private:
 	public:
 		std::chrono::system_clock::duration when;
 		std::string what;
-		bool _valid = false;
 	};
 
-	std::string GetStats() const;
-	std::string GetUserInfo(const std::string &wantedUser) const;
+	std::string GetStats();
+	std::string GetUserInfo(const std::string &wantedUser);
 
-	LastStatus GetLastStatus(const std::string &name) const;
-	LastActivity GetLastActive(const std::string &jid) const;
+	LastStatus GetLastStatus(const std::string &name);
+	std::optional<LastActivity> GetLastActive(const std::string &jid);
 
 private:
-	LevelDBPersistentMap _lastSeenDB;
-	LevelDBPersistentMap _lastActiveDB;
-	LevelDBPersistentMap _nick2jidDB;
+	void Migrate();
 
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(LastSeen, GetLastStatus_OnlineOffline);

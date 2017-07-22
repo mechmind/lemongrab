@@ -56,6 +56,23 @@ namespace DB
 		int summonerID = -1;
 		std::string nickname = "";
 	};
+
+	class Nick
+	{
+	public:
+		std::string nick = "";
+		std::string uniqueID = "";
+	};
+
+	class UserActivity
+	{
+	public:
+		std::string uniqueID = "";
+		std::string nick = "";
+		std::string message = "";
+		int timepoint_status = 0;
+		int timepoint_message = 0;
+	};
 }
 
 inline auto initStorage(const std::string &path)
@@ -110,6 +127,17 @@ inline auto initStorage(const std::string &path)
 								   make_column("id", &DB::LLSummoner::id, autoincrement(), primary_key()),
 								   make_column("summonerID", &DB::LLSummoner::summonerID),
 								   make_column("nick", &DB::LLSummoner::nickname)
+								   ),
+						make_table("nicks",
+								   make_column("nick", &DB::Nick::nick, primary_key()),
+								   make_column("uniqueID", &DB::Nick::uniqueID)
+								   ),
+						make_table("useractivity",
+								   make_column("uniqueID", &DB::UserActivity::uniqueID, primary_key()),
+								   make_column("nick", &DB::UserActivity::nick),
+								   make_column("message", &DB::UserActivity::message),
+								   make_column("timepoint_status", &DB::UserActivity::timepoint_status),
+								   make_column("timepoint_message", &DB::UserActivity::timepoint_message)
 								   )
 						);
 }

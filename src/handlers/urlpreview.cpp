@@ -267,7 +267,6 @@ void UrlPreview::MigrateHistory()
 								 std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count(),
 									  url + " " + title};
 			getStorage().insert(newRecord);
-			LOG(INFO) << "Imported URL #" << newRecord.id;
 			recordCount++;
 		} catch (std::exception &e) {
 			LOG(ERROR) << "Failed to import url record: " << e.what();
@@ -308,7 +307,7 @@ void UrlPreview::MigrateRules()
 
 	urlWhitelist.Clear();
 	urlBlacklist.Clear();
-	SendMessage("URL Rules migrated: " + std::to_string(recordCount));
+	SendMessage("Imported " + std::to_string(recordCount) + " URL rules");
 }
 
 std::string formatHTMLchars(std::string input)

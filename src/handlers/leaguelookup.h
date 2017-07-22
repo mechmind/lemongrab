@@ -45,6 +45,7 @@ private:
 	{
 		OK,
 		NotFound,
+		AccessDenied,
 		UnexpectedResponseCode,
 		RateLimitReached,
 		InvalidJSON,
@@ -62,7 +63,7 @@ private:
 	std::string GetSummonerNameByID(const std::string &id) const;
 
 	static void LookupAllSummoners(LeagueLookup *_parent, ApiOptions &api);
-	void AddSummoner(const std::string &id);
+	std::string AddSummoner(const std::string &id);
 	void DeleteSummoner(const std::string &id);
 	std::string ListSummoners();
 private:

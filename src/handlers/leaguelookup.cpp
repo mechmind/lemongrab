@@ -17,8 +17,6 @@
 LeagueLookup::LeagueLookup(LemonBot *bot)
 	: LemonHandler("leaugelookup", bot)
 {
-	Migrate();
-
 	if (bot)
 	{
 		_api._key = bot->GetRawConfigValue("LOL.ApiKey");
@@ -39,6 +37,8 @@ LeagueLookup::LeagueLookup(LemonBot *bot)
 		LOG(WARNING) << "Region / platform are not set, defaulting to EUNE";
 		_api._region = "eun1";
 	}
+
+	Migrate();
 }
 
 LeagueLookup::~LeagueLookup()
@@ -71,7 +71,7 @@ LemonHandler::ProcessingResult LeagueLookup::HandleMessage(const ChatMessage &ms
 
 	if (getCommandArguments(msg._body, "!addsummoner", args))
 	{
-		AddSummoner(args);
+		SendMessage(AddSummoner(args));
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -117,6 +117,7 @@ void LeagueLookup::Migrate()
 		} catch (std::exception &e) {
 			LOG(ERROR) << e.what();
 		}
+		return true;
 	});
 
 	summoners.Clear();
@@ -129,6 +130,8 @@ LeagueLookup::RiotAPIResponse LeagueLookup::RiotAPIRequest(const std::string &re
 
 	switch (apiResponse.status_code)
 	{
+	case 403:
+		return RiotAPIResponse::AccessDenied;
 	case 404:
 		return RiotAPIResponse::NotFound;
 	case 429:
@@ -172,6 +175,8 @@ std::string LeagueLookup::lookupCurrentGame(const std::string &name) const
 		return "Summoner is not currently in game";
 	case RiotAPIResponse::RateLimitReached:
 		return "Rate limit reached";
+	case RiotAPIResponse::AccessDenied:
+		return "Access denied";
 	case RiotAPIResponse::UnexpectedResponseCode:
 		return "RiotAPI returned unexpected return code";
 	case RiotAPIResponse::InvalidJSON:
@@ -210,8 +215,8 @@ int LeagueLookup::getSummonerIDFromName(const std::string &name) const
 	{
 	case RiotAPIResponse::NotFound:
 		return -1;
+	case RiotAPIResponse::AccessDenied:
 	case RiotAPIResponse::RateLimitReached:
-		return -2;
 	case RiotAPIResponse::UnexpectedResponseCode:
 	case RiotAPIResponse::InvalidJSON:
 		return -2;
@@ -350,19 +355,19 @@ void LeagueLookup::LookupAllSummoners(LeagueLookup *_parent, ApiOptions &api)
 	_parent->SendMessage(output);
 }
 
-void LeagueLookup::AddSummoner(const std::string &id)
+std::string LeagueLookup::AddSummoner(const std::string &id)
 {
 	auto name = GetSummonerNameByID(id);
 	if (name.empty())
 	{
-		SendMessage("Summoner not found");
+		return "Summoner not found";
 	} else {
 		DB::LLSummoner newSummoner = { -1, easy_stoll(id), name };
 
 		if (getStorage().insert(newSummoner))
-			SendMessage("Summoner with ID " + id + " added as " + name);
+			return "Summoner with ID " + id + " added as " + name;
 		else
-			SendMessage("Failed to add summoner to database");
+			return "Failed to add summoner to database";
 	}
 }
 

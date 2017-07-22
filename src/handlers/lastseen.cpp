@@ -9,17 +9,21 @@
 LastSeen::LastSeen(LemonBot *bot)
 	: LemonHandler("seen", bot)
 {
-	_lastSeenDB.init("lastseen", bot ? bot->GetDBPathPrefix() : "testdb/");
-	_nick2jidDB.init("nick2jid", bot ? bot->GetDBPathPrefix() : "testdb/");
-	_lastActiveDB.init("lastmsg", bot ? bot->GetDBPathPrefix() : "testdb/");
+	Migrate();
 }
 
 LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 {
-	if (_lastActiveDB.isOK())
-	{
-		auto now = std::chrono::system_clock::now();
-		_lastActiveDB.Set(msg._jid, std::to_string(std::chrono::system_clock::to_time_t(now)) + " " + msg._body);
+	auto now = std::chrono::system_clock::now();
+	auto now_t = std::chrono::system_clock::to_time_t(now);
+
+	if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(msg._jid)) {
+		userRecord->nick = msg._nick;
+		userRecord->message = msg._body;
+		userRecord->timepoint_message = now_t;
+		getStorage().update(*userRecord);
+	} else {
+		getStorage().replace(DB::UserActivity{msg._jid, msg._nick, msg._body, now_t, now_t});
 	}
 
 	if (msg._body == "!seenstat")
@@ -29,15 +33,8 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 	}
 
 	std::string wantedUser;
-
 	if (!getCommandArguments(msg._body, "!seen", wantedUser))
 		return ProcessingResult::KeepGoing;
-
-	if (!_nick2jidDB.isOK() || !_lastSeenDB.isOK() || !_lastActiveDB.isOK())
-	{
-		SendMessage("Database connection error");
-		return ProcessingResult::KeepGoing;
-	}
 
 	SendMessage(GetUserInfo(wantedUser));
 	return ProcessingResult::KeepGoing;
@@ -46,12 +43,19 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 void LastSeen::HandlePresence(const std::string &from, const std::string &jid, bool connected)
 {
 	auto now = std::chrono::system_clock::now();
+	auto now_t = std::chrono::system_clock::to_time_t(now);
 
-	if (_nick2jidDB.isOK())
-		_nick2jidDB.Set(from, jid);
+	using namespace sqlite_orm;
+	DB::Nick newNick{ from, jid };
+	getStorage().replace(newNick);
 
-	if (_lastSeenDB.isOK())
-		_lastSeenDB.Set(jid, std::to_string(std::chrono::system_clock::to_time_t(now)));
+	if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(jid)) {
+		userRecord->nick = from;
+		userRecord->timepoint_status = now_t;
+		getStorage().update(*userRecord);
+	} else {
+		getStorage().replace(DB::UserActivity{jid, from, "", now_t, now_t});
+	}
 }
 
 const std::string LastSeen::GetHelp() const
@@ -60,15 +64,14 @@ const std::string LastSeen::GetHelp() const
 		   "!seenstat - show statistics";
 }
 
-std::string LastSeen::GetStats() const
+std::string LastSeen::GetStats()
 {
-	if (!_nick2jidDB.isOK() || !_lastSeenDB.isOK() || !_lastActiveDB.isOK())
-		return "Database connection error";
-
-	return "Seen nicks: " + std::to_string(_nick2jidDB.Size()) + " | Seen users: " + std::to_string(_lastSeenDB.Size());
+	auto nick_count = getStorage().count<DB::Nick>();
+	auto user_count = getStorage().count<DB::UserActivity>();
+	return "Seen nicks: " + std::to_string(nick_count) + " | Seen users: " + std::to_string(user_count);
 }
 
-std::string LastSeen::GetUserInfo(const std::string &wantedUser) const
+std::string LastSeen::GetUserInfo(const std::string &wantedUser)
 {
 	auto lastStatus = GetLastStatus(wantedUser);
 	if (!lastStatus._error.empty())
@@ -85,92 +88,129 @@ std::string LastSeen::GetUserInfo(const std::string &wantedUser) const
 		result = wantedUser + " (" + lastStatus.jid + ") last seen " + CustomTimeFormat(lastStatus.when) + " ago";
 	}
 
-	auto lastActivity = GetLastActive(lastStatus.jid);
-	if (lastActivity._valid)
+	if (auto lastActivity = GetLastActive(lastStatus.jid))
 	{
-		result.append("; last active " + CustomTimeFormat(lastActivity.when) + " ago");
-		if (!lastActivity.what.empty())
-			result.append(": \"" + lastActivity.what + "\"");
+		result.append("; last active " + CustomTimeFormat(lastActivity->when) + " ago");
+		if (!lastActivity->what.empty())
+			result.append(": \"" + lastActivity->what + "\"");
 	}
 
 	return result;
 }
 
-LastSeen::LastStatus LastSeen::GetLastStatus(const std::string &name) const
+LastSeen::LastStatus LastSeen::GetLastStatus(const std::string &name) // FIXME const
 {
-	LastStatus result(name);
-
-	if (!_lastSeenDB.isOK() || !_nick2jidDB.isOK())
-	{
-		result._error = "Database connection error";
-		return result;
-	}
+	using namespace sqlite_orm;
+	auto now = std::chrono::system_clock::now();
 
 	std::string lastSeenRecord = "0";
 
-	if (!_lastSeenDB.Get(name, lastSeenRecord))
+	if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(name))
 	{
-		if (!_nick2jidDB.Get(name, result.jid))
-		{
-			auto similarUsers = _nick2jidDB.Find(name, LevelDBPersistentMap::FindOptions::All);
-			if (similarUsers.empty())
-				result._error = name + "? Who's that?";
-			else if (similarUsers.size() > maxSearchResults)
-				result._error = "Too many matches";
-			else
-			{
-				result._error = "Similar users:";
-				for (const auto &user : similarUsers)
-					result._error += " " + user.first + " (" + user.second + ")";
-			}
+		auto lastSeenTime = std::chrono::system_clock::from_time_t(userRecord->timepoint_status);
+		return { now - lastSeenTime, name, "" };
+	}
 
-			return result;
+	if (auto nick2jid = getStorage().get_no_throw<DB::Nick>(name))
+	{
+		if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(nick2jid->uniqueID))
+		{
+			auto lastSeenTime = std::chrono::system_clock::from_time_t(userRecord->timepoint_status);
+			return { now - lastSeenTime, userRecord->nick, "" };
 		}
 
-		if (!_lastSeenDB.Get(result.jid, lastSeenRecord))
-			result._error = "Well this is weird, " + name + " resolved to " + result.jid + " but I have no record for this jid";
+		return { std::chrono::nanoseconds{0}, "", "User activity and nick database mismatch" };
 	}
 
-	try {
-		auto now = std::chrono::system_clock::now();
-		auto lastSeenTime = std::chrono::system_clock::from_time_t(std::stol(lastSeenRecord));
-		result.when = now - lastSeenTime;
-	} catch (std::exception &e) {
-		result._error = "Something broke: " + std::string(e.what());
+	auto similarUsers = getStorage().get_all<DB::Nick>(where(like(&DB::Nick::nick, "%" + name + "%")), limit(maxSearchResults));
+	auto similarUsersByJid = getStorage().get_all<DB::Nick>(where(like(&DB::Nick::uniqueID, "%" + name + "%")), limit(maxSearchResults));
+	if (similarUsers.empty())
+		return { std::chrono::seconds{0}, "", name + "? Who's that?" };
+	else
+	{
+		std::string similarUsersStr = "Similar users:";
+		for (const auto &user : similarUsers)
+			similarUsersStr.append(" " + user.nick + " (" + user.uniqueID + ")");
+		for (const auto &user : similarUsersByJid)
+			similarUsersStr.append(" " + user.nick + " (" + user.uniqueID + ")");
+		return { std::chrono::seconds{0}, "", similarUsersStr };
 	}
-
-	return result;
 }
 
-LastSeen::LastActivity LastSeen::GetLastActive(const std::string &jid) const
+std::optional<LastSeen::LastActivity> LastSeen::GetLastActive(const std::string &jid)
 {
-	LastSeen::LastActivity result;
-	std::string lastActiveRecord = "";
-	if (!_lastActiveDB.Get(jid, lastActiveRecord))
-		return result;
-
-	auto data = tokenize(lastActiveRecord, ' ', 2);
-	lastActiveRecord = data.at(0);
-
-	if (data.size() > 1)
-		result.what = data.at(1);
-
-	try {
-		auto now = std::chrono::system_clock::now();
-		auto lastActiveTime = std::chrono::system_clock::from_time_t(std::stol(lastActiveRecord));
-		result.when = now - lastActiveTime;
-		result._valid = true;
-	} catch (std::exception &e) {
-		LOG(WARNING) << "Something broke: " + std::string(e.what());
-		return result;
+	auto now = std::chrono::system_clock::now();
+	if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(jid)) {
+		auto lastActiveTime = std::chrono::system_clock::from_time_t(userRecord->timepoint_message);
+		return {{ now - lastActiveTime, userRecord->message }};
+	} else {
+		return { };
 	}
+}
 
-	return result;
+void LastSeen::Migrate()
+{
+	LevelDBPersistentMap _lastSeenDB;
+	LevelDBPersistentMap _lastActiveDB;
+	LevelDBPersistentMap _nick2jidDB;
+
+	if (!_lastSeenDB.init("lastseen", _botPtr->GetDBPathPrefix()))
+		return;
+	if (!_nick2jidDB.init("nick2jid", _botPtr->GetDBPathPrefix()))
+		return;
+	if (!_lastActiveDB.init("lastmsg", _botPtr->GetDBPathPrefix()))
+		return;
+
+	if (_lastActiveDB.isEmpty() && _lastActiveDB.isEmpty() && _nick2jidDB.isEmpty())
+		return;
+
+	_nick2jidDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
+		getStorage().replace(DB::Nick{record.first, record.second});
+		return true;
+	});
+
+	_lastSeenDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
+		getStorage().replace(DB::UserActivity{record.first, "", "", easy_stoll(record.second), easy_stoll(record.second)});
+		return true;
+	});
+
+	_lastActiveDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
+		if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(record.first))
+		{
+			auto data = tokenize(record.second, ' ', 2);
+			userRecord->timepoint_message = easy_stoll(data.at(0));
+			userRecord->message = data.at(1);
+			getStorage().update(*userRecord);
+		} else {
+			LOG(ERROR) << "No record for jid " << record.first;
+		}
+		return true;
+	});
+
+	_lastSeenDB.Clear();
+	_lastActiveDB.Clear();
+	_nick2jidDB.Clear();
+
+	SendMessage("User db migration completed");
+	SendMessage(GetStats());
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
 
 #include "gtest/gtest.h"
+
+class LastSeenBot : public LemonBot
+{
+public:
+	LastSeenBot() : LemonBot(":memory:") {
+		_storage.sync_schema();
+	}
+
+	void SendMessage(const std::string &text)
+	{
+
+	}
+};
 
 TEST(LastSeen, DurationFormat)
 {
@@ -181,7 +221,8 @@ TEST(LastSeen, DurationFormat)
 
 TEST(LastSeen, GetLastStatus_OnlineOffline)
 {
-	LastSeen test(nullptr);
+	LastSeenBot tb;
+	LastSeen test(&tb);
 
 	{
 		EXPECT_FALSE(test.GetLastStatus("test_user")._error.empty());
