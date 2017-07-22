@@ -72,4 +72,24 @@ protected:
 	const std::list<std::int64_t> GetIntList(const std::string &name) const;
 	std::string _moduleName;
 	LemonBot *_botPtr;
+
+	Storage &getStorage() {
+		if (_botPtr)
+			return _botPtr->_storage;
+		else
+		{
+			static Storage storage = initStorage(":memory:");
+			return storage;
+		}
+	}
+
+	const Storage &getStorage() const {
+		if (_botPtr)
+			return _botPtr->_storage;
+		else
+		{
+			static Storage storage = initStorage(":memory:");
+			return storage;
+		}
+	}
 };
