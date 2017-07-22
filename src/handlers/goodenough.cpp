@@ -41,6 +41,8 @@ LemonHandler::ProcessingResult GoodEnough::HandleMessage(const ChatMessage &msg)
 class GoodEnoughBot : public LemonBot
 {
 public:
+	GoodEnoughBot() : LemonBot(":memory:") { }
+
 	void SendMessage(const std::string &text)
 	{
 		_success = (text == "TestUser: " + response);

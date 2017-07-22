@@ -205,6 +205,8 @@ void DiceRoller::ResetRNG(int seed)
 class DiceTestBot : public LemonBot
 {
 public:
+	DiceTestBot() : LemonBot(":memory:") { }
+
 	void SendMessage(const std::string &text)
 	{
 		if (text.find('=') > text.find('}') && text.find('=') < text.npos)

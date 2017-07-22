@@ -187,6 +187,8 @@ std::string Pager::GetPagerStats() const
 class PagerTestBot : public LemonBot
 {
 public:
+	PagerTestBot() : LemonBot(":memory:") { }
+
 	void SendMessage(const std::string &text)
 	{
 		_received.push_back(text);

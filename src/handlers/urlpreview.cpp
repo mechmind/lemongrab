@@ -346,6 +346,8 @@ std::string formatHTMLchars(std::string input)
 class UrlPreviewTestBot : public LemonBot
 {
 public:
+	UrlPreviewTestBot() : LemonBot(":memory:") { }
+
 	void SendMessage(const std::string &text)
 	{
 		_lastMessage = text;

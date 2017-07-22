@@ -168,6 +168,8 @@ void Quotes::RegenerateIndex()
 class QuoteTestBot : public LemonBot
 {
 public:
+	QuoteTestBot() : LemonBot(":memory:") { }
+
 	void SendMessage(const std::string &text)
 	{
 		_received.push_back(text);
