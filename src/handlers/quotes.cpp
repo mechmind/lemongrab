@@ -188,7 +188,7 @@ void Quotes::Migrate()
 	});
 
 	quotesDB.Clear();
-	SendMessage("Imported " + std::to_string(recordCount) + " quotes");
+	LOG(WARNING) << "Imported " + std::to_string(recordCount) + " quotes";
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START

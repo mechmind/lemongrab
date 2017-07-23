@@ -121,7 +121,7 @@ void LeagueLookup::Migrate()
 	});
 
 	summoners.Clear();
-	SendMessage("Imported " + std::to_string(recordCount) + " summoners");
+	LOG(WARNING) << "Imported " + std::to_string(recordCount) + " summoners";
 }
 
 LeagueLookup::RiotAPIResponse LeagueLookup::RiotAPIRequest(const std::string &request, Json::Value &output)

@@ -6,6 +6,8 @@
 
 #include "util/stringops.h"
 
+#include "util/persistentmap.h"
+
 LastSeen::LastSeen(LemonBot *bot)
 	: LemonHandler("seen", bot)
 {
@@ -192,8 +194,7 @@ void LastSeen::Migrate()
 	_lastActiveDB.Clear();
 	_nick2jidDB.Clear();
 
-	SendMessage("User db migration completed");
-	SendMessage(GetStats());
+	LOG(WARNING) << "User db migration completed: " << GetStats();
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START

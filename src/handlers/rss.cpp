@@ -225,7 +225,7 @@ void RSSWatcher::Migrate()
 
 	if (success) {
 		feeds.Clear();
-		SendMessage("Imported RSS feeds: " + std::to_string(recordCount));
+		LOG(WARNING) << "Imported RSS feeds: " + std::to_string(recordCount);
 	}
 }
 

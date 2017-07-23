@@ -276,7 +276,7 @@ void UrlPreview::MigrateHistory()
 	});
 
 	urlHistory.Clear();
-	SendMessage("URLs from history imported: " + std::to_string(recordCount));
+	LOG(WARNING) << "URLs from history imported: " + std::to_string(recordCount);
 }
 
 void UrlPreview::MigrateRules()
@@ -307,7 +307,7 @@ void UrlPreview::MigrateRules()
 
 	urlWhitelist.Clear();
 	urlBlacklist.Clear();
-	SendMessage("Imported " + std::to_string(recordCount) + " URL rules");
+	LOG(WARNING) << "Imported " + std::to_string(recordCount) + " URL rules";
 }
 
 std::string formatHTMLchars(std::string input)
