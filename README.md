@@ -1,11 +1,17 @@
 lemongrab
 =========
 
-Simple XMPP MUC bot, serving one conference at a time, written in C++
+Simple XMPP MUC bot, serving one conference at a time, written in C++.
+
+This is a pet project, not intended for general use.
 
 [![Build Status](https://travis-ci.org/Chemrat/lemongrab.svg?branch=master)](https://travis-ci.org/Chemrat/lemongrab)
 [![Coverage Status](https://coveralls.io/repos/github/Chemrat/lemongrab/badge.svg?branch=master)](https://coveralls.io/github/Chemrat/lemongrab?branch=master)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/8766/badge.svg)](https://scan.coverity.com/projects/8766)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/49f2e50d3d81475d9bb0915b81368494)](https://www.codacy.com/app/jazzvoid/lemongrab?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Chemrat/lemongrab&amp;utm_campaign=Badge_Grade)
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
+
 
 List of features:
 
