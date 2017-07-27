@@ -85,7 +85,7 @@ std::string Quotes::GetQuote(const std::string &id)
 	if (id.empty())
 	{
 		using namespace sqlite_orm;
-		auto quotes = getStorage().get_all<DB::Quote>(order_by(&DB::Quote::humanIndex).random());
+		auto quotes = getStorage().get_all<DB::Quote>(order_by(sqlite_orm::random()));
 
 		return "(" + std::to_string(quotes.at(0).humanIndex) + "/" + LastID + ") " + quotes.at(0).quote;
 	}
