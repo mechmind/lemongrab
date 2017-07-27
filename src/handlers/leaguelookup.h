@@ -51,7 +51,6 @@ private:
 		InvalidJSON,
 	};
 
-	void Migrate();
 	static RiotAPIResponse RiotAPIRequest(const std::string &request, Json::Value &output);
 
 	std::string lookupCurrentGame(const std::string &name) const;

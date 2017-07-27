@@ -22,8 +22,6 @@ private:
 	std::string FindQuote(const std::string &request);
 	void RegenerateIndex();
 
-	void Migrate();
-
 private:
 	std::mt19937_64 _generator;
 

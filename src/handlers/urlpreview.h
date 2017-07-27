@@ -27,9 +27,6 @@ private:
 	std::string ShowURLRules();
 
 private:
-	void MigrateHistory();
-	void MigrateRules();
-
 	static constexpr int maxLength = 500;
 	static constexpr int maxURLsInOneMessage = 5;
 	static constexpr int maxURLsInSearch = 15;

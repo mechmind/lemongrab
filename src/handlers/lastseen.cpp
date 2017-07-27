@@ -6,12 +6,10 @@
 
 #include "util/stringops.h"
 
-#include "util/persistentmap.h"
-
 LastSeen::LastSeen(LemonBot *bot)
 	: LemonHandler("seen", bot)
 {
-	Migrate();
+
 }
 
 LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
@@ -149,52 +147,6 @@ std::optional<LastSeen::LastActivity> LastSeen::GetLastActive(const std::string 
 	} else {
 		return { };
 	}
-}
-
-void LastSeen::Migrate()
-{
-	LevelDBPersistentMap _lastSeenDB;
-	LevelDBPersistentMap _lastActiveDB;
-	LevelDBPersistentMap _nick2jidDB;
-
-	if (!_lastSeenDB.init("lastseen", _botPtr->GetDBPathPrefix()))
-		return;
-	if (!_nick2jidDB.init("nick2jid", _botPtr->GetDBPathPrefix()))
-		return;
-	if (!_lastActiveDB.init("lastmsg", _botPtr->GetDBPathPrefix()))
-		return;
-
-	if (_lastActiveDB.isEmpty() && _lastActiveDB.isEmpty() && _nick2jidDB.isEmpty())
-		return;
-
-	_nick2jidDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		getStorage().replace(DB::Nick{record.first, record.second});
-		return true;
-	});
-
-	_lastSeenDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		getStorage().replace(DB::UserActivity{record.first, "", "", easy_stoll(record.second), easy_stoll(record.second)});
-		return true;
-	});
-
-	_lastActiveDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(record.first))
-		{
-			auto data = tokenize(record.second, ' ', 2);
-			userRecord->timepoint_message = easy_stoll(data.at(0));
-			userRecord->message = data.at(1);
-			getStorage().update(*userRecord);
-		} else {
-			LOG(ERROR) << "No record for jid " << record.first;
-		}
-		return true;
-	});
-
-	_lastSeenDB.Clear();
-	_lastActiveDB.Clear();
-	_nick2jidDB.Clear();
-
-	LOG(WARNING) << "User db migration completed: " << GetStats();
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START

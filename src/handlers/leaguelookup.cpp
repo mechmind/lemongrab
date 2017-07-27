@@ -9,8 +9,6 @@
 #include "util/stringops.h"
 #include "util/thread_util.h"
 
-#include "util/persistentmap.h"
-
 #include <chrono>
 #include <thread>
 
@@ -37,8 +35,6 @@ LeagueLookup::LeagueLookup(LemonBot *bot)
 		LOG(WARNING) << "Region / platform are not set, defaulting to EUNE";
 		_api._region = "eun1";
 	}
-
-	Migrate();
 }
 
 LeagueLookup::~LeagueLookup()
@@ -97,31 +93,6 @@ const std::string LeagueLookup::GetHelp() const
 			"!addsummoner %id% - add summoner to watchlist\n"
 			"!delsummoner %id% - remove summoner from watchlist\n"
 		   "!listsummoners - list watchlist content";
-}
-
-void LeagueLookup::Migrate()
-{
-	LevelDBPersistentMap summoners;
-	if (!summoners.init("leaguelookup", _botPtr->GetDBPathPrefix()))
-		return;
-
-	if (summoners.isEmpty())
-		return;
-
-	int recordCount = 0;
-	summoners.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		try {
-			AddSummoner(record.first);
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-			recordCount++;
-		} catch (std::exception &e) {
-			LOG(ERROR) << e.what();
-		}
-		return true;
-	});
-
-	summoners.Clear();
-	LOG(WARNING) << "Imported " + std::to_string(recordCount) + " summoners";
 }
 
 LeagueLookup::RiotAPIResponse LeagueLookup::RiotAPIRequest(const std::string &request, Json::Value &output)

@@ -44,6 +44,4 @@ private:
 	std::uint64_t _updateSecondsCurrent = 0;
 	std::uint64_t _updateSecondsMax = 0;
 	friend void UpdateThread(RSSWatcher *parent);
-
-	void Migrate();
 };

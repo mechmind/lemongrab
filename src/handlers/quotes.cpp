@@ -6,13 +6,11 @@
 
 #include "util/stringops.h"
 
-#include "util/persistentmap.h"
-
 Quotes::Quotes(LemonBot *bot)
 	: LemonHandler("quotes", bot)
 	, _generator(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()))
 {
-	Migrate();
+
 }
 
 LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)
@@ -167,28 +165,6 @@ void Quotes::RegenerateIndex()
 	}
 
 	SendMessage("Index regenerated. New count: " + std::to_string(index));
-}
-
-void Quotes::Migrate()
-{
-	LevelDBPersistentMap quotesDB;
-	if (!quotesDB.init("quotes", _botPtr->GetDBPathPrefix()))
-		return;
-
-	if (quotesDB.isEmpty())
-		return;
-
-	int recordCount = 0;
-	quotesDB.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		if (AddQuote(record.second))
-			recordCount++;
-		else
-			LOG(ERROR) << "Failed to import quote with id: " << record.first;
-		return true;
-	});
-
-	quotesDB.Clear();
-	LOG(WARNING) << "Imported " + std::to_string(recordCount) + " quotes";
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START

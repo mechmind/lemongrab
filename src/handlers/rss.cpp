@@ -10,8 +10,6 @@
 #include "util/stringops.h"
 #include "util/thread_util.h"
 
-#include "util/persistentmap.h"
-
 void UpdateThread(RSSWatcher *parent)
 {
 	while (parent->_isRunning) {
@@ -34,8 +32,6 @@ RSSWatcher::RSSWatcher(LemonBot *bot)
 		LOG(WARNING) << "Invalid RSS update rate, defaulting to 1 hour";
 		updateRate = 60 * 60;
 	}
-
-	Migrate();
 
 	_updateSecondsMax = updateRate;
 
@@ -198,35 +194,6 @@ RSSItem RSSWatcher::GetLatestItem(const std::string &feedURL)
 
 	result._error = "Invalid XML in feed";
 	return result;
-}
-
-void RSSWatcher::Migrate()
-{
-	LevelDBPersistentMap feeds;
-	if (!feeds.init("rss", _botPtr->GetDBPathPrefix()))
-		return;
-
-	if (feeds.isEmpty())
-		return;
-
-	bool success = true;
-	int recordCount = 0;
-	feeds.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		try {
-			DB::RssFeed feed = { -1, record.first, record.second };
-			getStorage().insert(feed);
-			recordCount++;
-		} catch (std::exception &e) {
-			SendMessage("Migration failed: " + std::string(e.what()));
-			success = false;
-		}
-		return true;
-	});
-
-	if (success) {
-		feeds.Clear();
-		LOG(WARNING) << "Imported RSS feeds: " + std::to_string(recordCount);
-	}
 }
 
 std::string RSSItem::Format() const

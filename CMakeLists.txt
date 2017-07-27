@@ -18,7 +18,6 @@ find_package(Gloox REQUIRED)
 find_package(Glog REQUIRED)
 find_package(LibEvent REQUIRED)
 find_package(JsonCpp REQUIRED)
-find_package(LevelDB REQUIRED)
 find_package(CppToml REQUIRED)
 find_package(PugiXML REQUIRED)
 find_package(Boost COMPONENTS locale REQUIRED)
@@ -38,7 +37,6 @@ include_directories(
     ${PUGIXML_INCLUDE_DIR}
     ${LIBEVENT_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
-    ${LEVELDB_INCLUDE_DIR}
     ${SQLITE3_INCLUDE_DIRS}
     )
 
@@ -72,7 +70,6 @@ target_link_libraries(${PROJECT_NAME}
     ${LIBEVENT_LIBRARY}
     ${LIBEVENT_PTHREADS_LIBRARY}
     ${Boost_LIBRARIES}
-    ${LEVELDB_LIBRARY}
     ${SQLITE3_LIBRARIES}
     )
 

@@ -42,9 +42,6 @@ private:
 	LastStatus GetLastStatus(const std::string &name);
 	std::optional<LastActivity> GetLastActive(const std::string &jid);
 
-private:
-	void Migrate();
-
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(LastSeen, GetLastStatus_OnlineOffline);
 #endif

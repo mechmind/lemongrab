@@ -12,15 +12,12 @@
 
 #include "util/stringops.h"
 
-#include "util/persistentmap.h"
-
 std::string formatHTMLchars(std::string input);
 
 UrlPreview::UrlPreview(LemonBot *bot)
 	: LemonHandler("url", bot)
 {
-	MigrateHistory();
-	MigrateRules();
+
 }
 
 LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)
@@ -241,73 +238,6 @@ std::string UrlPreview::ShowURLRules()
 		result.append("\n" + getStorage().dump(rule));
 
 	return result;
-}
-
-void UrlPreview::MigrateHistory()
-{
-	LevelDBPersistentMap urlHistory;
-	urlHistory.init("urlhistory", _botPtr->GetDBPathPrefix());
-
-	if (!urlHistory.isOK() || urlHistory.isEmpty())
-		return;
-
-	int recordCount = 0;
-	urlHistory.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		try {
-			auto now = std::chrono::system_clock::now();
-			auto splitter = record.second.find_first_of(' ');
-
-			if (splitter == record.second.npos)
-				throw(std::runtime_error("No splitter found"));
-
-			auto url = record.second.substr(0, splitter);
-			auto title = record.second.substr(splitter + 1);
-
-			DB::LoggedURL newRecord = { -1, url, title,
-								 std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count(),
-									  url + " " + title};
-			getStorage().insert(newRecord);
-			recordCount++;
-		} catch (std::exception &e) {
-			LOG(ERROR) << "Failed to import url record: " << e.what();
-		}
-
-		return true;
-	});
-
-	urlHistory.Clear();
-	LOG(WARNING) << "URLs from history imported: " + std::to_string(recordCount);
-}
-
-void UrlPreview::MigrateRules()
-{
-	LevelDBPersistentMap urlWhitelist;
-	LevelDBPersistentMap urlBlacklist;
-	urlWhitelist.init("urlwhitelist", _botPtr->GetDBPathPrefix());
-	urlBlacklist.init("urlblacklist", _botPtr->GetDBPathPrefix());
-
-	if (!urlWhitelist.isOK() || !urlBlacklist.isOK())
-		return;
-
-	if (urlWhitelist.isEmpty() && urlBlacklist.isEmpty())
-		return;
-
-	int recordCount = 0;
-	urlWhitelist.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		addRuleToRuleset(record.second, false);
-		recordCount++;
-		return true;
-	});
-
-	urlBlacklist.ForEach([&](std::pair<std::string, std::string> record)->bool{
-		addRuleToRuleset(record.second, true);
-		recordCount++;
-		return true;
-	});
-
-	urlWhitelist.Clear();
-	urlBlacklist.Clear();
-	LOG(WARNING) << "Imported " + std::to_string(recordCount) + " URL rules";
 }
 
 std::string formatHTMLchars(std::string input)

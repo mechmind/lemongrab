@@ -25,12 +25,12 @@ Dependencies:
 
 * gloox
 * curl
-* leveldb
 * libevent
 * jsoncpp
 * boost_locale
 * glog
 * pugixml
+* sqlite, sqlite_orm
 * gtest (if you're building tests)
 
 Build instructions:
