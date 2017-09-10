@@ -54,7 +54,9 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)
 
 	if (getCommandArguments(body, "!delisturl", args))
 	{
-		delRuleFromRuleset(args);
+		if (auto ruleID = from_string<int>(args)) {
+			delRuleFromRuleset(*ruleID);
+		};
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -220,10 +222,10 @@ bool UrlPreview::addRuleToRuleset(const std::string &rule, bool blacklist)
 	}
 }
 
-bool UrlPreview::delRuleFromRuleset(const std::string &ruleID)
+bool UrlPreview::delRuleFromRuleset(int ruleID)
 {
 	try {
-		getStorage().remove<DB::URLRule>(easy_stoll(ruleID));
+		getStorage().remove<DB::URLRule>(ruleID);
 		return true;
 	} catch (std::exception &e) {
 		LOG(ERROR) << "Failed to delete rule: " << e.what();

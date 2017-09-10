@@ -25,15 +25,7 @@ void UpdateThread(RSSWatcher *parent)
 RSSWatcher::RSSWatcher(LemonBot *bot)
 	: LemonHandler("rss", bot)
 {
-	auto updateRate = easy_stoll(GetRawConfigValue("RSS.UpdateSeconds"));
-
-	if (updateRate <= 0)
-	{
-		LOG(WARNING) << "Invalid RSS update rate, defaulting to 1 hour";
-		updateRate = 60 * 60;
-	}
-
-	_updateSecondsMax = updateRate;
+	_updateSecondsMax = from_string<int>(GetRawConfigValue("RSS.UpdateSeconds")).value_or(60*60);
 
 	UpdateFeeds();
 
@@ -58,7 +50,9 @@ LemonHandler::ProcessingResult RSSWatcher::HandleMessage(const ChatMessage &msg)
 		return ProcessingResult::StopProcessing;
 	} else if (getCommandArguments(msg._body, "!delrss", args)
 			   && msg._isAdmin) {
-		UnregisterFeed(easy_stoll(args));
+		auto feedID = from_string<int>(args);
+		if (feedID)
+			UnregisterFeed(*feedID);
 		return ProcessingResult::StopProcessing;
 	} else if (msg._body == "!listrss") {
 		SendMessage(ListRSSFeeds());
@@ -106,7 +100,7 @@ void RSSWatcher::RegisterFeed(const std::string &feed)
 	SendMessage("Feed " + feed + " added");
 }
 
-void RSSWatcher::UnregisterFeed(const int id)
+void RSSWatcher::UnregisterFeed(int id)
 {
 	try {
 		getStorage().remove<DB::RssFeed>(id);

@@ -18,7 +18,7 @@ public:
 private:
 	std::string GetQuote(const std::string &id);
 	bool AddQuote(const std::string &text);
-	bool DeleteQuote(const std::string &id);
+	bool DeleteQuote(int id);
 	std::string FindQuote(const std::string &request);
 	void RegenerateIndex();
 

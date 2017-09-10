@@ -4,6 +4,7 @@
 #include <vector>
 #include <list>
 #include <chrono>
+#include <optional>
 
 void initLocale();
 
@@ -36,4 +37,5 @@ std::list<URL> findURLs(const std::string &input);
 
 std::string CustomTimeFormat(std::chrono::system_clock::duration input);
 
-long long easy_stoll(const std::string &input);
+template <typename T>
+std::optional<T> from_string(const std::string &input);

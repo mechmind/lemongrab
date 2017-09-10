@@ -111,8 +111,8 @@ void Voting::Vote(const std::string &args, const std::string &voter)
 		return;
 	}
 
-	auto vote = easy_stoll(tokens.at(1));
-	if (vote < 0 || vote >= poll->second._options.size())
+	auto optionID = from_string<size_t>(tokens.at(1));
+	if (!optionID || *optionID < 0 || *optionID >= poll->second._options.size())
 	{
 		SendMessage("No such option");
 		return;
@@ -128,7 +128,7 @@ void Voting::Vote(const std::string &args, const std::string &voter)
 			}
 	}
 
-	poll->second._votes.at(vote).insert(voter);
+	poll->second._votes.at(*optionID).insert(voter);
 	SendMessage("Vote cast");
 }
 

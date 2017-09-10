@@ -38,9 +38,13 @@ LemonHandler::ProcessingResult Quotes::HandleMessage(const ChatMessage &msg)
 			return ProcessingResult::StopProcessing;
 		}
 
-		DeleteQuote(arg)
-				? SendMessage(msg._nick + ": quote deleted")
-				: SendMessage(msg._nick + ": quote doesn't exist or access denied");
+		if (auto id = from_string<int>(arg)) {
+			DeleteQuote(*id)
+					? SendMessage(msg._nick + ": quote deleted")
+					: SendMessage(msg._nick + ": quote doesn't exist or access denied");
+		} else {
+			SendMessage("Invalid ID");
+		}
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -82,16 +86,16 @@ std::string Quotes::GetQuote(const std::string &id)
 		return "No quotes";
 	}
 
-	if (id.empty())
-	{
+	if (id.empty()) {
 		using namespace sqlite_orm;
 		auto quotes = getStorage().get_all<DB::Quote>(order_by(sqlite_orm::random()));
 
 		return "(" + std::to_string(quotes.at(0).humanIndex) + "/" + LastID + ") " + quotes.at(0).quote;
 	}
 
-	if (auto quote = getStorage().get_no_throw<DB::Quote>(easy_stoll(id)))
+	if (auto quote = getStorage().get_no_throw<DB::Quote>(from_string<int>(id).value_or(0))) {
 		return "(" + std::to_string(quote->humanIndex) + "/" + LastID + ") " + quote->quote;
+	}
 
 	return FindQuote(id);
 }
@@ -114,12 +118,10 @@ bool Quotes::AddQuote(const std::string &text)
 	}
 }
 
-bool Quotes::DeleteQuote(const std::string &id)
+bool Quotes::DeleteQuote(int id)
 {
-	auto intId = easy_stoll(id);
-
 	try {
-		getStorage().remove<DB::Quote>(intId);
+		getStorage().remove<DB::Quote>(id);
 		return true;
 	} catch (std::exception &e) {
 		LOG(ERROR) << "Failed to delete quote: " << std::string(e.what());
@@ -199,7 +201,7 @@ TEST(QuotesTest, General)
 	auto quote = q.GetQuote("1");
 	auto pos = quote.find(testquote);
 	EXPECT_NE(quote.npos, pos);
-	EXPECT_TRUE(q.DeleteQuote("1"));
+	EXPECT_TRUE(q.DeleteQuote(1));
 }
 
 TEST(QuotesTest, Search)
@@ -221,8 +223,8 @@ TEST(QuotesTest, Search)
 	EXPECT_NE(quoteids.npos, pos1);
 	EXPECT_NE(quoteids.npos, pos2);
 
-	EXPECT_TRUE(q.DeleteQuote("1"));
-	EXPECT_TRUE(q.DeleteQuote("2"));
+	EXPECT_TRUE(q.DeleteQuote(1));
+	EXPECT_TRUE(q.DeleteQuote(2));
 }
 
 #endif // LCOV_EXCL_STOP

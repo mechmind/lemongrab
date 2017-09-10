@@ -23,7 +23,7 @@ private:
 
 	bool shouldPrintTitle(const std::string &url);
 	bool addRuleToRuleset(const std::string &rule, bool blacklist);
-	bool delRuleFromRuleset(const std::string &ruleID);
+	bool delRuleFromRuleset(int ruleID);
 	std::string ShowURLRules();
 
 private:

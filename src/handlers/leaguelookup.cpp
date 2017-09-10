@@ -328,25 +328,30 @@ void LeagueLookup::LookupAllSummoners(LeagueLookup *_parent, ApiOptions &api)
 
 std::string LeagueLookup::AddSummoner(const std::string &id)
 {
-	auto name = GetSummonerNameByID(id);
-	if (name.empty())
-	{
-		return "Summoner not found";
-	} else {
-		DB::LLSummoner newSummoner = { -1, easy_stoll(id), name };
-
-		if (getStorage().insert(newSummoner))
-			return "Summoner with ID " + id + " added as " + name;
-		else
-			return "Failed to add summoner to database";
+	auto summonerID = from_string<int>(id);
+	if (!summonerID) {
+		return "Invalid ID";
 	}
+
+	auto name = GetSummonerNameByID(id);
+	if (name.empty()) {
+		return "Summoner not found";
+	}
+
+	DB::LLSummoner newSummoner = { -1, *summonerID, name };
+
+	if (getStorage().insert(newSummoner))
+		return "Summoner with ID " + id + " added as " + name;
+	else
+		return "Failed to add summoner to database";
 }
 
 void LeagueLookup::DeleteSummoner(const std::string &id)
 {
 	using namespace sqlite_orm;
 	try {
-		getStorage().remove_all<DB::LLSummoner>(where(is_equal(&DB::LLSummoner::summonerID, easy_stoll(id))));
+		getStorage().remove_all<DB::LLSummoner>(where(is_equal(&DB::LLSummoner::summonerID,
+															   from_string<int>(id).value_or(0))));
 		SendMessage("Summoner deleted");
 	} catch (std::exception &e) {
 		LOG(ERROR) << e.what();

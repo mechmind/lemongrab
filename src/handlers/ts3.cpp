@@ -28,7 +28,7 @@ bool TS3::Init()
 	if (_nickname.empty())
 		_nickname = "Unseen\\svoice";
 
-	_channelID = easy_stoll(_botPtr->GetRawConfigValue("Teamspeak.Channel"));
+	_channelID = from_string<int>(_botPtr->GetRawConfigValue("Teamspeak.Channel")).value_or(0);
 
 	StartServerQueryClient();
 	return true;

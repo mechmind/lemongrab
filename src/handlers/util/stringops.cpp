@@ -109,18 +109,34 @@ std::string CustomTimeFormat(std::chrono::system_clock::duration input)
 	return output;
 }
 
-long long easy_stoll(const std::string &input)
+template<>
+std::optional<int> from_string<int>(const std::string &input)
 {
 	if (input.empty())
-		return -1;
+		return {};
 
 	try {
-		return std::stoll(input);
+		return std::stoi(input);
 	} catch (std::exception &e) {
-		LOG(INFO) << "stoll for " << input << " failed: " << e.what();
+		LOG(INFO) << "stoi for " << input << " failed: " << e.what();
 	}
 
-	return -1;
+	return {};
+}
+
+template<>
+std::optional<size_t> from_string<size_t>(const std::string &input)
+{
+	if (input.empty())
+		return {};
+
+	try {
+		return std::stoul(input);
+	} catch (std::exception &e) {
+		LOG(INFO) << "stoul for " << input << " failed: " << e.what();
+	}
+
+	return {};
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START

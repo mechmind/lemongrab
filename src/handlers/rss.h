@@ -32,7 +32,7 @@ public:
 
 private:
 	void RegisterFeed(const std::string &feed);
-	void UnregisterFeed(const int id);
+	void UnregisterFeed(int id);
 	std::string ListRSSFeeds();
 
 	void UpdateFeeds();
@@ -41,7 +41,7 @@ private:
 
 	std::thread _updateThread;
 	bool _isRunning = true;
-	std::uint64_t _updateSecondsCurrent = 0;
-	std::uint64_t _updateSecondsMax = 0;
+	int _updateSecondsCurrent = 0;
+	int _updateSecondsMax = 0;
 	friend void UpdateThread(RSSWatcher *parent);
 };
