@@ -18,7 +18,8 @@ private:
 	std::string getTitle(const std::string &content) const;
 	std::string getMetaCodepage(const std::string &content) const;
 
-	std::string findUrlsInHistory(const std::string &request, bool withIndices = false);
+	std::vector<DB::LoggedURL> findUrlsInHistory(const std::string &request);
+	std::string concatenateURLs(const std::vector<DB::LoggedURL> &urls, bool withIndices) const;
 	void StoreRecord(const std::string &record);
 
 	bool shouldPrintTitle(const std::string &url);
