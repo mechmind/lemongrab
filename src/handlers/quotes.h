@@ -29,5 +29,6 @@ private:
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(QuotesTest, General);
 	FRIEND_TEST(QuotesTest, Search);
+	FRIEND_TEST(QuotesTest, RegenIndex);
 #endif
 };

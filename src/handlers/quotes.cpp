@@ -79,6 +79,8 @@ const std::string Quotes::GetHelp() const
 
 std::string Quotes::GetQuote(const std::string &id)
 {
+	using namespace sqlite_orm;
+
 	std::string LastID;
 	if (auto maxID = getStorage().max(&DB::Quote::humanIndex)) {
 		LastID = std::to_string(*maxID);
@@ -87,14 +89,15 @@ std::string Quotes::GetQuote(const std::string &id)
 	}
 
 	if (id.empty()) {
-		using namespace sqlite_orm;
 		auto quotes = getStorage().get_all<DB::Quote>(order_by(sqlite_orm::random()));
 
 		return "(" + std::to_string(quotes.at(0).humanIndex) + "/" + LastID + ") " + quotes.at(0).quote;
 	}
 
-	if (auto quote = getStorage().get_no_throw<DB::Quote>(from_string<int>(id).value_or(0))) {
-		return "(" + std::to_string(quote->humanIndex) + "/" + LastID + ") " + quote->quote;
+	auto quotes = getStorage().get_all<DB::Quote>(where(is_equal(&DB::Quote::humanIndex, from_string<int>(id).value_or(0))));
+	if (quotes.size() == 1) {
+		const auto &quote = *quotes.begin();
+		return "(" + std::to_string(quote.humanIndex) + "/" + LastID + ") " + quote.quote;
 	}
 
 	return FindQuote(id);
@@ -180,15 +183,14 @@ public:
 		_storage.sync_schema();
 	}
 
-	void SendMessage(const std::string &text)
-	{
-		_received.push_back(text);
-	}
-
-	std::string GetDBPathPrefix() const { return "testdb/"; }
-
+	void SendMessage(const std::string &text);
 	std::vector<std::string> _received;
 };
+
+void QuoteTestBot::SendMessage(const std::string &text)
+{
+	_received.push_back(text);
+}
 
 TEST(QuotesTest, General)
 {
@@ -225,6 +227,25 @@ TEST(QuotesTest, Search)
 
 	EXPECT_TRUE(q.DeleteQuote(1));
 	EXPECT_TRUE(q.DeleteQuote(2));
+}
+
+TEST(QuotesTest, RegenIndex)
+{
+	QuoteTestBot tb;
+	Quotes q(&tb);
+
+	ASSERT_TRUE(q.AddQuote("testquote1"));
+	ASSERT_TRUE(q.AddQuote("testquote2"));
+	ASSERT_TRUE(q.AddQuote("testquote3"));
+
+	auto quote2 = q.GetQuote("2");
+	EXPECT_EQ("(2/3) testquote2", quote2);
+
+	EXPECT_TRUE(q.DeleteQuote(2));
+	q.RegenerateIndex();
+
+	auto quote3 = q.GetQuote("2");
+	EXPECT_EQ("(2/2) testquote3", quote3);
 }
 
 #endif // LCOV_EXCL_STOP
