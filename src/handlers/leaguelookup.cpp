@@ -290,6 +290,9 @@ void LeagueLookup::LookupAllSummoners(LeagueLookup *_parent, ApiOptions &api)
 		{
 		case RiotAPIResponse::NotFound:
 			break;
+		case RiotAPIResponse::AccessDenied:
+			_parent->SendMessage("Access denied");
+			return;
 		case RiotAPIResponse::RateLimitReached:
 			_parent->SendMessage("Rate limit reached");
 			return;

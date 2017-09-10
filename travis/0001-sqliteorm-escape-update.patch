@@ -1,0 +1,13 @@
+diff --git a/include/sqlite_orm/sqlite_orm.h b/include/sqlite_orm/sqlite_orm.h
+index 7dbd686..d783d25 100644
+--- a/include/sqlite_orm/sqlite_orm.h
++++ b/include/sqlite_orm/sqlite_orm.h
+@@ -4219,7 +4219,7 @@ namespace sqlite_orm {
+                 }
+             });
+             for(size_t i = 0; i < setColumnNames.size(); ++i) {
+-                ss << setColumnNames[i] << " = ?";
++                ss << "\"" << setColumnNames[i] << "\" = ?";
+                 if(i < setColumnNames.size() - 1) {
+                     ss << ", ";
+                 }else{
