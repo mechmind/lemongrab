@@ -125,7 +125,7 @@ void Pager::StoreMessage(const std::string &to, const std::string &from, const s
 	auto msgtext = from + ": " + text;
 	_messages.emplace_back(to, msgtext);
 
-	DB::PagerMsg newMsg = { -1, from, msgtext, std::chrono::system_clock::to_time_t(_messages.back()._expiration) };
+	DB::PagerMsg newMsg = { -1, to, msgtext, static_cast<int>(std::chrono::system_clock::to_time_t(_messages.back()._expiration)) };
 	try {
 		getStorage().insert(newMsg);
 	} catch (std::exception &e) {
@@ -138,7 +138,7 @@ void Pager::PurgeMessageFromDB(long long id)
 	try {
 		getStorage().remove<DB::PagerMsg>(id);
 	} catch (std::exception &e) {
-		LOG(ERROR) << "Failed to purge pager message with id " << id;
+		LOG(ERROR) << "Failed to purge pager message with id: " << e.what() << id;
 	}
 }
 
