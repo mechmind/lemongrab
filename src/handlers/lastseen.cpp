@@ -23,7 +23,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 		userRecord->timepoint_message = now_t;
 		getStorage().update(*userRecord);
 	} else {
-		getStorage().replace(DB::UserActivity{msg._jid, msg._nick, msg._body, now_t, now_t});
+		getStorage().replace(DB::UserActivity{msg._jid, msg._nick, msg._body, static_cast<int>(now_t), static_cast<int>(now_t)});
 	}
 
 	if (msg._body == "!seenstat")
@@ -54,7 +54,7 @@ void LastSeen::HandlePresence(const std::string &from, const std::string &jid, b
 		userRecord->timepoint_status = now_t;
 		getStorage().update(*userRecord);
 	} else {
-		getStorage().replace(DB::UserActivity{jid, from, "", now_t, now_t});
+		getStorage().replace(DB::UserActivity{jid, from, "", static_cast<int>(now_t), static_cast<int>(now_t)});
 	}
 }
 
@@ -102,8 +102,6 @@ LastSeen::LastStatus LastSeen::GetLastStatus(const std::string &name) // FIXME c
 {
 	using namespace sqlite_orm;
 	auto now = std::chrono::system_clock::now();
-
-	std::string lastSeenRecord = "0";
 
 	if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(name))
 	{
@@ -160,11 +158,13 @@ public:
 		_storage.sync_schema();
 	}
 
-	void SendMessage(const std::string &text)
-	{
-
-	}
+	void SendMessage(const std::string &text);
 };
+
+void LastSeenBot::SendMessage(const std::string &text)
+{
+
+}
 
 TEST(LastSeen, DurationFormat)
 {

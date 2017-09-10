@@ -44,7 +44,7 @@ private:
 	std::string _outgoingMessage;
 
 	std::string _nickname = "Lemongrab";
-	std::int64_t _channelID;
+	std::int64_t _channelID = 0;
 	std::thread _telnetClient;
 	State _sqState = State::NotConnected;
 	std::unordered_map<std::string, std::string> _clients;
