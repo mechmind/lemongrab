@@ -118,19 +118,9 @@ void httpServerThread(GithubWebhooks * parent, std::uint16_t port)
 
 bool GithubWebhooks::InitLibeventServer()
 {
-	auto portFromOptions = GetRawConfigValue("Github.Port");
-
-	std::uint16_t port = 5555;
-	if (!portFromOptions.empty())
-	{
-		try {
-			port = std::stol(portFromOptions);
-		} catch (std::exception &e) {
-			LOG(WARNING) << "Invalid Github.Port in config.ini (" << e.what() << ")";
-		}
-	}
-
-	_httpServer = std::thread (&httpServerThread, this, port);
+	_httpServer = std::thread(&httpServerThread,
+							  this,
+							  from_string<int>(GetRawConfigValue("Github.Port")).value_or(5555));
 	nameThread(_httpServer, "GitHub webhook listener");
 	return true;
 }
