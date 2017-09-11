@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Dwarf Fortress Development Log</title>
+<atom:link href="http://www.bay12games.com/dwarves/dev_now.rss" rel="self" type="application/rss+xml" />
+    <link>http://www.bay12games.com/dwarves/index.html</link>
+    <description>DF development updates</description>
+    <item>
+      <title>09/07/2017</title>
+      <pubDate>Thu, 07 Sep 2017 21:29:00 PDT</pubDate>
+      <link>http://www.bay12games.com/dwarves/index.html#2017-09-07</link>
+      <description xml:space="preserve">testitem</description>
+      <guid>testguid</guid>
+    </item>
+  </channel>
+</rss>
