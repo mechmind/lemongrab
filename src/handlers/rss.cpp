@@ -61,8 +61,11 @@ LemonHandler::ProcessingResult RSSWatcher::HandleMessage(const ChatMessage &msg)
 		UpdateFeeds();
 		return ProcessingResult::StopProcessing;
 	} else if (getCommandArguments(msg._body, "!readrss", args)) {
-		auto item = GetLatestItem(args);
-		SendMessage(item.Format());
+		if (auto item = GetLatestItem(args)) {
+			SendMessage(item->Format());
+		} else {
+			SendMessage("Failed to fetch or parse feed");
+		}
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -81,8 +84,6 @@ const std::string RSSWatcher::GetHelp() const
 void RSSWatcher::RegisterFeed(const std::string &feed)
 {
 	using namespace sqlite_orm;
-	DB::RssFeed newFeed { -1, feed };
-
 	auto feeds = getStorage().get_all<DB::RssFeed>(where(is_equal(&DB::RssFeed::URL, feed)));
 	if (feeds.size() > 0)
 	{
@@ -91,6 +92,7 @@ void RSSWatcher::RegisterFeed(const std::string &feed)
 	}
 
 	try {
+		DB::RssFeed newFeed { -1, feed };
 		getStorage().insert(newFeed);
 	} catch (std::exception &e) {
 		SendMessage("Can't insert feed: " + std::string(e.what()));
@@ -111,10 +113,10 @@ void RSSWatcher::UnregisterFeed(int id)
 	SendMessage("Feed removed");
 }
 
-std::string RSSWatcher::ListRSSFeeds()// FIXME const
+std::string RSSWatcher::ListRSSFeeds()
 {
 	std::string result = "Registered feeds: ";
-	for (auto &feed : getStorage().get_all<DB::RssFeed, std::list<DB::RssFeed>>())
+	for (const auto &feed : getStorage().get_all<DB::RssFeed, std::list<DB::RssFeed>>())
 	{
 		result.append("\n" + getStorage().dump(feed));
 	}
@@ -124,78 +126,115 @@ std::string RSSWatcher::ListRSSFeeds()// FIXME const
 
 void RSSWatcher::UpdateFeeds()
 {
-	try {
-		for (auto &feed : getStorage().get_all<DB::RssFeed, std::list<DB::RssFeed>>())
+	for (auto &feed : getStorage().get_all<DB::RssFeed, std::list<DB::RssFeed>>())
+	{
+		const auto item = GetLatestItem(feed.URL);
+		if (item && item->guid != feed.GUID)
 		{
-			auto item = GetLatestItem(feed.URL);
-
-			if (!item._valid)
-			{
-				LOG(WARNING) << "Failed to update feed " << feed.URL
-							 << " | Error: " << item._error;
-				continue;
-			}
-
-			if (feed.GUID != item.guid)
-			{
-				feed.GUID = item.guid;
-				getStorage().update(feed);
-				SendMessage(item.Format());
-			}
+			feed.GUID = item->guid;
+			getStorage().update(feed);
+			SendMessage(item->Format());
 		}
-	} catch (std::exception &e) {
-		SendMessage("UpdateFeeds failed: " + std::string(e.what()));
 	}
 }
 
-RSSItem RSSWatcher::GetLatestItem(const std::string &feedURL)
+std::optional<RSSItem> RSSWatcher::GetLatestItem(const std::string &feedURL) const
 {
-	RSSItem result;
+	auto feedContent = fetchRawRSS(feedURL);
+
+	if (!feedContent)
+		return {};
+
+	return parseRawRSS(*feedContent);
+}
+
+std::optional<std::string> RSSWatcher::fetchRawRSS(const std::string &feedURL) const
+{
 	auto feedContent = cpr::Get(cpr::Url(feedURL), cpr::Timeout(2000));
-
-	// Avoid INFO log clutter
-	// LOG(INFO) << "Checking feed: " << feedURL << " | Result: " << feedContent.status_code;
-
 	if (feedContent.status_code != 200)
 	{
-		result._error = "Status code is not 200 OK: " + std::to_string(feedContent.status_code) + " | " + feedContent.error.message;
-		return result;
+		LOG(WARNING) << "Status code is not 200 OK: " + std::to_string(feedContent.status_code) + " | " + feedContent.error.message;
+		return {};
 	}
 
+	return feedContent.text;
+}
+
+std::optional<RSSItem> RSSWatcher::parseRawRSS(const std::string &rawRSS) const
+{
 	pugi::xml_document doc;
-	auto parsingResult = doc.load_string(feedContent.text.c_str());
-
-	if (parsingResult)
-	{
-		try {
-			auto rss = doc.child("rss");
-			auto channel = rss.child("channel");
-			auto items = channel.children("item");
-
-			result.title = items.begin()->child_value("title");
-			result.link = items.begin()->child_value("link");
-			result.pubDate = items.begin()->child_value("pubDate");
-			result.description = items.begin()->child_value("description");
-			result.guid = items.begin()->child_value("guid");
-			result._valid = true;
-
-			return result;
-		} catch (...) {
-			result._error = "XML parser exploded violently";
-			return result;
-		}
+	auto parsingResult = doc.load_string(rawRSS.c_str());
+	if (!parsingResult) {
+		LOG(WARNING) << "Invalid XML: " << std::endl << rawRSS;
+		return {};
 	}
 
-	result._error = "Invalid XML in feed";
-	return result;
+	try {
+		auto items = doc.child("rss").child("channel").children("item");
+		return RSSItem{
+			items.begin()->child_value("title"),
+			items.begin()->child_value("pubDate"),
+			items.begin()->child_value("link"),
+			items.begin()->child_value("description"),
+			items.begin()->child_value("guid")
+		};
+	} catch (std::exception &e) {
+		LOG(WARNING) << "XML parser exploded violently: " << e.what();
+		return {};
+	}
 }
 
 std::string RSSItem::Format() const
 {
-	if (_valid)
-		return title + " @ " + pubDate + \
-				" ( " + link + " )" + \
-				"\n\n" + description;
-	else
-		return _error;
+	return title + " @ " + pubDate + \
+			" ( " + link + " )" + \
+			"\n\n" + description;
 }
+
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
+
+#include "gtest/gtest.h"
+
+#include <fstream>
+#include <streambuf>
+#include <iostream>
+
+class RssTestBot : public LemonBot
+{
+public:
+	RssTestBot() : LemonBot(":memory:") {
+		_storage.sync_schema();
+	}
+
+	void SendMessage(const std::string &text);
+	std::vector<std::string> _received;
+};
+
+void RssTestBot::SendMessage(const std::string &text)
+{
+	_received.push_back(text);
+}
+
+
+TEST(RSSReader, Parse)
+{
+	{
+		RssTestBot tb;
+		RSSWatcher rss(&tb);
+		std::ifstream rssFile("test/dev_now.rss");
+		std::string contents{std::istreambuf_iterator<char>{rssFile}, {}};
+		ASSERT_FALSE(contents.empty());
+
+		auto rssitem = rss.parseRawRSS(contents);
+		ASSERT_TRUE(rssitem.has_value());
+
+		EXPECT_EQ("09/07/2017", rssitem->title);
+		EXPECT_EQ("Thu, 07 Sep 2017 21:29:00 PDT", rssitem->pubDate);
+		EXPECT_EQ("http://www.bay12games.com/dwarves/index.html#2017-09-07", rssitem->link);
+		EXPECT_EQ("testitem", rssitem->description);
+		EXPECT_EQ("testguid", rssitem->guid);
+	}
+}
+
+#endif // LCOV_EXCL_STOP
+

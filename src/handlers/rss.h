@@ -4,15 +4,17 @@
 #include <string>
 #include <mutex>
 #include <thread>
+#include <optional>
 
 #include "lemonhandler.h"
+
+#ifdef _BUILD_TESTS
+#include <gtest/gtest_prod.h>
+#endif
 
 class RSSItem
 {
 public:
-	bool _valid = false;
-	std::string _error = "No error specified";
-
 	std::string title;
 	std::string pubDate;
 	std::string link;
@@ -37,11 +39,17 @@ private:
 
 	void UpdateFeeds();
 
-	RSSItem GetLatestItem(const std::string &feedURL);
+	std::optional<RSSItem> GetLatestItem(const std::string &feedURL) const;
+	std::optional<std::string> fetchRawRSS(const std::string &feedURL) const;
+	std::optional<RSSItem> parseRawRSS(const std::string &rawRSS) const;
 
 	std::thread _updateThread;
 	bool _isRunning = true;
 	int _updateSecondsCurrent = 0;
 	int _updateSecondsMax = 0;
 	friend void UpdateThread(RSSWatcher *parent);
+
+#ifdef _BUILD_TESTS
+	FRIEND_TEST(RSSReader, Parse);
+#endif
 };
