@@ -1,5 +1,7 @@
 #include "ts3.h"
 
+#include <array>
+
 #include <event2/dns.h>
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
@@ -15,6 +17,7 @@
 
 std::string FormatTS3Name(const std::string &raw);
 std::string ReplaceTS3Spaces(const std::string &input, bool backwards = false);
+std::optional<std::string> BuffereventToString(bufferevent *bev);
 
 TS3::TS3(LemonBot *bot)
 	: LemonHandler("ts3", bot)
@@ -96,29 +99,19 @@ void TS3::telnetEvent(bufferevent *bev, short event, void *parentPtr)
 
 void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 {
-	auto parent = static_cast<TS3*>(parentPtr);
-	std::string s;
-	char buf[1024];
-	int n;
-	evbuffer *input = bufferevent_get_input(bev);
-	while ((n = evbuffer_remove(input, buf, sizeof(buf))) > 0)
-		s.append(buf, n);
+	const auto s = BuffereventToString(bev);
+	if (!s) return;
 
-	// trim CR LF
-	if (s.size() > 2)
-		s.erase(s.size() - 2);
-	else
-		LOG(ERROR) << "Received telnet line that is too short!";
+	const auto &message = *s;
 
-	// Pong messages clutter INFO log badly
-	// LOG(INFO) << s;
+	const auto parent = static_cast<TS3*>(parentPtr);
 
 	switch (parent->_sqState)
 	{
 	case TS3::State::NotConnected:
 		// FIXME: very poor criteria for connection
 		static const std::string welcome = "Welcome to the TeamSpeak 3 ServerQuery interface";
-		if (s.find(welcome) != s.npos)
+		if (message.find(welcome) != message.npos)
 		{
 			LOG(INFO) << "Connected to ServerQuery interface";
 			parent->_sqState = TS3::State::ServerQueryConnected;
@@ -130,7 +123,7 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 
 	case TS3::State::ServerQueryConnected:
 		static const std::string okMsg = "error id=0 msg=ok";
-		if (beginsWith(s, okMsg))
+		if (beginsWith(message, okMsg))
 		{
 			LOG(INFO) << "Authorized on TS3 server";
 			parent->_sqState = TS3::State::Authrozied;
@@ -139,7 +132,7 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 		break;
 
 	case TS3::State::Authrozied:
-		if (beginsWith(s, okMsg))
+		if (beginsWith(message, okMsg))
 		{
 			LOG(INFO) << "Connected to Virtual Server";
 			parent->_sqState = TS3::State::VirtualServerConnected;
@@ -148,7 +141,7 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 		break;
 
 	case TS3::State::VirtualServerConnected:
-		if (beginsWith(s, okMsg))
+		if (beginsWith(message, okMsg))
 		{
 			LOG(INFO) << "Nickname is set";
 			parent->_sqState = TS3::State::NickSet;
@@ -158,7 +151,7 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 		break;
 
 	case TS3::State::NickSet:
-		if (beginsWith(s, okMsg))
+		if (beginsWith(message, okMsg))
 		{
 			LOG(INFO) << "Subscribed to connects/disconnects";
 			parent->_sqState = TS3::State::Subscribed;
@@ -167,37 +160,37 @@ void TS3::telnetMessage(bufferevent *bev, void *parentPtr)
 		break;
 
 	case TS3::State::Subscribed:
-		if (beginsWith(s, "notifycliententerview"))
+		if (beginsWith(message, "notifycliententerview"))
 		{
-			auto tokens = tokenize(s, ' ');
+			auto tokens = tokenize(message, ' ');
 			try {
 				parent->TS3Connected(tokens.at(4).substr(5), tokens.at(6).substr(16));
 			} catch (std::exception &e) {
-				LOG(ERROR) << "Can't parse message: \"" << s << "\" | Exception: " << e.what();
+				LOG(ERROR) << "Can't parse message: \"" << message << "\" | Exception: " << e.what();
 			}
 			break;
 		}
 
-		if (beginsWith(s, "notifyclientleftview"))
+		if (beginsWith(message, "notifyclientleftview"))
 		{
-			auto tokens = tokenize(s, ' ');
+			auto tokens = tokenize(message, ' ');
 			try {
 				parent->TS3Disconnected(tokens.at(5).substr(5, tokens.at(5).size() - 5));
 			} catch (std::exception &e) {
-				LOG(ERROR) << "Can't parse message: \"" << s << "\" | Exception: " << e.what();
+				LOG(ERROR) << "Can't parse message: \"" << message << "\" | Exception: " << e.what();
 			}
 			break;
 		}
 
-		if (beginsWith(s, "notifytextmessage"))
+		if (beginsWith(message, "notifytextmessage"))
 		{
-			auto tokens = tokenize(s, ' ');
+			auto tokens = tokenize(message, ' ');
 			try {
 				auto nick = ReplaceTS3Spaces(tokens.at(4).substr(12));
 				auto message = ReplaceTS3Spaces(tokens.at(2).substr(4));
 				parent->TS3Message(nick, message);
 			} catch (std::exception &e) {
-				LOG(ERROR) << "Can't parse message: \"" << s << "\" | Exceptions: " << e.what();
+				LOG(ERROR) << "Can't parse message: \"" << message << "\" | Exceptions: " << e.what();
 			}
 			break;
 		}
@@ -329,6 +322,25 @@ std::string ReplaceTS3Spaces(const std::string &input, bool backwards)
 	}
 
 	return result;
+}
+
+std::optional<std::string> BuffereventToString(bufferevent *bev)
+{
+	std::string s;
+	std::array<char, 1024> buf;
+	int n = 0;
+	evbuffer *input = bufferevent_get_input(bev);
+	while ((n = evbuffer_remove(input, buf.data(), buf.size())) > 0)
+		s.append(buf.data(), n);
+
+	// trim CR LF
+	if (s.size() <= 2) {
+		LOG(ERROR) << "Received telnet line that is too short!";
+		return {};
+	}
+
+	s.erase(s.size() - 2);
+	return s;
 }
 
 #ifdef _BUILD_TESTS // LCOV_EXCL_START

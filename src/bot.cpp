@@ -98,7 +98,7 @@ void Bot::OnMessage(ChatMessage &msg)
 	if (text == "!uptime")
 	{
 		auto currentTime = std::chrono::system_clock::now();
-		std::string uptime("Uptime: " + CustomTimeFormat(currentTime - _startTime) + " | Build date: " + std::string(__DATE__));
+		std::string uptime("Uptime: " + CustomTimeFormat(currentTime - _startTime));
 		return SendMessage(uptime);
 	}
 
