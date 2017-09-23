@@ -30,9 +30,6 @@ public:
 
 	ExitCode Run(); // Locks thread
 
-	void RegisterAllHandlers();
-	void UnregisterAllHandlers();
-
 	// XMPPHandler interface
 	void OnConnect() override;
 	void OnMessage(ChatMessage &msg) final;
@@ -47,7 +44,12 @@ public:
 	void SendMessage(const std::string &text) final;
 	std::string GetRawConfigValue(const std::string &name) const final;
 
+	void OnSIGTERM();
 private:
+	// Handlers
+	void RegisterAllHandlers();
+	void UnregisterAllHandlers();
+
 	template <class LemonHandler> void RegisterHandler()
 	{
 		auto handler = std::make_shared<LemonHandler>(this);

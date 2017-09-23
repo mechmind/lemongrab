@@ -16,9 +16,33 @@
 
 #include "glooxclient.h"
 
+#include "signal.h"
+
 #include <glog/logging.h>
 
 #include <algorithm>
+
+static Bot *signalHandlingInstance = nullptr;
+
+void handleSigTerm(int) {
+	if (signalHandlingInstance)
+		signalHandlingInstance->OnSIGTERM();
+}
+
+static void RegisterSignalHandler(Bot *bot) {
+	signalHandlingInstance = bot;
+
+	struct sigaction action;
+	memset(&action, 0, sizeof(struct sigaction));
+	action.sa_handler = &handleSigTerm;
+	sigaction(SIGTERM, &action, NULL);
+}
+
+static void UnregisterSignalHandler() {
+	struct sigaction action;
+	memset(&action, 0, sizeof(struct sigaction));
+	sigaction(SIGTERM, &action, NULL);
+}
 
 Bot::Bot(XMPPClient *client, Settings &settings)
 	: LemonBot(settings.GetDBPrefixPath() + "/local.db")
@@ -27,6 +51,7 @@ Bot::Bot(XMPPClient *client, Settings &settings)
 {
 	_storage.sync_schema(true);
 	_xmpp->SetXMPPHandler(this);
+	RegisterSignalHandler(this);
 }
 
 Bot::ExitCode Bot::Run()
@@ -104,9 +129,8 @@ void Bot::OnMessage(ChatMessage &msg)
 
 	if (text == "!die" && msg._isAdmin)
 	{
-		LOG(WARNING) << "Termination requested";
+		LOG(WARNING) << "Termination requested (!die command received)";
 		_exitCode = ExitCode::TerminationRequested;
-		// _chatEventHandlers.clear();
 		_xmpp->Disconnect();
 		return;
 	}
@@ -207,6 +231,13 @@ std::string Bot::GetRawConfigValue(const std::string &name) const
 {
 	// FIXME expose _settings instead
 	return _settings.GetRawString(name);
+}
+
+void Bot::OnSIGTERM()
+{
+	LOG(WARNING) << "Termination requested (SIGTERM caught)";
+	_exitCode = ExitCode::TerminationRequested;
+	_xmpp->Disconnect();
 }
 
 void Bot::EnableHandlers(const std::list<std::string> &whitelist, const std::list<std::string> &blacklist)
