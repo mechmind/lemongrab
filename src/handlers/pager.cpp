@@ -29,11 +29,6 @@ Pager::Message::Message(const std::string &to, const std::string &text)
 	std::replace(_text.begin(), _text.end(), '\n', ' ');
 }
 
-bool Pager::Message::isValid()
-{
-	return !_recepient.empty();
-}
-
 bool Pager::Message::operator==(const Pager::Message &rhs)
 {
 	return _id == rhs._id
@@ -111,12 +106,7 @@ void Pager::RestoreMessages()
 {
 	for (auto &msg : getStorage().get_all<DB::PagerMsg>())
 	{
-		Message m(msg);
-
-		if (!m.isValid())
-			LOG(ERROR) << "Invalid message with ID: " << m._id;
-		else
-			_messages.push_back(m);
+		_messages.emplace_back(msg);
 	}
 }
 

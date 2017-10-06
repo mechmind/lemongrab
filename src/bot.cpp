@@ -172,10 +172,10 @@ void Bot::OnMessage(ChatMessage &msg)
 
 void Bot::OnPresence(const std::string &nick, const std::string &jid, bool online, const std::string &newNick)
 {
-	bool newConnection = false;
+	bool isNewConnection = false;
 	if (online)
 	{
-		newConnection = _nick2jid.insert(std::pair<std::string, std::string>(nick, jid)).second;
+		isNewConnection = _nick2jid.insert(std::pair(nick, jid)).second;
 		_jid2nick[jid] = nick;
 	}
 	else
@@ -191,7 +191,7 @@ void Bot::OnPresence(const std::string &nick, const std::string &jid, bool onlin
 	}
 
 	for (auto &handler : _chatEventHandlers)
-		handler->HandlePresence(nick, jid, newConnection);
+		handler->HandlePresence(nick, jid, isNewConnection);
 }
 
 std::string Bot::GetNickByJid(const std::string &jid) const

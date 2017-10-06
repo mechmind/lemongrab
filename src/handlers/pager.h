@@ -30,7 +30,6 @@ private:
 		Message(const DB::PagerMsg &dbmsg);
 		Message(const std::string &to, const std::string &text);
 
-		bool isValid();
 		inline bool operator==(const Message &rhs);
 
 		long long _id = 0;
