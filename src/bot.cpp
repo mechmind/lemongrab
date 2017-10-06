@@ -84,7 +84,7 @@ void Bot::RegisterAllHandlers()
 	for (const auto &handler : _handlersByName)
 		LOG(INFO) << "Handler loaded: " << handler.first;
 
-	EnableHandlers(_settings.GetArray<std::list, std::string>("General.Modules"), _settings.GetArray<std::list, std::string>("General.ModulesBlacklist"));
+	EnableHandlers(_settings.GetStringSet("General.Modules"), _settings.GetStringSet("General.ModulesBlacklist"));
 }
 
 void Bot::UnregisterAllHandlers()
@@ -240,15 +240,16 @@ void Bot::OnSIGTERM()
 	_xmpp->Disconnect();
 }
 
-void Bot::EnableHandlers(const std::list<std::string> &whitelist, const std::list<std::string> &blacklist)
+void Bot::EnableHandlers(const std::set<std::string> &whitelist, const std::set<std::string> &blacklist)
 {
 	if (whitelist.empty())
 	{
 		LOG(WARNING) << "No handlers are set, enabling them all";
 		for (const auto &handler : _handlersByName)
 		{
-			if (std::find(blacklist.begin(), blacklist.end(), handler.first) == blacklist.end())
+			if (blacklist.find(handler.first) == blacklist.end()) {
 				EnableHandler(handler.first);
+			}
 		}
 
 		return;
@@ -256,8 +257,9 @@ void Bot::EnableHandlers(const std::list<std::string> &whitelist, const std::lis
 
 	for (const auto &name : whitelist)
 	{
-		if (std::find(blacklist.begin(), blacklist.end(), name) == blacklist.end())
+		if (blacklist.find(name) == blacklist.end()) {
 			EnableHandler(name);
+		}
 	}
 }
 
@@ -270,14 +272,19 @@ bool Bot::EnableHandler(const std::string &name)
 		return false;
 	}
 
-	if (!handler->second->Init())
+	return EnableHandler(handler->second);
+}
+
+bool Bot::EnableHandler(std::shared_ptr<LemonHandler> &handler)
+{
+	if (!handler->Init())
 	{
-		LOG(WARNING) << "Init for handler " << name << " failed";
+		LOG(WARNING) << "Init for handler " << handler->GetName() << " failed";
 		return false;
 	}
 
-	_chatEventHandlers.push_back(handler->second);
-	LOG(INFO) << "Handler enabled: " << name;
+	_chatEventHandlers.push_back(handler);
+	LOG(INFO) << "Handler enabled: " << handler->GetName();
 	return true;
 }
 

@@ -56,8 +56,9 @@ private:
 		_handlersByName[handler->GetName()] = handler;
 	}
 
-	void EnableHandlers(const std::list<std::string> &whitelist, const std::list<std::string> &blacklist);
+	void EnableHandlers(const std::set<std::string> &whitelist, const std::set<std::string> &blacklist);
 	bool EnableHandler(const std::string &name);
+	bool EnableHandler(std::shared_ptr<LemonHandler> &handler);
 
 	// Global commands
 	const std::string GetHelp(const std::string &module) const;

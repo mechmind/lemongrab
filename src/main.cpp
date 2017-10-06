@@ -59,15 +59,14 @@ int main(int argc, char **argv)
 	}
 
 	InitGLOG(argv, settings.GetLogPrefixPath());
-	nameThisThread("XMPP Client");
+	// nameThisThread("XMPP Client");
 
-	std::shared_ptr<Bot> botPtr;
 	Bot::ExitCode exitCode = Bot::ExitCode::Error;
 	do {
-		botPtr = std::make_shared<Bot>(cliTestMode ?
-										   static_cast<XMPPClient*>(new ConsoleClient())
-										 : static_cast<XMPPClient*>(new GlooxClient()),
-									   settings);
+		auto botPtr = std::make_shared<Bot>(cliTestMode ?
+												static_cast<XMPPClient*>(new ConsoleClient())
+											  : static_cast<XMPPClient*>(new GlooxClient()),
+											settings);
 
 		exitCode = botPtr->Run();
 

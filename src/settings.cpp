@@ -3,8 +3,6 @@
 #include <iostream>
 #include <cpptoml.h>
 
-template std::list<std::string> Settings::GetArray(const std::string &name) const;
-
 Settings::Settings()
 {
 }
@@ -102,26 +100,6 @@ std::set<std::string> Settings::GetStringSet(const std::string &name) const
 	return result;
 }
 
-template <template<class...> class Container, class Element>
-Container<Element> Settings::GetArray(const std::string &name) const
-{
-	Container<Element> result;
-
-	auto array = _config->get_array_qualified(name);
-	if (!array)
-		return result;
-
-	auto values = array->array_of<Element>();
-
-	for (const auto& value : values)
-	{
-		if (value)
-			result.push_back(value->get());
-	}
-
-	return result;
-}
-
 #ifdef _BUILD_TESTS // LCOV_EXCL_START
 
 #include <gtest/gtest.h>
@@ -141,12 +119,6 @@ TEST(Settings, Read)
 	EXPECT_EQ(2, stringSet.size());
 	EXPECT_EQ("StringValue1", *stringSet.begin());
 	EXPECT_EQ("StringValue2", *stringSet.rbegin());
-
-	auto set = test.GetArray<std::vector, std::int64_t>("TestGroup.NumArray");
-	EXPECT_EQ(3, set.size());
-	EXPECT_EQ(4, set.at(0));
-	EXPECT_EQ(5, set.at(1));
-	EXPECT_EQ(6, set.at(2));
 }
 
 TEST(Settings, Reload)
@@ -165,9 +137,6 @@ TEST(Settings, Errors)
 
 	EXPECT_TRUE(test.GetRawString("NonExistent").empty());
 	EXPECT_TRUE(test.GetStringSet("NonExistent").empty());
-
-	auto isEmpty = test.GetArray<std::list, std::string>("NonExistent").empty();
-	EXPECT_TRUE(isEmpty);
 }
 
 #endif // LCOV_EXCL_STOP
