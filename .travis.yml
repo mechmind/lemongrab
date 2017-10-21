@@ -21,12 +21,7 @@ addons:
 
 before_install:
   - export CXX="g++-7"
-  - bash travis/install_cmake.sh
-  - bash travis/install_jsoncpp.sh
-  - bash travis/install_cpr.sh
-  - bash travis/install_cpptoml.sh
-  - bash travis/install_pugixml.sh
-  - bash travis/install_sqlite_orm.sh
+  - bash travis/install_all.sh
 
 script:
   - mkdir build
