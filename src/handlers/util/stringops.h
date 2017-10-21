@@ -9,6 +9,7 @@
 void initLocale();
 
 std::string toLower(const std::string &input);
+std::string toUpper(const std::string &input);
 
 bool beginsWith(const std::string &input, const std::string &prefix);
 

@@ -17,6 +17,11 @@ std::string toLower(const std::string &input)
 	return boost::locale::to_lower(input);
 }
 
+std::string toUpper(const std::string &input)
+{
+	return boost::locale::to_upper(input);
+}
+
 bool beginsWith(const std::string &input, const std::string &prefix)
 {
 	if (prefix.length() > input.length())
