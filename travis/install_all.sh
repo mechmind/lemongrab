@@ -1,8 +1,8 @@
 #!/bin/bash
 
-./travis/install_cmake.sh
-./travis/install_jsoncpp.sh
-./travis/install_cpr.sh
-./travis/install_cpptoml.sh
-./travis/install_pugixml.sh
-./travis/install_sqlite_orm.sh
+./travis/install_cmake.sh || die 1
+./travis/install_jsoncpp.sh  || die 1
+./travis/install_cpr.sh || die 1
+./travis/install_cpptoml.sh || die 1
+./travis/install_pugixml.sh || die 1
+./travis/install_sqlite_orm.sh || die 1
