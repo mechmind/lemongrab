@@ -11,6 +11,7 @@
 #include "handlers/leaguelookup.h"
 #include "handlers/vote.h"
 #include "handlers/rss.h"
+#include "handlers/goshamer.h"
 
 #include "handlers/util/stringops.h"
 
@@ -80,6 +81,7 @@ void Bot::RegisterAllHandlers()
 	RegisterHandler<TS3>();
 	RegisterHandler<Voting>();
 	RegisterHandler<RSSWatcher>();
+	RegisterHandler<GoShamer>();
 
 	for (const auto &handler : _handlersByName)
 		LOG(INFO) << "Handler loaded: " << handler.first;
