@@ -25,6 +25,8 @@ public:
 	std::string _body;
 	bool _isPrivate = false;
 	bool _isAdmin = false;
+
+	std::string _module_name;
 };
 
 class XMPPHandler

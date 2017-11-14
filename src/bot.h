@@ -20,6 +20,7 @@ class Bot
 {
 public:
 	Bot(XMPPClient *client, Settings &settings);
+	virtual ~Bot() override;
 
 	enum class ExitCode
 	{
@@ -39,9 +40,12 @@ public:
 	std::string GetNickByJid(const std::string &jid) const final;
 	std::string GetJidByNick(const std::string &nick) const final;
 	std::string GetDBPathPrefix() const final;
+	std::string GetOnlineUsers() const final;
 
 	// LemonBot interface
-	void SendMessage(const std::string &text) final;
+	void SendMessage(const std::string &text, const std::string &module_name = "") final;
+	void TunnelMessage(const ChatMessage &msg, const std::string &module_name) final;
+
 	std::string GetRawConfigValue(const std::string &name) const final;
 
 	void OnSIGTERM();
@@ -54,6 +58,7 @@ private:
 	{
 		auto handler = std::make_shared<LemonHandler>(this);
 		_handlersByName[handler->GetName()] = handler;
+		_allChatEventHandlers.push_back(handler);
 	}
 
 	void EnableHandlers(const std::set<std::string> &whitelist, const std::set<std::string> &blacklist);
@@ -70,6 +75,8 @@ private:
 	std::unordered_map<std::string, std::string> _jid2nick;
 
 	std::list<std::shared_ptr<LemonHandler>> _chatEventHandlers;
+	std::list<std::shared_ptr<LemonHandler>> _allChatEventHandlers;
+
 	std::unordered_map<std::string, std::shared_ptr<LemonHandler>> _handlersByName;
 
 	ExitCode _exitCode = ExitCode::Error;

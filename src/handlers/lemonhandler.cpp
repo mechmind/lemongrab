@@ -24,8 +24,16 @@ const std::string &LemonHandler::GetName() const
 
 void LemonHandler::SendMessage(const std::string &text)
 {
-	if (_botPtr)
-		_botPtr->SendMessage(text);
+	if (_botPtr) {
+		_botPtr->SendMessage(text, _moduleName);
+	};
+}
+
+void LemonHandler::TunnelMessage(const ChatMessage &msg)
+{
+	if (_botPtr) {
+		_botPtr->TunnelMessage(msg, _moduleName);
+	};
 }
 
 const std::string LemonHandler::GetRawConfigValue(const std::string &name) const

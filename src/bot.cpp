@@ -12,6 +12,7 @@
 #include "handlers/vote.h"
 #include "handlers/rss.h"
 #include "handlers/goshamer.h"
+#include "handlers/discord.h"
 
 #include "handlers/util/stringops.h"
 
@@ -55,6 +56,11 @@ Bot::Bot(XMPPClient *client, Settings &settings)
 	RegisterSignalHandler(this);
 }
 
+Bot::~Bot()
+{
+	UnregisterSignalHandler();
+}
+
 Bot::ExitCode Bot::Run()
 {
 	_startTime = std::chrono::system_clock::now();
@@ -71,6 +77,7 @@ Bot::ExitCode Bot::Run()
 void Bot::RegisterAllHandlers()
 {
 	LOG(INFO) << "Registering handlers";
+	RegisterHandler<Discord>();
 	RegisterHandler<DiceRoller>();
 	RegisterHandler<UrlPreview>();
 	RegisterHandler<LastSeen>();
@@ -113,17 +120,12 @@ void Bot::OnMessage(ChatMessage &msg)
 
 	auto &text = msg._body;
 
-	// FIXME: temporary workaround for discord mirror
-	if (msg._nick == "discord")
-	{
-		auto nickpos = msg._body.find_first_of('>');
-		if (nickpos != msg._body.npos
-				&& nickpos + 2 != msg._body.length())
-			msg._body = msg._body.substr(nickpos + 2);
-	}
-
 	if (text == "!uptime")
 	{
+		// FIXME: dirty hack
+		if (msg._module_name != "discord")
+			dynamic_cast<Discord*>(_handlersByName["discord"].get())->HandleMessage(msg);
+
 		auto currentTime = std::chrono::system_clock::now();
 		std::string uptime("Uptime: " + CustomTimeFormat(currentTime - _startTime));
 		return SendMessage(uptime);
@@ -131,6 +133,10 @@ void Bot::OnMessage(ChatMessage &msg)
 
 	if (text == "!die" && msg._isAdmin)
 	{
+		// FIXME: dirty hack
+		if (msg._module_name != "discord")
+			dynamic_cast<Discord*>(_handlersByName["discord"].get())->HandleMessage(msg);
+
 		LOG(WARNING) << "Termination requested (!die command received)";
 		_exitCode = ExitCode::TerminationRequested;
 		_xmpp->Disconnect();
@@ -139,6 +145,10 @@ void Bot::OnMessage(ChatMessage &msg)
 
 	if (text == "!restart" && msg._isAdmin)
 	{
+		// FIXME: dirty hack
+		if (msg._module_name != "discord")
+			dynamic_cast<Discord*>(_handlersByName["discord"].get())->HandleMessage(msg);
+
 		LOG(WARNING) << "Restart requested";
 		_exitCode = ExitCode::RestartRequested;
 		// _chatEventHandlers.clear();
@@ -148,6 +158,10 @@ void Bot::OnMessage(ChatMessage &msg)
 
 	if (text == "!reload" && msg._isAdmin)
 	{
+		// FIXME: dirty hack
+		if (msg._module_name != "discord")
+			dynamic_cast<Discord*>(_handlersByName["discord"].get())->HandleMessage(msg);
+
 		LOG(INFO) << "Config reload requested";
 		if (_settings.Reload())
 		{
@@ -163,13 +177,21 @@ void Bot::OnMessage(ChatMessage &msg)
 	std::string args;
 	if (getCommandArguments(text, "!help", args))
 	{
+		// FIXME: dirty hack
+		if (msg._module_name != "discord")
+			dynamic_cast<Discord*>(_handlersByName["discord"].get())->HandleMessage(msg);
+
 		const auto &module = args;
 		return SendMessage(GetHelp(module));
 	}
 
-	for (auto &handler : _chatEventHandlers)
+	for (auto &handler : _chatEventHandlers) {
+//		if (handler->GetName() == msg._module_name)
+//			continue;
+
 		if (handler->HandleMessage(msg) == LemonHandler::ProcessingResult::StopProcessing)
 			break;
+	}
 }
 
 void Bot::OnPresence(const std::string &nick, const std::string &jid, bool online, const std::string &newNick)
@@ -213,7 +235,18 @@ std::string Bot::GetDBPathPrefix() const
 	return _settings.GetDBPrefixPath();
 }
 
-void Bot::SendMessage(const std::string &text)
+std::string Bot::GetOnlineUsers() const
+{
+	std::string result = "Jabber users:";
+
+	for (auto pair : _jid2nick) {
+		result += "\n" + pair.second + " (" + pair.first + ")";
+	};
+
+	return result;
+}
+
+void Bot::SendMessage(const std::string &text, const std::string &module_name)
 {
 	std::lock_guard<std::mutex> lock(_sendMessageMutex);
 	auto currentTime = std::chrono::system_clock::now();
@@ -226,7 +259,19 @@ void Bot::SendMessage(const std::string &text)
 	}
 
 	_xmpp->SendMessage(text, "");
+
+	if (module_name != "discord") {
+		dynamic_cast<Discord*>(_handlersByName["discord"].get())->SendToDiscord(text);
+	}
+
 	_lastMessage = std::chrono::system_clock::now();
+}
+
+void Bot::TunnelMessage(const ChatMessage &msg, const std::string &module_name)
+{
+	auto newMsg = msg;
+	newMsg._module_name = module_name;
+	OnMessage(newMsg);
 }
 
 std::string Bot::GetRawConfigValue(const std::string &name) const
@@ -247,10 +292,10 @@ void Bot::EnableHandlers(const std::set<std::string> &whitelist, const std::set<
 	if (whitelist.empty())
 	{
 		LOG(WARNING) << "No handlers are set, enabling them all";
-		for (const auto &handler : _handlersByName)
+		for (auto &handler : _allChatEventHandlers)
 		{
-			if (blacklist.find(handler.first) == blacklist.end()) {
-				EnableHandler(handler.first);
+			if (blacklist.find(handler->GetName()) == blacklist.end()) {
+				EnableHandler(handler);
 			}
 		}
 

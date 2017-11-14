@@ -20,7 +20,7 @@ find_package(LibEvent REQUIRED)
 find_package(JsonCpp REQUIRED)
 find_package(CppToml REQUIRED)
 find_package(PugiXML REQUIRED)
-find_package(Boost COMPONENTS locale REQUIRED)
+find_package(Boost COMPONENTS locale system REQUIRED)
 find_package(SQLite3 REQUIRED)
 
 find_program(iwyu_path NAMES include-what-you-use iwyu)
@@ -71,6 +71,7 @@ target_link_libraries(${PROJECT_NAME}
     ${LIBEVENT_PTHREADS_LIBRARY}
     ${Boost_LIBRARIES}
     ${SQLITE3_LIBRARIES}
+    hexicord
     )
 
 if (CHECK_INCLUDES)

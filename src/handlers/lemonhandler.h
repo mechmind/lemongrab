@@ -14,10 +14,14 @@ public:
 		: _storage(initStorage(storagePath))
 	{}
 
-	virtual void SendMessage(const std::string &text) = 0;
+	virtual void SendMessage(const std::string &text) {}
+	virtual void SendMessage(const std::string &text, const std::string &module_name) {}
+	virtual void TunnelMessage(const ChatMessage &msg, const std::string &module_name) {}
+
 	virtual std::string GetRawConfigValue(const std::string &name) const { return ""; }
 	virtual std::string GetNickByJid(const std::string &jid)  const { return ""; }
 	virtual std::string GetJidByNick(const std::string &nick) const { return ""; }
+	virtual std::string GetOnlineUsers() const { return ""; }
 	virtual std::string GetDBPathPrefix() const { return "db/"; }
 	virtual ~LemonBot() {}
 
@@ -68,6 +72,13 @@ protected:
 	 * @param text
 	 */
 	void SendMessage(const std::string &text);
+
+	/**
+	 * @brief TunnelMessage
+	 * @param msg
+	 */
+	void TunnelMessage(const ChatMessage &msg);
+
 	const std::string GetRawConfigValue(const std::string &name) const;
 	const std::list<std::int64_t> GetIntList(const std::string &name) const;
 	std::string _moduleName;
