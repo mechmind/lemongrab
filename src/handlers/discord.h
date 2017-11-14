@@ -18,6 +18,7 @@ public:
 	std::string _username;
 	std::string _nick;
 	std::string _status;
+	std::string _avatar;
 };
 
 class Discord : public LemonHandler

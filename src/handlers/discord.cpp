@@ -22,10 +22,18 @@ LemonHandler::ProcessingResult Discord::HandleMessage(const ChatMessage &msg)
 {
 	if (msg._module_name != GetName()) {
 		if (!_webhookURL.empty()) {
+
+			auto mappedId = GetRawConfigValue("discord.idmap", msg._jid);
+
+			std::string avatar_url;
+			if (!_users[mappedId]._avatar.empty()) {
+				avatar_url = "https://cdn.discordapp.com/avatars/" + mappedId + "/" + _users[mappedId]._avatar + ".png";
+			}
 			cpr::Post(cpr::Url{_webhookURL},
 					  cpr::Payload{
 						  {"username", msg._nick},
-						  {"content", msg._body}
+						  {"content", msg._body},
+						  {"avatar_url", avatar_url}
 					  });
 
 		} else if (_channelID != 0) {
@@ -107,82 +115,127 @@ bool Discord::Init()
 
 	_clientThread = std::thread([=]() noexcept
 	{
-									nlohmann::json me;
-									gclient->eventDispatcher.addHandler(Hexicord::Event::Ready, [&me](const nlohmann::json& json) {
-										me = json["user"];
-									});
+		nlohmann::json me;
+		gclient->eventDispatcher.addHandler(Hexicord::Event::Ready, [&me](const nlohmann::json& json) {
+			me = json["user"];
+		});
 
-									gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberUpdate, [&](const nlohmann::json& json) {
-										auto id = json["user"]["id"].get<std::string>();
-										auto nickname = json["user"]["username"].get<std::string>();
+		gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberUpdate, [&](const nlohmann::json& json) {
+			try {
+				auto id = json["user"]["id"].get<std::string>();
+				auto nickname = json["user"]["username"].get<std::string>();
+				if (json["nick"].is_string()) {
+					nickname = json["nick"].get<std::string>();
+				}
 
-										if (json["nick"].is_string()) {
-											nickname = json["nick"].get<std::string>();
-										}
+				_users[id]._nick = nickname;
+				if (json["user"]["avatar"].is_string()) {
+					_users[id]._avatar = json["user"]["avatar"].get<std::string>();
+				}
+			} catch (std::exception &e) {
+				LOG(ERROR) << e.what();
+			}
+		});
 
-										_users[id]._nick = nickname;
-									});
+		gclient->eventDispatcher.addHandler(Hexicord::Event::MessageCreate, [&](const nlohmann::json& json) {
+			try {
+				Hexicord::Snowflake senderId(json["author"].count("id") ? json["author"]["id"].get<std::string>()
+					: json["author"]["webhook_id"].get<std::string>());
 
-									gclient->eventDispatcher.addHandler(Hexicord::Event::MessageCreate, [&](const nlohmann::json& json) {
-										// Sender can be webhook. For such we need to use "webhook_id" instead of "id".
-										Hexicord::Snowflake senderId(json["author"].count("id") ? json["author"]["id"].get<std::string>()
-										: json["author"]["webhook_id"].get<std::string>());
+				auto id = json["author"]["id"].get<std::string>();
 
-										auto id = json["author"]["id"].get<std::string>();
+				// Avoid responing to messages of bot.
+				if (senderId == Hexicord::Snowflake(me["id"].get<std::string>())
+						|| senderId == Hexicord::Snowflake(_selfWebhook)) return;
 
-										// Avoid responing to messages of bot.
-										if (senderId == Hexicord::Snowflake(me["id"].get<std::string>())
-												|| senderId == Hexicord::Snowflake(_selfWebhook)) return;
+				std::string text = json["content"];
 
-										std::string text = json["content"];
+				this->SendMessage(" <" + _users[id]._nick + "> " + text);
 
-										this->SendMessage(_users[id]._nick + "> " + text);
+				ChatMessage msg;
+				msg._nick = _users[id]._nick;
+				msg._body = text;
+				msg._jid = _users[id]._username;
+				msg._isAdmin = senderId == ownerId;
+				msg._isPrivate = false;
+				this->TunnelMessage(msg);
+			} catch (std::exception &e) {
+				LOG(ERROR) << e.what();
+			}
+		});
 
-										ChatMessage msg;
-										msg._nick = _users[id]._nick;
-										msg._body = text;
-										msg._jid = _users[id]._username;
-										msg._isAdmin = senderId == ownerId;
-										msg._isPrivate = false;
-										this->TunnelMessage(msg);
-									});
+		gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberAdd, [&](const nlohmann::json& json) {
+			try {
+				auto id = json["user"]["id"].get<std::string>();
+				auto nickname = json["user"]["username"].get<std::string>();
+				if (json["nick"].is_string()) {
+					nickname = json["nick"].get<std::string>();
+				}
 
-									gclient->eventDispatcher.addHandler(Hexicord::Event::PresenceUpdate, [&](const nlohmann::json& json) {
-										auto id = json["user"]["id"].get<std::string>();
+				_users[id]._nick = nickname;
 
-										if (json["status"].is_string()) {
-											_users[id]._status = json["status"].get<std::string>();
-										}
-									});
+				if (json["user"]["avatar"].is_string()) {
+					_users[id]._avatar = json["user"]["avatar"].get<std::string>();
+				}
+			} catch (std::exception &e) {
+				LOG(ERROR) << e.what();
+			}
+		});
 
-									gclient->eventDispatcher.addHandler(Hexicord::Event::GuildCreate, [&](const nlohmann::json& json) {
-										auto members = json["members"];
+		gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberRemove, [&](const nlohmann::json& json) {
+			try {
+				auto id = json["user"]["id"].get<std::string>();
+				_users.erase(id);
+			} catch (std::exception &e) {
+				LOG(ERROR) << e.what();
+			}
+		});
 
-										std::cout << members.dump();
+		gclient->eventDispatcher.addHandler(Hexicord::Event::PresenceUpdate, [&](const nlohmann::json& json) {
+			try {
+				auto id = json["user"]["id"].get<std::string>();
 
-										for (auto member : members) {
-											auto id = member["user"]["id"].get<std::string>();
+				if (json["status"].is_string()) {
+					_users[id]._status = json["status"].get<std::string>();
+				}
+			} catch (std::exception &e) {
+				LOG(ERROR) << e.what();
+			}
+		});
 
-											if (member["nick"].is_string()) {
-												_users[id]._nick = member["nick"].get<std::string>();
-											} else {
-												_users[id]._nick = member["user"]["username"].get<std::string>();
-											};
+		gclient->eventDispatcher.addHandler(Hexicord::Event::GuildCreate, [&](const nlohmann::json& json) {
+			try {
+				auto members = json["members"];
 
-											_users[id]._username = member["user"]["username"].get<std::string>() + "#" + member["user"]["discriminator"].get<std::string>();
-										}
-									});
+				for (auto member : members) {
+					auto id = member["user"]["id"].get<std::string>();
 
-									gclient->connect(rclient->getGatewayUrlBot().first,
-									Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
-									{
-										{ "since", nullptr   },
-										{ "status", "online" },
-										{ "game", {{ "name", "LEMONGRAB"}, { "type", 0 }}},
-										{ "afk", false }
-									});
+					if (member["nick"].is_string()) {
+						_users[id]._nick = member["nick"].get<std::string>();
+					} else {
+						_users[id]._nick = member["user"]["username"].get<std::string>();
+					};
 
-									ioService.run();
+					_users[id]._username = member["user"]["username"].get<std::string>() + "#" + member["user"]["discriminator"].get<std::string>();
+					if (member["user"]["avatar"].is_string()) {
+						_users[id]._avatar = member["user"]["avatar"].get<std::string>();
+					}
+				}
+			} catch (std::exception &e) {
+				LOG(ERROR) << e.what();
+			}
+		});
+
+		gclient->connect(rclient->getGatewayUrlBot().first,
+						 Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
+		{
+							 { "since", nullptr   },
+							 { "status", "online" },
+							 { "game", {{ "name", "LEMONGRAB"}, { "type", 0 }}},
+							 { "afk", false }
+						 });
+
+		ioService.run();
 	});
 
 	_isEnabled = true;

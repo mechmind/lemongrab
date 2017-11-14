@@ -19,6 +19,7 @@ public:
 	virtual void TunnelMessage(const ChatMessage &msg, const std::string &module_name) {}
 
 	virtual std::string GetRawConfigValue(const std::string &name) const { return ""; }
+	virtual std::string GetRawConfigValue(const std::string &table, const std::string &name) const { return ""; }
 	virtual std::string GetNickByJid(const std::string &jid)  const { return ""; }
 	virtual std::string GetJidByNick(const std::string &nick) const { return ""; }
 	virtual std::string GetOnlineUsers() const { return ""; }
@@ -80,6 +81,7 @@ protected:
 	void TunnelMessage(const ChatMessage &msg);
 
 	const std::string GetRawConfigValue(const std::string &name) const;
+	const std::string GetRawConfigValue(const std::string &table, const std::string &name) const;
 	const std::list<std::int64_t> GetIntList(const std::string &name) const;
 	std::string _moduleName;
 	LemonBot *_botPtr;

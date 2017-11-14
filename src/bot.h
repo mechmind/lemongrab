@@ -47,6 +47,7 @@ public:
 	void TunnelMessage(const ChatMessage &msg, const std::string &module_name) final;
 
 	std::string GetRawConfigValue(const std::string &name) const final;
+	std::string GetRawConfigValue(const std::string &table, const std::string &name) const final;
 
 	void OnSIGTERM();
 private:

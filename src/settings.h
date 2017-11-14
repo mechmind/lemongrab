@@ -25,6 +25,7 @@ public:
 	const std::string &GetLogPrefixPath() const;
 	const std::string &GetDBPrefixPath() const;
 
+	std::shared_ptr<cpptoml::table> GetTable(const std::string &name) const;
 	std::string GetRawString(const std::string &name) const;
 	std::set<std::string> GetStringSet(const std::string &name) const;
 

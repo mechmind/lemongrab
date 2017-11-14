@@ -40,3 +40,8 @@ const std::string LemonHandler::GetRawConfigValue(const std::string &name) const
 {
 	return _botPtr ? _botPtr->GetRawConfigValue(name) : "";
 }
+
+const std::string LemonHandler::GetRawConfigValue(const std::string &table, const std::string &name) const
+{
+	return _botPtr ? _botPtr->GetRawConfigValue(table, name) : "";
+}

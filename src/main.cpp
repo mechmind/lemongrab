@@ -15,6 +15,8 @@
 #include "handlers/util/stringops.h"
 #include "handlers/util/thread_util.h"
 
+#include <cpptoml.h>
+
 void InitGLOG(char **argv, const std::string &prefix)
 {
 	std::cout << "Initializing glog..." << std::endl;

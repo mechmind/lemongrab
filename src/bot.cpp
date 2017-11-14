@@ -20,6 +20,7 @@
 
 #include "signal.h"
 
+#include <cpptoml.h>
 #include <glog/logging.h>
 
 #include <algorithm>
@@ -37,13 +38,13 @@ static void RegisterSignalHandler(Bot *bot) {
 	struct sigaction action;
 	memset(&action, 0, sizeof(struct sigaction));
 	action.sa_handler = &handleSigTerm;
-	sigaction(SIGTERM, &action, NULL);
+	sigaction(SIGTERM, &action, nullptr);
 }
 
 static void UnregisterSignalHandler() {
 	struct sigaction action;
 	memset(&action, 0, sizeof(struct sigaction));
-	sigaction(SIGTERM, &action, NULL);
+	sigaction(SIGTERM, &action, nullptr);
 }
 
 Bot::Bot(XMPPClient *client, Settings &settings)
@@ -276,8 +277,13 @@ void Bot::TunnelMessage(const ChatMessage &msg, const std::string &module_name)
 
 std::string Bot::GetRawConfigValue(const std::string &name) const
 {
-	// FIXME expose _settings instead
+	// FIXME expose _settings instead?
 	return _settings.GetRawString(name);
+}
+
+std::string Bot::GetRawConfigValue(const std::string &table, const std::string &name) const
+{
+	return _settings.GetTable(table)->get_as<std::string>(name).value_or("");
 }
 
 void Bot::OnSIGTERM()

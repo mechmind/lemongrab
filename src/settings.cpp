@@ -76,6 +76,11 @@ const std::string &Settings::GetDBPrefixPath() const
 	return _dbPrefixPath;
 }
 
+std::shared_ptr<cpptoml::table> Settings::GetTable(const std::string &name) const
+{
+	return _config->get_table_qualified(name);
+}
+
 std::string Settings::GetRawString(const std::string &name) const
 {
 	return _config->get_qualified_as<std::string>(name).value_or("");
