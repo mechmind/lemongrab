@@ -6,3 +6,4 @@
 ./travis/install_cpptoml.sh || die 1
 ./travis/install_pugixml.sh || die 1
 ./travis/install_sqlite_orm.sh || die 1
+./travis/install_hexicord.sh || die 1
