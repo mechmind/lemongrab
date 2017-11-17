@@ -1,6 +1,6 @@
 #!/bin/bash
 
-git clone https://github.com/foxcpp/Hexicord.git
+git clone --recursive https://github.com/foxcpp/Hexicord.git
 mkdir hexibuild && cd hexibuild
 cmake ../Hexicord && make
 sudo make install
