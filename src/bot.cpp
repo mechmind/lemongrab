@@ -11,7 +11,6 @@
 #include "handlers/leaguelookup.h"
 #include "handlers/vote.h"
 #include "handlers/rss.h"
-#include "handlers/goshamer.h"
 #include "handlers/discord.h"
 
 #include "handlers/util/stringops.h"
@@ -89,7 +88,6 @@ void Bot::RegisterAllHandlers()
 	RegisterHandler<TS3>();
 	RegisterHandler<Voting>();
 	RegisterHandler<RSSWatcher>();
-	RegisterHandler<GoShamer>();
 
 	for (const auto &handler : _handlersByName)
 		LOG(INFO) << "Handler loaded: " << handler.first;
@@ -249,6 +247,11 @@ std::string Bot::GetOnlineUsers() const
 
 void Bot::SendMessage(const std::string &text, const std::string &module_name)
 {
+	if (text.empty()) {
+		LOG(WARNING) << "SendMessage with no payload called from " << module_name;
+		return;
+	}
+
 	std::lock_guard<std::mutex> lock(_sendMessageMutex);
 	auto currentTime = std::chrono::system_clock::now();
 	if (_lastMessage + std::chrono::seconds(_sendMessageThrottle) > currentTime)

@@ -62,8 +62,8 @@ LemonHandler::ProcessingResult Discord::HandleMessage(const ChatMessage &msg)
 	if ((msg._body == "!jabber" || msg._body == "!xmpp")
 			&& msg._module_name == "discord") {
 		//SendMessage(_botPtr->GetOnlineUsers());
-		rclient->sendTextMessage(_channelID, "```\n" + _botPtr->GetOnlineUsers()
-								 + "```\n\nthis message is invisible to xmpp users to avoid highlighting");
+		rclient->sendTextMessage(_channelID, "\n" + _botPtr->GetOnlineUsers()
+								 + "\n`this message is invisible to xmpp users to avoid highlighting`");
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -150,7 +150,19 @@ bool Discord::Init()
 
 				std::string text = json["content"];
 
-				this->SendMessage(" <" + _users[id]._nick + "> " + text);
+				auto attachements = json["attachments"];
+				for (const auto &attachment : attachements) {
+					text.append("\n[ " + attachment["url"].get<std::string>() + " ]");
+				}
+
+				bool hasEmbeds = false;
+				auto embeds = json["embeds"];
+				for (const auto &embed : embeds) {
+					hasEmbeds = true;
+					text.append("\n" + embed["title"].get<std::string>());
+				}
+
+				this->SendMessage("<" + _users[id]._nick + "> " + text);
 
 				ChatMessage msg;
 				msg._nick = _users[id]._nick;
@@ -158,6 +170,7 @@ bool Discord::Init()
 				msg._jid = _users[id]._username;
 				msg._isAdmin = senderId == ownerId;
 				msg._isPrivate = false;
+				msg._hasDiscordEmbed = hasEmbeds;
 				this->TunnelMessage(msg);
 			} catch (std::exception &e) {
 				LOG(ERROR) << e.what();
@@ -235,7 +248,18 @@ bool Discord::Init()
 							 { "afk", false }
 						 });
 
-		ioService.run();
+		bool noErrors = true;
+		do {
+			try {
+				noErrors = true;
+				ioService.run();
+			} catch (std::exception &e) {
+				noErrors = false;
+				LOG(ERROR) << "ioService error: " << e.what();
+			};
+		} while (!noErrors);
+
+		LOG(INFO) << "ioService terminated";
 	});
 
 	_isEnabled = true;
@@ -249,7 +273,8 @@ void Discord::HandlePresence(const std::string &from, const std::string &jid, bo
 
 const std::string Discord::GetHelp() const
 {
-	return "?";
+	return "!discord - list current discord users online\n"
+		   "!jabber - list current jabber users online (works only in discord)";
 }
 
 void Discord::SendToDiscord(std::string text)

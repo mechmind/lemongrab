@@ -66,6 +66,10 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)
 		return ProcessingResult::StopProcessing;
 	}
 
+	if (msg._hasDiscordEmbed) {
+		return ProcessingResult::KeepGoing;
+	}
+
 	auto sites = findURLs(body);
 	if (sites.empty())
 		return ProcessingResult::KeepGoing;
