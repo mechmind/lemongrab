@@ -17,13 +17,18 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 	auto now = std::chrono::system_clock::now();
 	auto now_t = std::chrono::system_clock::to_time_t(now);
 
-	if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(msg._jid)) {
-		userRecord->nick = msg._nick;
-		userRecord->message = msg._body;
-		userRecord->timepoint_message = now_t;
-		getStorage().update(*userRecord);
-	} else {
-		getStorage().replace(DB::UserActivity{msg._jid, msg._nick, msg._body, static_cast<int>(now_t), static_cast<int>(now_t)});
+	try {
+		if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(msg._jid)) {
+			userRecord->nick = msg._nick;
+			userRecord->message = msg._body;
+			userRecord->timepoint_message = now_t;
+			getStorage().update(*userRecord);
+		} else {
+			getStorage().replace(DB::UserActivity{msg._jid, msg._nick, msg._body, static_cast<int>(now_t), static_cast<int>(now_t)});
+		}
+	} catch (std::exception &e) {
+		// get_no_throws throws? debug this
+		LOG(ERROR) << e.what();
 	}
 
 	if (msg._body == "!seenstat")
@@ -49,12 +54,17 @@ void LastSeen::HandlePresence(const std::string &from, const std::string &jid, b
 	DB::Nick newNick{ from, jid };
 	getStorage().replace(newNick);
 
-	if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(jid)) {
-		userRecord->nick = from;
-		userRecord->timepoint_status = now_t;
-		getStorage().update(*userRecord);
-	} else {
-		getStorage().replace(DB::UserActivity{jid, from, "", static_cast<int>(now_t), static_cast<int>(now_t)});
+	try {
+		if (auto userRecord = getStorage().get_no_throw<DB::UserActivity>(jid)) {
+			userRecord->nick = from;
+			userRecord->timepoint_status = now_t;
+			getStorage().update(*userRecord);
+		} else {
+			getStorage().replace(DB::UserActivity{jid, from, "", static_cast<int>(now_t), static_cast<int>(now_t)});
+		}
+	} catch (std::exception &e) {
+		// get_no_throws throws? debug this
+		LOG(ERROR) << e.what();
 	}
 }
 
