@@ -17,12 +17,6 @@ RUN \
 
 RUN apt update
 
-RUN apt install -y g++-7 git lcov libcurl4-openssl-dev libgloox-dev libgtest-dev libgoogle-glog-dev libevent-dev libboost-locale-dev wget sudo unzip libsqlite3-dev
+RUN apt install -y g++-7 git lcov libcurl4-openssl-dev libgloox-dev libgtest-dev libgoogle-glog-dev libevent-dev libboost-system-dev libboost-locale-dev wget sudo unzip libsqlite3-dev
 
-COPY travis /root/travis
-
-RUN chmod +x /root/travis/*.sh
-
-RUN /root/travis/install_all.sh
-
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["/root/build-in-docker.sh"]

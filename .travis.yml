@@ -2,39 +2,14 @@ language: cpp
 sudo: required
 dist: trusty
 
-compiler:
-  - gcc
-
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - g++-7
-    - lcov
-    - libcurl4-openssl-dev
-    - libgloox-dev
-    - libgtest-dev
-    - libgoogle-glog-dev
-    - libevent-dev
-    - libboost-locale-dev
-    - libboost-system-dev
+services:
+  - docker
 
 before_install:
-  - export CXX="g++-7"
-  - bash travis/install_all.sh
+  - docker pull loonygnoll/lemongrab-ubuntu-dockerbuild
 
 script:
-  - mkdir build
-  - cd build
-  - cmake .. -DBUILD_TESTS=ON -DBUILD_COVER=ON
-  - make
-  - cp -R ../test test
-  - mkdir testdb
-  - ./lemongrab --test
-  - lcov -c -d . -o coverage.info
-  - lcov --remove coverage.info "/usr*" -o coverage.clean.info
-  - coveralls-lcov --repo-token "${COVERALLS_REPO_TOKEN}" coverage.clean.info
+  - docker run -v $TRAVIS_BUILD_DIR:/root/ -e COVERALLS_REPO_TOKEN='${COVERALLS_REPO_TOKEN}'
 
 os:
   - linux
