@@ -7,7 +7,6 @@
 #include "handlers/githubwebhooks.h"
 #include "handlers/goodenough.h"
 #include "handlers/quotes.h"
-#include "handlers/ts3.h"
 #include "handlers/leaguelookup.h"
 #include "handlers/vote.h"
 #include "handlers/rss.h"
@@ -85,7 +84,6 @@ void Bot::RegisterAllHandlers()
 	RegisterHandler<GithubWebhooks>();
 	RegisterHandler<Quotes>();
 	RegisterHandler<LeagueLookup>();
-	RegisterHandler<TS3>();
 	RegisterHandler<Voting>();
 	RegisterHandler<RSSWatcher>();
 
