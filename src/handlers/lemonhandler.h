@@ -15,7 +15,9 @@ public:
 	{}
 
 	virtual void SendMessage(const std::string &text) {}
-	virtual void SendMessage(const std::string &text, const std::string &module_name) {}
+	virtual void SendMessage(const std::string &text, const std::string &module_name) {
+		SendMessage(text);
+	}
 	virtual void TunnelMessage(const ChatMessage &msg, const std::string &module_name) {}
 
 	virtual std::string GetRawConfigValue(const std::string &name) const { return ""; }
