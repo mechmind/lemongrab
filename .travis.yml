@@ -9,7 +9,12 @@ before_install:
   - docker pull loonygnoll/lemongrab-build-gentoo
 
 script:
-  - docker run -v $TRAVIS_BUILD_DIR:/root/ -e COVERALLS_REPO_TOKEN='${COVERALLS_REPO_TOKEN}' loonygnoll/lemongrab-build-gentoo
+  - docker run -v $TRAVIS_BUILD_DIR:/root/ -e
+    TRAVIS='${TRAVIS}' -e
+    TRAVIS_JOB_ID='${TRAVIS_JOB_ID}' -e
+    TRAVIS_BRANCH='${TRAVIS_BRANCH}' -e
+    COVERALLS_REPO_TOKEN='${COVERALLS_REPO_TOKEN}'
+    loonygnoll/lemongrab-build-gentoo
 
 os:
   - linux
