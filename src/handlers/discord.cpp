@@ -239,27 +239,31 @@ bool Discord::Init()
 			}
 		});
 
-		gclient->connect(rclient->getGatewayUrlBot().first,
-						 Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
-		{
-							 { "since", nullptr   },
-							 { "status", "online" },
-							 { "game", {{ "name", "LEMONGRAB"}, { "type", 0 }}},
-							 { "afk", false }
-						 });
-
 		bool noErrors = true;
 		do {
 			try {
 				noErrors = true;
+				gclient->disconnect();
+				gclient->connect(rclient->getGatewayUrlBot().first,
+								 Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
+				{
+									 { "since", nullptr   },
+									 { "status", "online" },
+									 { "game", {{ "name", "LEMONGRAB"}, { "type", 0 }}},
+									 { "afk", false }
+								 });
 				ioService.run();
+			} catch (Hexicord::GatewayError &e) {
+				LOG(ERROR) << "Gateway error: " << e.what();
 			} catch (std::exception &e) {
 				noErrors = false;
 				LOG(ERROR) << "ioService error: " << e.what();
+				LOG(ERROR) << "Reconnecting in 10 seconds";
+				std::this_thread::sleep_for(std::chrono::seconds(10));
 			};
 		} while (!noErrors);
 
-		LOG(INFO) << "ioService terminated";
+		LOG(INFO) << "Discord thread terminated";
 	});
 
 	_isEnabled = true;
