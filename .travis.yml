@@ -7,6 +7,7 @@ services:
 
 before_install:
   - docker pull loonygnoll/lemongrab-build-gentoo
+  - gem install coveralls-lcov
 
 script:
   - docker run -v $TRAVIS_BUILD_DIR:/root/ -e
@@ -15,6 +16,7 @@ script:
     TRAVIS_BRANCH='${TRAVIS_BRANCH}' -e
     COVERALLS_REPO_TOKEN='${COVERALLS_REPO_TOKEN}'
     loonygnoll/lemongrab-build-gentoo
+  - coveralls-lcov --repo-token "${COVERALLS_REPO_TOKEN}" coverage.clean.info
 
 os:
   - linux

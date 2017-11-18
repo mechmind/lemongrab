@@ -10,4 +10,4 @@ mkdir testdb
 ./lemongrab --test
 lcov -c -d . -o coverage.info
 lcov --remove coverage.info "/usr*" -o coverage.clean.info
-coveralls-lcov --repo-token "${COVERALLS_REPO_TOKEN}" coverage.clean.info
+#coveralls-lcov --repo-token "${COVERALLS_REPO_TOKEN}" coverage.clean.info
