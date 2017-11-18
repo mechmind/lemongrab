@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cd /root/
 mkdir build
 cd build
 cmake .. -DBUILD_TESTS=ON -DBUILD_COVER=ON
