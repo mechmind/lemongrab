@@ -12,6 +12,8 @@
 
 #include <cpr/cpr.h>
 
+#include <boost/algorithm/string/replace.hpp>
+
 Discord::Discord(LemonBot *bot)
 	: LemonHandler("discord", bot)
 {
@@ -149,6 +151,11 @@ bool Discord::Init()
 						|| senderId == Hexicord::Snowflake(_selfWebhook)) return;
 
 				std::string text = json["content"];
+
+				auto mentions =  json["mentions"];
+				for (const auto &mention : mentions) {
+					boost::algorithm::replace_all(text, "<@!" + mention["id"].get<std::string>() + ">", "@" + _users[mention["id"].get<std::string>()]._nick);
+				}
 
 				auto attachements = json["attachments"];
 				for (const auto &attachment : attachements) {
