@@ -34,12 +34,12 @@ LemonHandler::ProcessingResult Discord::HandleMessage(const ChatMessage &msg)
 			cpr::Post(cpr::Url{_webhookURL},
 					  cpr::Payload{
 						  {"username", msg._nick},
-						  {"content", msg._body},
+						  {"content", sanitizeDiscord(msg._body)},
 						  {"avatar_url", avatar_url}
 					  });
 
 		} else if (_channelID != 0) {
-			rclient->sendTextMessage(_channelID, msg._body);
+			rclient->sendTextMessage(_channelID, sanitizeDiscord(msg._body));
 		}
 	}
 
@@ -57,15 +57,15 @@ LemonHandler::ProcessingResult Discord::HandleMessage(const ChatMessage &msg)
 		}
 
 		SendMessage(result);
-		rclient->sendTextMessage(_channelID, result);
+		rclient->sendTextMessage(_channelID, sanitizeDiscord(result));
 		return LemonHandler::ProcessingResult::StopProcessing;
 	}
 
 	if ((msg._body == "!jabber" || msg._body == "!xmpp")
 			&& msg._module_name == "discord") {
 		//SendMessage(_botPtr->GetOnlineUsers());
-		rclient->sendTextMessage(_channelID, "\n" + _botPtr->GetOnlineUsers()
-								 + "\n`this message is invisible to xmpp users to avoid highlighting`");
+		rclient->sendTextMessage(_channelID, sanitizeDiscord("\n" + _botPtr->GetOnlineUsers()
+								 + "\n`this message is invisible to xmpp users to avoid highlighting`"));
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -80,6 +80,20 @@ Discord::~Discord()
 
 		_clientThread.join();
 	}
+}
+
+std::string Discord::sanitizeDiscord(const std::string &input)
+{
+	std::string output = input;
+	boost::algorithm::replace_all(output, "\\", "\\\\");
+
+	if (output.find('@') != output.npos) {
+		for (auto user : _users) {
+			boost::algorithm::replace_all(output, "@" + user.second._nick, "<@!" + user.first + ">");
+		}
+	}
+
+	return output;
 }
 
 bool Discord::Init()
@@ -291,6 +305,6 @@ const std::string Discord::GetHelp() const
 void Discord::SendToDiscord(std::string text)
 {
 	if (_isEnabled) {
-		rclient->sendTextMessage(Hexicord::Snowflake(_channelID), text);
+		rclient->sendTextMessage(Hexicord::Snowflake(_channelID), sanitizeDiscord(text));
 	}
 }

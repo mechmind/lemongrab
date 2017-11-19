@@ -35,6 +35,8 @@ public:
 	virtual ~Discord() final;
 
 private:
+	std::string sanitizeDiscord(const std::string &input);
+
 	bool _isEnabled = false;
 	boost::asio::io_service ioService;
 
