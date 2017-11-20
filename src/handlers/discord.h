@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef _BUILD_TESTS
+#include <gtest/gtest_prod.h>
+#endif
+
 #include "lemonhandler.h"
 
 #include <boost/asio/io_service.hpp>
@@ -50,4 +54,9 @@ private:
 	std::string _webhookURL;
 	std::string _selfWebhook;
 	std::thread _clientThread;
+
+#ifdef _BUILD_TESTS
+	FRIEND_TEST(DiscordTest, XMPP2DiscordNickTest);
+	FRIEND_TEST(DiscordTest, DiscordSanitizeTest);
+#endif
 };

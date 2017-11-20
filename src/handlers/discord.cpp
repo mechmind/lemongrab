@@ -308,3 +308,47 @@ void Discord::SendToDiscord(std::string text)
 		rclient->sendTextMessage(Hexicord::Snowflake(_channelID), sanitizeDiscord(text));
 	}
 }
+
+
+#ifdef _BUILD_TESTS // LCOV_EXCL_START
+
+#include "gtest/gtest.h"
+
+#include <set>
+
+class DiscordTestBot : public LemonBot
+{
+public:
+	DiscordTestBot() : LemonBot(":memory:") { }
+
+	void SendMessage(const std::string &text)
+	{
+		lastMSG = text;
+	}
+
+	int _lastResult = 0;
+
+	std::string lastMSG;
+};
+
+TEST(DiscordTest, XMPP2DiscordNickTest)
+{
+	DiscordTestBot bot;
+	Discord d(&bot);
+
+	d._users["112233"]._nick = "You";
+
+	EXPECT_EQ("<@!112233>: hello", d.sanitizeDiscord("@You: hello"));
+	EXPECT_EQ("Hello, <@!112233>", d.sanitizeDiscord("Hello, @You"));
+
+}
+
+TEST(DiscordTest, DiscordSanitizeTest)
+{
+	DiscordTestBot bot;
+	Discord d(&bot);
+	EXPECT_EQ("Double\\\\slash", d.sanitizeDiscord("Double\\slash"));
+}
+
+#endif // LCOV_EXCL_STOP
+
