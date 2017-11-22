@@ -89,7 +89,10 @@ std::string Discord::sanitizeDiscord(const std::string &input)
 
 	if (output.find('@') != output.npos) {
 		for (auto user : _users) {
-			boost::algorithm::replace_all(output, "@" + user.second._nick, "<@!" + user.first + ">");
+			if (!user.second._nick.empty()) {
+				LOG(INFO) << "Replacing @" + user.second._nick + "with <@!" + user.first + ">";
+				boost::algorithm::replace_all(output, "@" + user.second._nick, "<@!" + user.first + ">");
+			}
 		}
 	}
 
@@ -145,6 +148,7 @@ bool Discord::Init()
 				}
 
 				_users[id]._nick = nickname;
+				LOG(INFO) << "User " << id << " nick is set to " << nickname;
 				if (json["user"]["avatar"].is_string()) {
 					_users[id]._avatar = json["user"]["avatar"].get<std::string>();
 				}
@@ -207,6 +211,7 @@ bool Discord::Init()
 				}
 
 				_users[id]._nick = nickname;
+				LOG(INFO) << "User " << id << " nick is set to " << nickname;
 
 				if (json["user"]["avatar"].is_string()) {
 					_users[id]._avatar = json["user"]["avatar"].get<std::string>();
@@ -246,8 +251,10 @@ bool Discord::Init()
 
 					if (member["nick"].is_string()) {
 						_users[id]._nick = member["nick"].get<std::string>();
+						LOG(INFO) << "User " << id << " nick is set to " << _users[id]._nick;
 					} else {
 						_users[id]._nick = member["user"]["username"].get<std::string>();
+						LOG(INFO) << "User " << id << " nick is set to " << _users[id]._nick;
 					};
 
 					_users[id]._username = member["user"]["username"].get<std::string>() + "#" + member["user"]["discriminator"].get<std::string>();
