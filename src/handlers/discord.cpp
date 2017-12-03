@@ -39,7 +39,7 @@ LemonHandler::ProcessingResult Discord::HandleMessage(const ChatMessage &msg)
 					  });
 
 		} else if (_channelID != 0) {
-			rclient->sendTextMessage(_channelID, sanitizeDiscord(msg._body));
+			rclientSafeSend(msg._body);
 		}
 	}
 
@@ -57,15 +57,15 @@ LemonHandler::ProcessingResult Discord::HandleMessage(const ChatMessage &msg)
 		}
 
 		SendMessage(result);
-		rclient->sendTextMessage(_channelID, sanitizeDiscord(result));
+		rclientSafeSend(result);
 		return LemonHandler::ProcessingResult::StopProcessing;
 	}
 
 	if ((msg._body == "!jabber" || msg._body == "!xmpp")
 			&& msg._module_name == "discord") {
 		//SendMessage(_botPtr->GetOnlineUsers());
-		rclient->sendTextMessage(_channelID, sanitizeDiscord("\n" + _botPtr->GetOnlineUsers()
-								 + "\n`this message is invisible to xmpp users to avoid highlighting`"));
+		rclientSafeSend("\n" + _botPtr->GetOnlineUsers()
+						+ "\n`this message is invisible to xmpp users to avoid highlighting`");
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -97,6 +97,23 @@ std::string Discord::sanitizeDiscord(const std::string &input)
 	}
 
 	return output;
+}
+
+void Discord::rclientSafeSend(const std::string &message)
+{
+	if (!_isEnabled)
+		return;
+
+	const auto text = sanitizeDiscord(message);
+
+	if (text.size() < 200) {
+		rclient->sendTextMessage(_channelID, text);
+	} else {
+		for (size_t i = 0; i <= text.length(); i+=200) {
+			rclient->sendTextMessage(_channelID, text.substr(i, 200));
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+	}
 }
 
 bool Discord::Init()
@@ -311,9 +328,7 @@ const std::string Discord::GetHelp() const
 
 void Discord::SendToDiscord(std::string text)
 {
-	if (_isEnabled) {
-		rclient->sendTextMessage(Hexicord::Snowflake(_channelID), sanitizeDiscord(text));
-	}
+	rclientSafeSend(text);
 }
 
 

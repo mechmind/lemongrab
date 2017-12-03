@@ -40,6 +40,7 @@ public:
 
 private:
 	std::string sanitizeDiscord(const std::string &input);
+	void rclientSafeSend(const std::string &message);
 
 	bool _isEnabled = false;
 	boost::asio::io_service ioService;
