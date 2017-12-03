@@ -189,7 +189,9 @@ bool Discord::Init()
 
 				auto mentions =  json["mentions"];
 				for (const auto &mention : mentions) {
+					// FIXME: apparently mentions can have multiple formats? Can't find info on it anywhere
 					boost::algorithm::replace_all(text, "<@!" + mention["id"].get<std::string>() + ">", "@" + _users[mention["id"].get<std::string>()]._nick);
+					boost::algorithm::replace_all(text, "<@" + mention["id"].get<std::string>() + ">", "@" + _users[mention["id"].get<std::string>()]._nick);
 				}
 
 				auto attachements = json["attachments"];
@@ -362,7 +364,6 @@ TEST(DiscordTest, XMPP2DiscordNickTest)
 
 	EXPECT_EQ("<@!112233>: hello", d.sanitizeDiscord("@You: hello"));
 	EXPECT_EQ("Hello, <@!112233>", d.sanitizeDiscord("Hello, @You"));
-
 }
 
 TEST(DiscordTest, DiscordSanitizeTest)
