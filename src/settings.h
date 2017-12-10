@@ -25,6 +25,8 @@ public:
 	const std::string &GetLogPrefixPath() const;
 	const std::string &GetDBPrefixPath() const;
 
+	const bool &verboseLogging() const;
+
 	std::shared_ptr<cpptoml::table> GetTable(const std::string &name) const;
 	std::string GetRawString(const std::string &name) const;
 	std::set<std::string> GetStringSet(const std::string &name) const;
@@ -40,4 +42,6 @@ private:
 
 	std::string _logPrefixPath = "/var/logs/lemongrab";
 	std::string _dbPrefixPath = "/var/lib/lemongrab";
+
+	bool _verboseLogging = false;
 };

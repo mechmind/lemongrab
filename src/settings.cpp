@@ -40,6 +40,10 @@ bool Settings::Open(const std::string &path)
 	if (logPath)
 		_logPrefixPath = *logPath;
 
+	auto verboseLogging = _config->get_qualified_as<bool>("General.VerboseLog");
+	if (verboseLogging)
+		_verboseLogging = *verboseLogging;
+
 	return true;
 }
 
@@ -74,6 +78,11 @@ const std::string &Settings::GetLogPrefixPath() const
 const std::string &Settings::GetDBPrefixPath() const
 {
 	return _dbPrefixPath;
+}
+
+const bool &Settings::verboseLogging() const
+{
+	return _verboseLogging;
 }
 
 std::shared_ptr<cpptoml::table> Settings::GetTable(const std::string &name) const

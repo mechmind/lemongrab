@@ -115,6 +115,12 @@ void Bot::OnMessage(ChatMessage &msg)
 	msg._isAdmin |= !msg._jid.empty()
 			&& GetRawConfigValue("General.admin") == msg._jid;
 
+	if (_settings.verboseLogging())
+	{
+		LOG(INFO) << ">>> Message: " << msg._jid << " as " << msg._nick << " in " << msg._roomjid << " > " << msg._body
+				  << " [ Priv? " << msg._isPrivate << " Module? " << msg._module_name << " Discord embed? " << msg._hasDiscordEmbed << " ]";
+	}
+
 	auto &text = msg._body;
 
 	if (text == "!uptime")
