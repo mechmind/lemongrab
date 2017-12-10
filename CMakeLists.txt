@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb3 -O0 -Wall")
 option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_COVER "Generate test coverage" OFF)
 option(CHECK_INCLUDES "Run iwyu" OFF)
-option(EVENT_LOGGING "(debug) Log all events" ON)
+option(EVENT_LOGGING "(debug) Log all events" OFF)
 
 if(EVENT_LOGGING)
     add_definitions(-DEVENT_LOGGING)

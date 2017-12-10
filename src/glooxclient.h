@@ -36,7 +36,7 @@ public:
 	bool onTLSConnect(const gloox::CertInfo &info) override;
 
 	// Message callbacks
-	void handleMessage(const gloox::Message& stanza, gloox::MessageSession* session) override;
+	void handleMessage(const gloox::Message& msg, gloox::MessageSession* session) override;
 
 	// MUC callbacks
 	void handleMUCParticipantPresence(gloox::MUCRoom *room, const gloox::MUCRoomParticipant participant, const gloox::Presence &presence) override;

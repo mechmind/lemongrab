@@ -79,11 +79,32 @@ bool GlooxClient::onTLSConnect(const gloox::CertInfo &info)
 	return true;
 }
 
-void GlooxClient::handleMessage(const gloox::Message &stanza, gloox::MessageSession *session)
+// BUG: Groupchat messages that contain threads count as plain messages for some reason
+void GlooxClient::handleMessage(const gloox::Message &msg, gloox::MessageSession *session)
 {
 #ifdef EVENT_LOGGING
-	LOG(INFO) << "Message: " << stanza.body();
+	LOG(INFO) << "Message: " << msg.body();
 #endif
+
+	if (msg.when() != nullptr) // history
+	{
+#ifdef EVENT_LOGGING
+	LOG(INFO) << "Message: " << msg.body() << " ignored because it's history";
+#endif
+		return;
+	}
+
+	ChatMessage message(msg.from().resource(), "", msg.from().bareJID().full(), msg.body(), false);
+	if (message._nick == _room->nick()
+			|| message._nick.empty())
+	{
+#ifdef EVENT_LOGGING
+	LOG(INFO) << "Message: " << msg.body() << " ignored because it's ours or has empty nick";
+#endif
+		return;
+	}
+
+	_handler->OnMessage(message);
 }
 
 void GlooxClient::handleMUCParticipantPresence(gloox::MUCRoom *room, const gloox::MUCRoomParticipant participant, const gloox::Presence &presence)
@@ -112,7 +133,7 @@ void GlooxClient::handleMUCMessage(gloox::MUCRoom *room, const gloox::Message &m
 			|| message._isPrivate)
 	{
 #ifdef EVENT_LOGGING
-	LOG(INFO) << "MUCMessage: " << msg.body() << " ignored because it's private";
+	LOG(INFO) << "MUCMessage: " << msg.body() << " ignored because it's private, ours or has empty nick";
 #endif
 		return;
 	}
