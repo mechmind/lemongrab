@@ -56,6 +56,10 @@ bool GlooxClient::JoinRoom(const std::string &jid)
 
 void GlooxClient::SendMessage(const std::string &message, const std::string &recipient)
 {
+#ifdef EVENT_LOGGING
+	LOG(INFO) << "SendMessage: " << message;
+#endif
+
 	if (_room && recipient.empty())
 		_room->send(message);
 }
@@ -77,7 +81,9 @@ bool GlooxClient::onTLSConnect(const gloox::CertInfo &info)
 
 void GlooxClient::handleMessage(const gloox::Message &stanza, gloox::MessageSession *session)
 {
-
+#ifdef EVENT_LOGGING
+	LOG(INFO) << "Message: " << stanza.body();
+#endif
 }
 
 void GlooxClient::handleMUCParticipantPresence(gloox::MUCRoom *room, const gloox::MUCRoomParticipant participant, const gloox::Presence &presence)
@@ -88,14 +94,28 @@ void GlooxClient::handleMUCParticipantPresence(gloox::MUCRoom *room, const gloox
 
 void GlooxClient::handleMUCMessage(gloox::MUCRoom *room, const gloox::Message &msg, bool priv)
 {
-	if (msg.when() != 0) // history
+#ifdef EVENT_LOGGING
+	LOG(INFO) << "MUCMessage: " << msg.body();
+#endif
+
+	if (msg.when() != nullptr) // history
+	{
+#ifdef EVENT_LOGGING
+	LOG(INFO) << "MUCMessage: " << msg.body() << " ignored because it's history";
+#endif
 		return;
+	}
 
 	ChatMessage message(msg.from().resource(), "", msg.from().bareJID().full(), msg.body(), priv);
 	if (message._nick == _room->nick()
 			|| message._nick.empty()
 			|| message._isPrivate)
+	{
+#ifdef EVENT_LOGGING
+	LOG(INFO) << "MUCMessage: " << msg.body() << " ignored because it's private";
+#endif
 		return;
+	}
 
 	_handler->OnMessage(message);
 }
