@@ -106,13 +106,19 @@ void Discord::rclientSafeSend(const std::string &message)
 
 	const auto text = sanitizeDiscord(message);
 
-	if (text.size() < 200) {
-		rclient->sendTextMessage(_channelID, text);
-	} else {
-		for (size_t i = 0; i <= text.length(); i+=200) {
-			rclient->sendTextMessage(_channelID, text.substr(i, 200));
-			std::this_thread::sleep_for(std::chrono::seconds(1));
+	try {
+		if (text.size() < 200) {
+			rclient->sendTextMessage(_channelID, text);
+		} else {
+			for (size_t i = 0; i <= text.length(); i+=200) {
+				rclient->sendTextMessage(_channelID, text.substr(i, 200));
+				std::this_thread::sleep_for(std::chrono::seconds(1));
+			}
 		}
+	} catch (Hexicord::RESTError &e) {
+		LOG(ERROR) << "Failed to deliver message \"" << message << "\" via REST, REST error: " << e.what();
+	} catch (std::exception &e) {
+		LOG(ERROR) << "Failed to deliver message \"" << message << "\" via REST: " << e.what();
 	}
 }
 
