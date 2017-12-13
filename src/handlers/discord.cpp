@@ -111,7 +111,8 @@ void Discord::rclientSafeSend(const std::string &message)
 			rclient->sendTextMessage(_channelID, text);
 		} else {
 			for (size_t i = 0; i <= text.length(); i+=200) {
-				rclient->sendTextMessage(_channelID, text.substr(i, 200));
+				auto cutText = text.substr(i, 200);
+				rclient->sendTextMessage(_channelID, cutText);
 				std::this_thread::sleep_for(std::chrono::seconds(1));
 			}
 		}

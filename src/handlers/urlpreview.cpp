@@ -133,6 +133,10 @@ std::string UrlPreview::getTitle(const std::string &content) const
 	auto title = content.substr(titleBegin + titleOp.size(), titleEnd - titleBegin - titleOp.size());
 	boost::trim(title);
 
+	if (title.length() > 200) {
+		return "Title is too long";
+	}
+
 	try {
 		return boost::locale::conv::utf_to_utf<char>(title.c_str(), boost::locale::conv::stop);
 	} catch (boost::locale::conv::conversion_error &e) {
