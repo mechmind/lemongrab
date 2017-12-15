@@ -10,6 +10,7 @@ before_install:
 
 script:
   - docker run -v $TRAVIS_BUILD_DIR:$TRAVIS_BUILD_DIR
+    -e TRAVIS_BUILD_DIR
     -e TRAVIS
     -e TRAVIS_REPO_SLUG
     -e TRAVIS_JOB_ID
