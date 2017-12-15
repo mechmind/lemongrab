@@ -6,7 +6,6 @@ services:
 
 before_install:
   - docker pull loonygnoll/lemongrab-build-gentoo
-  - gem install coveralls-lcov
 
 script:
   - docker run -v $TRAVIS_BUILD_DIR:$TRAVIS_BUILD_DIR
