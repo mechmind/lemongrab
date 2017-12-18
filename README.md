@@ -7,7 +7,6 @@ This is a pet project, not intended for general use.
 
 [![Build Status](https://travis-ci.org/Chemrat/lemongrab.svg?branch=master)](https://travis-ci.org/Chemrat/lemongrab)
 [![Coverage Status](https://coveralls.io/repos/github/Chemrat/lemongrab/badge.svg?branch=master)](https://coveralls.io/github/Chemrat/lemongrab?branch=master)
-[![Coverity Scan Build Status](https://scan.coverity.com/projects/8766/badge.svg)](https://scan.coverity.com/projects/8766)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/49f2e50d3d81475d9bb0915b81368494)](https://www.codacy.com/app/jazzvoid/lemongrab?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Chemrat/lemongrab&amp;utm_campaign=Badge_Grade)
 [![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
 
@@ -21,8 +20,10 @@ List of features:
 * Pager - leave a public message to a currently absent user
 * RSS - poll news feeds and dump latest items in chat
 * Github Webhooks - notify chat about GitHub events (issues, stars, forks & pull requests)
-* TeamSpeak monitor - notify chat when someone connects or disconnects from TeamSpeak server (needs ServerQuery account) and transport messages from/to conference
 * Leauge of Legends lookup - see if player is currently in game
+* Quotes database
+* Simple polls
+* Discord bridge
 
 How to build/run
 ================
@@ -37,6 +38,7 @@ Dependencies:
 * glog
 * pugixml
 * sqlite, sqlite_orm
+* hexicord
 * gtest (if you're building tests)
 
 Build instructions:

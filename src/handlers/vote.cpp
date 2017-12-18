@@ -112,7 +112,7 @@ void Voting::Vote(const std::string &args, const std::string &voter)
 	}
 
 	auto optionID = from_string<size_t>(tokens.at(1));
-	if (!optionID || *optionID < 0 || *optionID >= poll->second._options.size())
+	if (!optionID || *optionID >= poll->second._options.size())
 	{
 		SendMessage("No such option");
 		return;
