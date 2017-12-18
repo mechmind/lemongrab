@@ -12,7 +12,7 @@
 class Pager : public LemonHandler
 {
 public:
-	Pager(LemonBot *bot);
+	explicit Pager(LemonBot *bot);
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	void HandlePresence(const std::string &from, const std::string &jid, bool connected) override;
 	const std::string GetHelp() const override;
@@ -27,7 +27,7 @@ private:
 	class Message
 	{
 	public:
-		Message(const DB::PagerMsg &dbmsg);
+		explicit Message(const DB::PagerMsg &dbmsg);
 		Message(const std::string &to, const std::string &text);
 
 		inline bool operator==(const Message &rhs);

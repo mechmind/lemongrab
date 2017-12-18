@@ -10,7 +10,7 @@ class UrlPreview
 		: public LemonHandler
 {
 public:
-	UrlPreview(LemonBot *bot);
+	explicit UrlPreview(LemonBot *bot);
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	const std::string GetHelp() const override;
 

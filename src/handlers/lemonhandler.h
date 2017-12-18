@@ -10,7 +10,7 @@
 class LemonBot
 {
 public:
-	LemonBot(std::string storagePath)
+	explicit LemonBot(const std::string &storagePath)
 		: _storage(initStorage(storagePath))
 	{}
 

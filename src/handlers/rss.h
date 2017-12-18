@@ -27,7 +27,7 @@ public:
 class RSSWatcher : public LemonHandler
 {
 public:
-	RSSWatcher(LemonBot *bot);
+	explicit RSSWatcher(LemonBot *bot);
 	~RSSWatcher();
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	const std::string GetHelp() const final;

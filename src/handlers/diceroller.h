@@ -9,7 +9,7 @@
 class DiceRoller : public LemonHandler
 {
 public:
-	DiceRoller(LemonBot *bot);
+	explicit DiceRoller(LemonBot *bot);
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	const std::string GetHelp() const override;
 

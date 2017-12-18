@@ -11,7 +11,7 @@
 class Quotes : public LemonHandler
 {
 public:
-	Quotes(LemonBot *bot);
+	explicit Quotes(LemonBot *bot);
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	const std::string GetHelp() const override;
 

@@ -25,7 +25,7 @@ public:
 class Voting : public LemonHandler
 {
 public:
-	Voting(LemonBot * bot);
+	explicit Voting(LemonBot * bot);
 
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	void HandlePresence(const std::string &from, const std::string &jid, bool connected) override;

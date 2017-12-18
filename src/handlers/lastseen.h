@@ -12,7 +12,7 @@
 class LastSeen : public LemonHandler
 {
 public:
-	LastSeen(LemonBot *bot);
+	explicit LastSeen(LemonBot *bot);
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 
 	void HandlePresence(const std::string &from, const std::string &jid, bool connected) override;

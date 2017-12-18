@@ -14,7 +14,7 @@ class evhttp; // NOLINT
 class GithubWebhooks : public LemonHandler
 {
 public:
-	GithubWebhooks(LemonBot *bot);
+	explicit GithubWebhooks(LemonBot *bot);
 	bool Init() final;
 	~GithubWebhooks() override;
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;

@@ -28,7 +28,7 @@ public:
 class Discord : public LemonHandler
 {
 public:
-	Discord(LemonBot *bot);
+	explicit Discord(LemonBot *bot);
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	bool Init() final;
 	void HandlePresence(const std::string &from, const std::string &jid, bool connected) final;
