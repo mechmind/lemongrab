@@ -49,7 +49,7 @@ include_directories(
 file(GLOB_RECURSE SRC_LIST "${CMAKE_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE TRAVIS_HELPERS "${CMAKE_SOURCE_DIR}/travis/*.sh")
 
-add_executable(${PROJECT_NAME} ${SRC_LIST} ${TRAVIS_HELPERS} .travis.yml .clang-tidy README.md LICENSE config.toml.default build-in-docker.sh Dockerfile)
+add_executable(${PROJECT_NAME} ${SRC_LIST} ${TRAVIS_HELPERS} .travis.yml .clang-tidy README.md LICENSE config.toml.default build-in-docker.sh)
 
 if(BUILD_TESTS)
     add_definitions(-D_BUILD_TESTS)

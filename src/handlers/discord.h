@@ -34,7 +34,7 @@ public:
 	void HandlePresence(const std::string &from, const std::string &jid, bool connected) final;
 	const std::string GetHelp() const final;
 
-	void SendToDiscord(std::string text);
+	void SendToDiscord(const std::string &text);
 
 	virtual ~Discord() final;
 

@@ -335,7 +335,7 @@ const std::string Discord::GetHelp() const
 		   "!jabber - list current jabber users online (works only in discord)";
 }
 
-void Discord::SendToDiscord(std::string text)
+void Discord::SendToDiscord(const std::string &text)
 {
 	rclientSafeSend(text);
 }
