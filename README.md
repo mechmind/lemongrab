@@ -50,9 +50,9 @@ cmake ..
 make
 ```
 
-Rename config.toml.default to config.toml, edit according to your needs (config file should be self-explanatory) and put it in the work directory
-Create a `logs` folder in work directory
-Create a `db` folder in work directory and run bot executable: ./lemongrab
+* Rename config.toml.default to config.toml, edit according to your needs (config file should be self-explanatory) and put it in the work directory
+* Create database folder set by General.DBPathPrefix (defaults to /var/db/lemongrab)
+* Create logs folder set by General.LogPathPrefix (defaults to /var/log/lemongrab)
 
 Commands
 ========
