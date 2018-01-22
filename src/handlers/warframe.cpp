@@ -98,7 +98,7 @@ void Warframe::Update()
 			LOG(INFO) << "New Warframe alert: " << guid << " " << title;
 
 			if (isOfIntereest(title) || author.find("Tactical") != author.npos)
-				SendMessage("New warframe alert" << title);
+				SendMessage(std::string("New warframe alert: ") + title);
 		}
 
 		_guids = newGuids;
