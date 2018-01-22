@@ -1,6 +1,8 @@
 #pragma once
 
-#include <sqlite_orm/sqlite_orm.h>
+#include <map>
+#include <regex>
+#include <sqlite_orm/sqlite_orm1.h>
 
 namespace DB
 {

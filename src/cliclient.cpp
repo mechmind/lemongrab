@@ -4,6 +4,8 @@
 #include "handlers/util/stringops.h"
 
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 ConsoleClient::ConsoleClient()
 {
@@ -36,6 +38,15 @@ bool ConsoleClient::Connect(const std::string &jid, const std::string &password)
 		if (getCommandArguments(input, "!setnick", args))
 		{
 			SetID(args, _jid);
+			continue;
+		}
+
+		if (input == "!fakerc") {
+			std::cout << "Faking reconnect" << std::endl;
+			FakeLeave(_nick, _jid);
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+			FakeJoin(_nick, _jid);
+			std::cout << "Done" << std::endl;
 			continue;
 		}
 
@@ -81,7 +92,7 @@ void ConsoleClient::FakeJoin(const std::string &nick, const std::string &jid)
 
 void ConsoleClient::FakeLeave(const std::string &nick, const std::string &jid)
 {
-	_handler->OnPresence(nick, jid, false, nick);
+	_handler->OnPresence(nick, jid, false, "");
 }
 
 void ConsoleClient::FakeRename(const std::string &nick, const std::string &jid, const std::string &newnick)

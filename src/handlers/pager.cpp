@@ -21,8 +21,9 @@ Pager::Message::Message(const DB::PagerMsg &dbmsg)
 	}
 }
 
-Pager::Message::Message(const std::string &to, const std::string &text)
-	: _recepient(to)
+Pager::Message::Message(long long id, const std::string &to, const std::string &text)
+	: _id(id)
+	, _recepient(to)
 	, _text(text)
 	, _expiration(std::chrono::system_clock::now() + std::chrono::hours(72))
 {
@@ -113,11 +114,11 @@ void Pager::RestoreMessages()
 void Pager::StoreMessage(const std::string &to, const std::string &from, const std::string &text)
 {
 	auto msgtext = from + ": " + text;
-	_messages.emplace_back(to, msgtext);
 
 	DB::PagerMsg newMsg = { -1, to, msgtext, static_cast<int>(std::chrono::system_clock::to_time_t(_messages.back()._expiration)) };
 	try {
-		getStorage().insert(newMsg);
+		auto id = getStorage().insert(newMsg);
+		_messages.emplace_back(id, to, msgtext);
 	} catch (std::exception &e) {
 		LOG(ERROR) << "Failed to save message: " << e.what();
 	}

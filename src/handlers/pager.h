@@ -28,7 +28,7 @@ private:
 	{
 	public:
 		explicit Message(const DB::PagerMsg &dbmsg);
-		Message(const std::string &to, const std::string &text);
+		Message(long long id, const std::string &to, const std::string &text);
 
 		inline bool operator==(const Message &rhs);
 
