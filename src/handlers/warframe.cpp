@@ -57,7 +57,7 @@ bool Warframe::isOfIntereest(const std::string &description)
 {
 	if (description.find("Orokin Reactor") != description.npos
 			|| description.find("Orokin Catalyst") != description.npos
-			|| description.find("Nitain Extract") != description.npos
+//			|| description.find("Nitain Extract") != description.npos
 			|| description.find("Corrosive Projection") != description.npos)
 		return true;
 
@@ -88,18 +88,17 @@ void Warframe::Update()
 
 		for (auto item : items) {
 			auto guid = item.child_value("guid");
+			newGuids.insert(guid);
 
 			std::string author = item.child_value("author");
 
 			if (_guids.count(guid) > 0) continue; // known guid
 
-			newGuids.insert(guid);
-
 			auto title = item.child_value("title");
 			LOG(INFO) << "New Warframe alert: " << guid << " " << title;
 
 			if (isOfIntereest(title) || author.find("Tactical") != author.npos)
-				SendMessage(title);
+				SendMessage("New warframe alert" << title);
 		}
 
 		_guids = newGuids;
