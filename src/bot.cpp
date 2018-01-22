@@ -11,6 +11,7 @@
 #include "handlers/vote.h"
 #include "handlers/rss.h"
 #include "handlers/discord.h"
+#include "handlers/warframe.h"
 
 #include "handlers/util/stringops.h"
 
@@ -86,6 +87,7 @@ void Bot::RegisterAllHandlers()
 	RegisterHandler<LeagueLookup>();
 	RegisterHandler<Voting>();
 	RegisterHandler<RSSWatcher>();
+	RegisterHandler<Warframe>();
 
 	for (const auto &handler : _handlersByName)
 		LOG(INFO) << "Handler loaded: " << handler.first;
