@@ -114,7 +114,7 @@ const std::string UrlPreview::GetHelp() const
 {
 	return "!url %regex% - search in URL history by title or url\n"
 		   "!wlisturl %regex% and !blisturl %regex% - enable/disable notifications for specific urls\n"
-		   "!wdelisturl %id% and !bdelisturl %id% - delete existing rules. !urlrules - print existing rules and their ids";
+		   "!delisturl %id% - delete existing rules. !urlrules - print existing rules and their ids";
 }
 
 std::string UrlPreview::getTitle(const std::string &content) const
