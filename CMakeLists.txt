@@ -21,6 +21,7 @@ find_package(Threads REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Cpr REQUIRED)
 find_package(Gloox REQUIRED)
+find_package(OpenSSL REQUIRED)
 find_package(Glog REQUIRED)
 find_package(LibEvent REQUIRED)
 find_package(JsonCpp REQUIRED)
@@ -37,6 +38,7 @@ endif()
 include_directories(
     ${CPR_INCLUDE_DIRS}
     ${GLOOX_INCLUDE_DIR}
+    ${OPENSSL_INCLUDE_DIR}
     ${GLOG_INCLUDE_DIR}
     ${CPPTOML_INCLUDE_DIR}
     ${JSONCPP_INCLUDE_DIR}
@@ -70,6 +72,7 @@ target_link_libraries(${PROJECT_NAME}
     ${CPR_LIBRARIES}
     ${CURL_LIBRARIES}
     ${GLOOX_LIBRARY}
+    ${OPENSSL_LIBRARIES}
     ${GLOG_LIBRARY}
     ${JSONCPP_LIBRARY}
     ${PUGIXML_LIBRARY}
