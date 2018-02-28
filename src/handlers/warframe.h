@@ -9,7 +9,8 @@ class Warframe : public LemonHandler
 {
 public:
 	explicit Warframe(LemonBot *bot);
-	~Warframe();
+	bool Init() final;
+	~Warframe() final;
 	ProcessingResult HandleMessage(const ChatMessage &msg) final;
 	const std::string GetHelp() const override;
 

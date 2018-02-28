@@ -25,7 +25,10 @@ Warframe::Warframe(LemonBot *bot)
 	: LemonHandler("warframe", bot)
 {
 	_updateSecondsMax = from_string<int>(GetRawConfigValue("Warframe.UpdateSeconds")).value_or(300);
+}
 
+bool Warframe::Init()
+{
 	_updateThread = std::thread(&UpdateThread, this);
 	nameThread(_updateThread, "Warframe updater");
 
