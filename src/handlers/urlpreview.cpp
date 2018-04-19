@@ -326,8 +326,8 @@ TEST(URLPreview, History)
 	UrlPreviewTestBot testBot;
 	UrlPreview t(&testBot);
 
-	t.HandleMessage(ChatMessage("Bob", "", "", "http://example.com/?test http://test.com/page#anchor", false));
-	t.HandleMessage(ChatMessage("Alice", "", "", "http://test.ru/", false));
+	t.HandleMessage(ChatMessage("Bob", "", "http://example.com/?test http://test.com/page#anchor", false));
+	t.HandleMessage(ChatMessage("Alice", "", "http://test.ru/", false));
 
 	std::list<std::string> expectedHistory = {
 		"http://test.ru/",

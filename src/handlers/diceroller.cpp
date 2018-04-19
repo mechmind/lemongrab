@@ -267,20 +267,20 @@ TEST(DiceTest, DiceRolls)
 	DiceTestBot testbot;
 	DiceRoller r(&testbot);
 
-	r.HandleMessage(ChatMessage("test", "", "", ".1d1", false));
+	r.HandleMessage(ChatMessage("test", "", ".1d1", false));
 	EXPECT_EQ(1, testbot._lastResult);
 
-	r.HandleMessage(ChatMessage("test", "", "", ".1d1 + 7 - 12 + 3d1", false));
+	r.HandleMessage(ChatMessage("test", "", ".1d1 + 7 - 12 + 3d1", false));
 	EXPECT_EQ(1+7-12+3, testbot._lastResult);
 
 	r.ResetRNG(1);
-	r.HandleMessage(ChatMessage("test", "", "", ".1d6", false));
+	r.HandleMessage(ChatMessage("test", "", ".1d6", false));
 	EXPECT_EQ(1, testbot._lastResult);
 
-	r.HandleMessage(ChatMessage("test", "", "", ".1d30", false));
+	r.HandleMessage(ChatMessage("test", "", ".1d30", false));
 	EXPECT_EQ(5, testbot._lastResult);
 
-	r.HandleMessage(ChatMessage("test", "", "", ".10d10 - 5d8 + 100d3", false));
+	r.HandleMessage(ChatMessage("test", "", ".10d10 - 5d8 + 100d3", false));
 	EXPECT_EQ(228, testbot._lastResult);
 }
 

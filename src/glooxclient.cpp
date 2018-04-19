@@ -94,7 +94,7 @@ void GlooxClient::handleMessage(const gloox::Message &msg, gloox::MessageSession
 		return;
 	}
 
-	ChatMessage message(msg.from().resource(), "", msg.from().bareJID().full(), msg.body(), false);
+	ChatMessage message(msg.from().resource(), "", msg.body(), false);
 	if (message._nick == _room->nick()
 			|| message._nick.empty())
 	{
@@ -127,7 +127,7 @@ void GlooxClient::handleMUCMessage(gloox::MUCRoom *room, const gloox::Message &m
 		return;
 	}
 
-	ChatMessage message(msg.from().resource(), "", msg.from().bareJID().full(), msg.body(), priv);
+	ChatMessage message(msg.from().resource(), "", msg.body(), priv);
 	if (message._nick == _room->nick()
 			|| message._nick.empty()
 			|| message._isPrivate)

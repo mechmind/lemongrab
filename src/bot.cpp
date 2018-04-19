@@ -119,7 +119,7 @@ void Bot::OnMessage(ChatMessage &msg)
 
 	if (_settings.verboseLogging())
 	{
-		LOG(INFO) << ">>> Message: " << msg._jid << " as " << msg._nick << " in " << msg._roomjid << " > " << msg._body
+		LOG(INFO) << ">>> Message: " << msg._jid << " as " << msg._nick << " > " << msg._body
 				  << " [ Priv? " << msg._isPrivate << " Module? " << msg._module_name << " Discord embed? " << msg._hasDiscordEmbed << " ]";
 	}
 

@@ -56,7 +56,7 @@ TEST(GoodEnoughTest, SimpleTrigger)
 	GoodEnoughBot testbot;
 	GoodEnough test(&testbot);
 
-	test.HandleMessage(ChatMessage("TestUser", "", "", "This test shoud be good enough", false));
+	test.HandleMessage(ChatMessage("TestUser", "", "This test shoud be good enough", false));
 	EXPECT_TRUE(testbot._success);
 }
 

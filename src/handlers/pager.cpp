@@ -173,11 +173,11 @@ TEST(PagerTest, MsgByNickCheckPresenseHandling)
 	PagerTestBot testbot;
 	Pager pager(&testbot);
 
-	pager.HandleMessage(ChatMessage("Bob", "", "", "!pager_stats", false));
+	pager.HandleMessage(ChatMessage("Bob", "", "!pager_stats", false));
 	EXPECT_EQ(1, testbot._received.size());
 	EXPECT_EQ("Paged messages: none", testbot._received.back());
 
-	pager.HandleMessage(ChatMessage("Bob", "", "", "!pager Alice test", false));
+	pager.HandleMessage(ChatMessage("Bob", "", "!pager Alice test", false));
 	EXPECT_EQ(2, testbot._received.size());
 
 	pager.HandlePresence("Alice", "alice@jabber.com", false);
@@ -186,7 +186,7 @@ TEST(PagerTest, MsgByNickCheckPresenseHandling)
 	pager.HandlePresence("Bob", "bob@jabber.com", true);
 	EXPECT_EQ(2, testbot._received.size());
 
-	pager.HandleMessage(ChatMessage("Bob", "", "", "!pager_stats", false));
+	pager.HandleMessage(ChatMessage("Bob", "", "!pager_stats", false));
 	EXPECT_EQ(3, testbot._received.size());
 	EXPECT_EQ("Paged messages: Alice (1)", testbot._received.back());
 
@@ -194,7 +194,7 @@ TEST(PagerTest, MsgByNickCheckPresenseHandling)
 	EXPECT_EQ(4, testbot._received.size());
 	EXPECT_EQ("Alice! You have a message >> Bob: test", testbot._received.back());
 
-	pager.HandleMessage(ChatMessage("Bob", "", "", "!pager_stats", false));
+	pager.HandleMessage(ChatMessage("Bob", "", "!pager_stats", false));
 	EXPECT_EQ(5, testbot._received.size());
 	EXPECT_EQ("Paged messages: none", testbot._received.back());
 }
@@ -204,11 +204,11 @@ TEST(PagerTest, MsgByJidCheckPresenseHandling)
 	PagerTestBot testbot;
 	Pager pager(&testbot);
 
-	pager.HandleMessage(ChatMessage("Bob", "", "", "!pager_stats", false));
+	pager.HandleMessage(ChatMessage("Bob", "", "!pager_stats", false));
 	EXPECT_EQ(1, testbot._received.size());
 	EXPECT_EQ("Paged messages: none", testbot._received.back());
 
-	pager.HandleMessage(ChatMessage("Bob", "", "", "!pager alice@jabber.com test", false));
+	pager.HandleMessage(ChatMessage("Bob", "", "!pager alice@jabber.com test", false));
 	EXPECT_EQ(2, testbot._received.size());
 
 	pager.HandlePresence("Alice", "alice@jabber.com", false);
@@ -217,7 +217,7 @@ TEST(PagerTest, MsgByJidCheckPresenseHandling)
 	pager.HandlePresence("Bob", "bob@jabber.com", true);
 	EXPECT_EQ(2, testbot._received.size());
 
-	pager.HandleMessage(ChatMessage("Bob", "", "", "!pager_stats", false));
+	pager.HandleMessage(ChatMessage("Bob", "", "!pager_stats", false));
 	EXPECT_EQ(3, testbot._received.size());
 	EXPECT_EQ("Paged messages: alice@jabber.com (1)", testbot._received.back());
 
@@ -225,7 +225,7 @@ TEST(PagerTest, MsgByJidCheckPresenseHandling)
 	EXPECT_EQ(4, testbot._received.size());
 	EXPECT_EQ("Alice! You have a message >> Bob: test", testbot._received.back());
 
-	pager.HandleMessage(ChatMessage("Bob", "", "", "!pager_stats", false));
+	pager.HandleMessage(ChatMessage("Bob", "", "!pager_stats", false));
 	EXPECT_EQ(5, testbot._received.size());
 	EXPECT_EQ("Paged messages: none", testbot._received.back());
 }
