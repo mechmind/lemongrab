@@ -33,6 +33,7 @@ bool Warframe::Init()
 	nameThread(_updateThread, "Warframe updater");
 
 	Update();
+	return true;
 }
 
 Warframe::~Warframe()

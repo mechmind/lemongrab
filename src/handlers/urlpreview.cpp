@@ -101,8 +101,12 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)
 
 		getStorage().insert(record);
 
-		if (shouldPrintTitle(site._url) && urlsFound < maxURLsInOneMessage)
-			SendMessage(formatHTMLchars(title));
+		if (shouldPrintTitle(site._url) && urlsFound < maxURLsInOneMessage) {
+			auto formattedTitle = formatHTMLchars(title);
+			if (!formattedTitle.empty()) {
+				SendMessage(formattedTitle);
+			}
+		}
 
 		urlsFound++;
 	}

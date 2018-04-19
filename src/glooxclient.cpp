@@ -104,6 +104,7 @@ void GlooxClient::handleMessage(const gloox::Message &msg, gloox::MessageSession
 		return;
 	}
 
+	message._origin = ChatMessage::Origin::XMPP;
 	_handler->OnMessage(message);
 }
 
@@ -138,6 +139,7 @@ void GlooxClient::handleMUCMessage(gloox::MUCRoom *room, const gloox::Message &m
 		return;
 	}
 
+	message._origin = ChatMessage::Origin::XMPP;
 	_handler->OnMessage(message);
 }
 

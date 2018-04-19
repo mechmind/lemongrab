@@ -213,7 +213,10 @@ bool Discord::Init()
 					text.append("\n" + embed["title"].get<std::string>());
 				}
 
-				this->SendMessage("<" + _users[id]._nick + "> " + text);
+				ChatMessage jabberTunneledMessage;
+				jabberTunneledMessage._body = "<" + _users[id]._nick + "> " + text;
+				jabberTunneledMessage._origin = ChatMessage::Origin::Discord;
+				this->SendMessage(jabberTunneledMessage);
 
 				ChatMessage msg;
 				msg._nick = _users[id]._nick;
@@ -222,6 +225,7 @@ bool Discord::Init()
 				msg._isAdmin = senderId == ownerId;
 				msg._isPrivate = false;
 				msg._hasDiscordEmbed = hasEmbeds;
+				msg._origin = ChatMessage::Origin::Discord;
 				this->TunnelMessage(msg);
 			} catch (std::exception &e) {
 				LOG(ERROR) << e.what();

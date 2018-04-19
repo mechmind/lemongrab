@@ -251,14 +251,25 @@ std::string Bot::GetOnlineUsers() const
 	return result;
 }
 
-void Bot::SendMessage(const std::string &text, const std::string &module_name)
+void Bot::SendMessage(const std::string &message)
 {
-	if (text.empty()) {
-		LOG(WARNING) << "SendMessage with no payload called from " << module_name;
+	// FIXME: get rid of this
+	ChatMessage msg;
+	msg._body = message;
+	msg._origin = ChatMessage::Origin::Bot;
+
+	SendMessage(msg);
+}
+
+void Bot::SendMessage(const ChatMessage &message)
+{
+	if (message._body.empty()) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(_sendMessageMutex);
+
+	// Throttle
 	auto currentTime = std::chrono::system_clock::now();
 	if (_lastMessage + std::chrono::seconds(_sendMessageThrottle) > currentTime)
 	{
@@ -268,10 +279,11 @@ void Bot::SendMessage(const std::string &text, const std::string &module_name)
 		_sendMessageThrottle = 1;
 	}
 
-	_xmpp->SendMessage(text, "");
+	// Send
+	_xmpp->SendMessage(message._body, ""); // FIXME: unused arg
 
-	if (module_name != "discord") {
-		dynamic_cast<Discord*>(_handlersByName["discord"].get())->SendToDiscord(text);
+	if (message._origin != ChatMessage::Origin::Discord) {
+		dynamic_cast<Discord*>(_handlersByName["discord"].get())->SendToDiscord(message._body);
 	}
 
 	_lastMessage = std::chrono::system_clock::now();

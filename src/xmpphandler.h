@@ -6,6 +6,13 @@
 class ChatMessage
 {
 public:
+	enum class Origin {
+		Unknown,
+		XMPP,
+		Discord,
+		Bot,
+	};
+
 	ChatMessage() = default;
 	ChatMessage(const std::string &nick,
 	            const std::string &jid,
@@ -25,6 +32,8 @@ public:
 	bool _hasDiscordEmbed = false;
 
 	std::string _module_name;
+
+	Origin _origin = Origin::Unknown;
 };
 
 class XMPPHandler

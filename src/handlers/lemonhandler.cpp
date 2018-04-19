@@ -25,8 +25,18 @@ const std::string &LemonHandler::GetName() const
 void LemonHandler::SendMessage(const std::string &text)
 {
 	if (_botPtr) {
-		_botPtr->SendMessage(text, _moduleName);
+		ChatMessage msg;
+		msg._body = text;
+		msg._origin = ChatMessage::Origin::Bot;
+		_botPtr->SendMessage(msg);
 	};
+}
+
+void LemonHandler::SendMessage(const ChatMessage &message)
+{
+	if (_botPtr) {
+		_botPtr->SendMessage(message);
+	}
 }
 
 void LemonHandler::TunnelMessage(const ChatMessage &msg)
