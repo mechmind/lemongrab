@@ -13,6 +13,7 @@
 namespace Hexicord {
 	class GatewayClient;
 	class RestClient;
+	class Snowflake;
 }
 
 class DiscordUser
@@ -41,6 +42,7 @@ public:
 private:
 	std::string sanitizeDiscord(const std::string &input);
 	void rclientSafeSend(const std::string &message);
+	void createRole(Hexicord::Snowflake guildid, const std::string &rolename, const Hexicord::Snowflake &userid);
 
 	bool _isEnabled = false;
 	boost::asio::io_service ioService;

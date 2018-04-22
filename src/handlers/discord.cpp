@@ -24,7 +24,7 @@ LemonHandler::ProcessingResult Discord::HandleMessage(const ChatMessage &msg)
 {
 	if (msg._module_name != GetName()) {
 		if (!_webhookURL.empty()) {
-
+			//FIXME: empty ID map crashes the bot
 			auto mappedId = GetRawConfigValue("discord.idmap", msg._jid);
 
 			std::string avatar_url;
@@ -123,6 +123,87 @@ void Discord::rclientSafeSend(const std::string &message)
 	}
 }
 
+void Discord::createRole(Hexicord::Snowflake guildid, const std::string &rolename, const Hexicord::Snowflake &userid)
+{
+	if (rolename == "dwarf")
+		return;
+
+	try {
+		std::string roleid;
+
+		auto roles = rclient->getRoles(guildid);
+		for (const auto &role : roles) {
+			if (role["name"].get<std::string>() == rolename) {
+				roleid = role["id"].get<std::string>();
+				LOG(INFO) << "Role " << rolename << " found: " << roleid;
+				break;
+			}
+		}
+
+		if (roleid.empty()) {
+			// create new role
+			nlohmann::json newRole;
+			newRole["name"] = rolename;
+			newRole["mentionable"] = true;
+
+			std::ostringstream o;
+			o << guildid.value;
+
+			auto url = "https://discordapp.com/api/guilds/" + o.str() + "/roles";
+			cpr::Response response = cpr::Post(cpr::Url{url},
+											   cpr::Header{{"Authorization"
+														   , "Bot " + rclient->token}},
+											   cpr::Body{newRole.dump()});
+
+			LOG(WARNING) << response.status_code;
+			LOG(WARNING) << response.text;
+
+			nlohmann::json newroleresult = nlohmann::json::parse(response.text);
+
+			//auto newroleresult = rclient->createRole(guildid, newRole);
+			roleid = newroleresult["id"].get<std::string>();
+		}
+
+		if (roleid.empty()) {
+			LOG(WARNING) << "Couldn't create another role!";
+			return;
+		};
+
+		Hexicord::Snowflake roleidflake(roleid);
+		auto member = rclient->getMember(guildid, userid);
+		auto oldroles = member["roles"];
+
+		oldroles.emplace_back(roleid);
+
+		std::ostringstream o;
+		o << guildid.value;
+
+		std::ostringstream u;
+		u << userid.value;
+
+		auto url = "https://discordapp.com/api/guilds/" + o.str() + "/members/" + u.str();
+
+		nlohmann::json newrolestuff;
+		newrolestuff["roles"] = oldroles;
+
+		cpr::Response response = cpr::Patch(cpr::Url{url},
+										   cpr::Header{{"Authorization"
+													   , "Bot " + rclient->token},
+											{"Content-Type", "application/json"}},
+										  cpr::Body{newrolestuff.dump()});
+
+		LOG(INFO) << "Role added:" << response.status_code;
+
+		//rclient->setMemberRoles(guildid, userid, newRoles);
+	} catch (nlohmann::json::parse_error& e) {
+		LOG(ERROR) << "Message: " << e.what()
+				   << "Id: " << e.id
+				   << "Byte: " << e.byte;
+	} catch (std::exception &e) {
+		LOG(ERROR) << e.what();
+	}
+}
+
 bool Discord::Init()
 {
 	auto botToken = GetRawConfigValue("discord.token");
@@ -130,8 +211,8 @@ bool Discord::Init()
 	auto ownerIdStr = GetRawConfigValue("discord.owner");
 	Hexicord::Snowflake ownerId = ownerIdStr.empty() ? Hexicord::Snowflake() : Hexicord::Snowflake(ownerIdStr);
 
-	//auto guildIdStr = GetRawConfigValue("discord.guild");
-	//Hexicord::Snowflake guildId = guildIdStr.empty() ? Hexicord::Snowflake() : Hexicord::Snowflake(guildIdStr);
+	auto guildIdStr = GetRawConfigValue("discord.guild");
+	Hexicord::Snowflake guildId = guildIdStr.empty() ? Hexicord::Snowflake() : Hexicord::Snowflake(guildIdStr);
 
 	auto channelIdStr = GetRawConfigValue("discord.channel");
 	_webhookURL = GetRawConfigValue("discord.webhook");
@@ -193,6 +274,11 @@ bool Discord::Init()
 						|| senderId == Hexicord::Snowflake(_selfWebhook)) return;
 
 				std::string text = json["content"];
+
+				std::string args;
+				if (getCommandArguments(text, "!sub", args)) {
+					createRole(guildId, args, Hexicord::Snowflake(id));
+				}
 
 				auto mentions =  json["mentions"];
 				for (const auto &mention : mentions) {
