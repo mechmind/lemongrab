@@ -82,6 +82,9 @@ bool GlooxClient::onTLSConnect(const gloox::CertInfo &info)
 // BUG: Groupchat messages that contain threads count as plain messages for some reason
 void GlooxClient::handleMessage(const gloox::Message &msg, gloox::MessageSession *session)
 {
+	LOG(INFO) << "Private message: " << msg.body();
+	return;
+
 #ifdef EVENT_LOGGING
 	LOG(INFO) << "Message: " << msg.body();
 #endif

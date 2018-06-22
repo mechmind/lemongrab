@@ -402,8 +402,8 @@ bool Discord::Init()
 				noErrors = false;
 				LOG(ERROR) << "ioService error: " << e.what();
 				gclient->disconnect();
-				LOG(ERROR) << "Reconnecting in 10 seconds";
-				std::this_thread::sleep_for(std::chrono::seconds(10));
+				LOG(ERROR) << "Reconnecting in 2 minutes";
+				std::this_thread::sleep_for(std::chrono::minutes(2));
 			};
 		} while (!noErrors);
 
