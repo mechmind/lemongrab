@@ -27,6 +27,7 @@ find_package(LibEvent REQUIRED)
 find_package(JsonCpp REQUIRED)
 find_package(CppToml REQUIRED)
 find_package(PugiXML REQUIRED)
+find_package(Hexicord REQUIRED)
 find_package(Boost COMPONENTS locale system REQUIRED)
 find_package(SQLite3 REQUIRED)
 
@@ -46,6 +47,7 @@ include_directories(
     ${LIBEVENT_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     ${SQLITE3_INCLUDE_DIRS}
+    ${HEXICORD_INCLUDE_DIR}
     )
 
 file(GLOB_RECURSE SRC_LIST "${CMAKE_SOURCE_DIR}/src/*.cpp")
@@ -80,7 +82,7 @@ target_link_libraries(${PROJECT_NAME}
     ${LIBEVENT_PTHREADS_LIBRARY}
     ${Boost_LIBRARIES}
     ${SQLITE3_LIBRARIES}
-    hexicord
+    ${HEXICORD_LIBRARY}
     )
 
 if (CHECK_INCLUDES)
