@@ -148,7 +148,13 @@ void GlooxClient::handleMUCMessage(gloox::MUCRoom *room, const gloox::Message &m
 
 void GlooxClient::handleMUCError(gloox::MUCRoom *room, gloox::StanzaError error)
 {
-	LOG(ERROR) << "MUC Error: " << error;
+	switch (error) {
+	case gloox::StanzaError::StanzaErrorResourceConstraint:
+		LOG(ERROR) << "MUC Error: resource constraint";
+		break;
+	default:
+		LOG(ERROR) << "MUC Error: " << error;
+	}
 }
 
 void GlooxClient::handleMUCInviteDecline(gloox::MUCRoom *room, const gloox::JID &invitee, const std::string &reason)
