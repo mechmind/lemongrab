@@ -227,7 +227,7 @@ std::list<Summoner> LeagueLookup::getSummonerNamesFromJSON(const Json::Value &ro
 
 bool LeagueLookup::InitializeChampions()
 {
-	std::string apiRequest = "https://" + _api._region + ".api.riotgames.com/lol/static-data/v3/champions?dataById=true&api_key=" + _api._key;
+	std::string apiRequest = "https://ddragon.leagueoflegends.com/cdn/6.24.1/data/en_US/champion.json";
 
 	Json::Value response;
 	if (RiotAPIRequest(apiRequest, response) != RiotAPIResponse::OK)
@@ -246,7 +246,7 @@ bool LeagueLookup::InitializeChampions()
 
 bool LeagueLookup::InitializeSpells()
 {
-	std::string apiRequest = "https://" + _api._region + ".api.riotgames.com/lol/static-data/v3/summoner-spells?api_key=" + _api._key;
+	std::string apiRequest = "https://ddragon.leagueoflegends.com/cdn/6.24.1/data/en_US/summoner.json";
 
 	Json::Value response;
 	if (RiotAPIRequest(apiRequest, response) != RiotAPIResponse::OK)

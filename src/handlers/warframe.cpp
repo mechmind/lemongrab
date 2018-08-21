@@ -61,8 +61,8 @@ bool Warframe::isOfIntereest(const std::string &description)
 {
 	if (description.find("Orokin Reactor") != description.npos
 			|| description.find("Orokin Catalyst") != description.npos
-//			|| description.find("Nitain Extract") != description.npos
-			|| description.find("Corrosive Projection") != description.npos)
+			|| description.find("Nitain Extract") != description.npos)
+//			|| description.find("Corrosive Projection") != description.npos)
 		return true;
 
 	return false;
