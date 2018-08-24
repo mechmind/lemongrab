@@ -30,7 +30,7 @@ find_package(PugiXML REQUIRED)
 find_package(Hexicord REQUIRED)
 find_package(Boost COMPONENTS locale system REQUIRED)
 find_package(SQLite3 REQUIRED)
-
+find_package(cpprestsdk REQUIRED)
 find_package(ZLIB REQUIRED)
 
 find_program(iwyu_path NAMES include-what-you-use iwyu)
@@ -50,6 +50,7 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
     ${SQLITE3_INCLUDE_DIRS}
     ${HEXICORD_INCLUDE_DIR}
+    ${CPPRESTSDK_INCLUDE_DIR}
     )
 
 file(GLOB_RECURSE SRC_LIST "${CMAKE_SOURCE_DIR}/src/*.cpp")
