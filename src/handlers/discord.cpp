@@ -106,6 +106,13 @@ void Discord::rclientSafeSend(const std::string &message)
 
 	const auto text = sanitizeDiscord(message);
 
+	cpr::Post(cpr::Url{_webhookURL},
+			  cpr::Payload{
+				  {"content", text},
+			  });
+
+	return;
+
 	try {
 		if (text.size() < 200) {
 			rclient->sendTextMessage(_channelID, text);
@@ -235,13 +242,15 @@ bool Discord::Init()
 	}
 
 	gclient.reset(new Hexicord::GatewayClient(ioService, botToken));
-	rclient.reset(new Hexicord::RestClient(ioService, botToken));
+//	rclient.reset(new Hexicord::RestClient(ioService, botToken));
 
+	//rclient->getGatewayUrlBot();
+/*
 	_clientThread = std::thread([=]() noexcept
-	{
-		nlohmann::json me;
-		gclient->eventDispatcher.addHandler(Hexicord::Event::Ready, [&me](const nlohmann::json& json) {
-			me = json["user"];
+	{*/
+
+		gclient->eventDispatcher.addHandler(Hexicord::Event::Ready, [&](const nlohmann::json& json) {
+			_myID = json["user"]["id"].get<std::string>();
 		});
 
 		gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberUpdate, [&](const nlohmann::json& json) {
@@ -263,14 +272,15 @@ bool Discord::Init()
 		});
 
 		gclient->eventDispatcher.addHandler(Hexicord::Event::MessageCreate, [&](const nlohmann::json& json) {
-			try {
+			//try
+			{
 				Hexicord::Snowflake senderId(json["author"].count("id") ? json["author"]["id"].get<std::string>()
 					: json["author"]["webhook_id"].get<std::string>());
 
 				auto id = json["author"]["id"].get<std::string>();
 
 				// Avoid responing to messages of bot.
-				if (senderId == Hexicord::Snowflake(me["id"].get<std::string>())
+				if (senderId == Hexicord::Snowflake(_myID)
 						|| senderId == Hexicord::Snowflake(_selfWebhook)) return;
 
 				std::string text = json["content"];
@@ -313,9 +323,9 @@ bool Discord::Init()
 				msg._hasDiscordEmbed = hasEmbeds;
 				msg._origin = ChatMessage::Origin::Discord;
 				this->TunnelMessage(msg);
-			} catch (std::exception &e) {
+			}/* catch (std::exception &e) {
 				LOG(ERROR) << e.what();
-			}
+			}*/
 		});
 
 		gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberAdd, [&](const nlohmann::json& json) {
@@ -383,11 +393,21 @@ bool Discord::Init()
 			}
 		});
 
+		gclient->connect("", //rclient->getGatewayUrlBot().first,
+						 Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
+		{
+							 { "since", nullptr   },
+							 { "status", "online" },
+							 { "game", {{ "name", "LEMONGRAB"}, { "type", 0 }}},
+							 { "afk", false }
+						 });
+		/*
+
 		bool noErrors = true;
 		do {
 			try {
 				noErrors = true;
-				gclient->connect(rclient->getGatewayUrlBot().first,
+				gclient->connect("", //rclient->getGatewayUrlBot().first,
 								 Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
 				{
 									 { "since", nullptr   },
@@ -395,7 +415,7 @@ bool Discord::Init()
 									 { "game", {{ "name", "LEMONGRAB"}, { "type", 0 }}},
 									 { "afk", false }
 								 });
-				ioService.run();
+//				ioService.run();
 			} catch (Hexicord::GatewayError &e) {
 				LOG(ERROR) << "Gateway error: " << e.what();
 			} catch (std::exception &e) {
@@ -405,10 +425,11 @@ bool Discord::Init()
 				LOG(ERROR) << "Reconnecting in 2 minutes";
 				std::this_thread::sleep_for(std::chrono::minutes(2));
 			};
+			LOG(WARNING) << "Discord loop exited";
 		} while (!noErrors);
 
 		LOG(INFO) << "Discord thread terminated";
-	});
+	});*/
 
 	_isEnabled = true;
 	return true;

@@ -31,6 +31,8 @@ find_package(Hexicord REQUIRED)
 find_package(Boost COMPONENTS locale system REQUIRED)
 find_package(SQLite3 REQUIRED)
 
+find_package(ZLIB REQUIRED)
+
 find_program(iwyu_path NAMES include-what-you-use iwyu)
 if(CHECK_INCLUDES AND NOT iwyu_path)
     message(FATAL_ERROR "Could not find the program include-what-you-use but CHECK_INCLUDES is ON")
@@ -83,6 +85,8 @@ target_link_libraries(${PROJECT_NAME}
     ${Boost_LIBRARIES}
     ${SQLITE3_LIBRARIES}
     ${HEXICORD_LIBRARY}
+    ${ZLIB_LIBARIRES}
+    cpprest
     )
 
 if (CHECK_INCLUDES)

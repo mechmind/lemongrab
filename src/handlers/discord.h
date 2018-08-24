@@ -51,6 +51,7 @@ private:
 	std::shared_ptr<Hexicord::RestClient> rclient;
 
 	std::map<std::string, DiscordUser> _users;
+	std::string _myID;
 
 	std::uint64_t _channelID = 0;
 	std::uint64_t _ownerID = 0;
