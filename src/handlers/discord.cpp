@@ -106,13 +106,6 @@ void Discord::rclientSafeSend(const std::string &message)
 
 	const auto text = sanitizeDiscord(message);
 
-	cpr::Post(cpr::Url{_webhookURL},
-			  cpr::Payload{
-				  {"content", text},
-			  });
-
-	return;
-
 	try {
 		if (text.size() < 200) {
 			rclient->sendTextMessage(_channelID, text);
@@ -241,10 +234,14 @@ bool Discord::Init()
 		return false;
 	}
 
-	gclient.reset(new Hexicord::GatewayClient(ioService, botToken));
-//	rclient.reset(new Hexicord::RestClient(ioService, botToken));
+	rclient.reset(new Hexicord::RestClient(ioService, botToken));
+	auto gatewayurl = rclient->getGatewayUrlBot();
+	std::cout << "Gateway URL: " << gatewayurl.first << std::endl;
 
-	//rclient->getGatewayUrlBot();
+
+	gclient.reset(new Hexicord::GatewayClient(ioService, botToken));
+
+
 /*
 	_clientThread = std::thread([=]() noexcept
 	{*/
@@ -393,7 +390,7 @@ bool Discord::Init()
 			}
 		});
 
-		gclient->connect("", //rclient->getGatewayUrlBot().first,
+		gclient->connect(rclient->getGatewayUrlBot().first,
 						 Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
 		{
 							 { "since", nullptr   },
