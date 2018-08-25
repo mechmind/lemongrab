@@ -6,8 +6,6 @@
 
 #include "lemonhandler.h"
 
-#include <boost/asio/io_service.hpp>
-
 #include <thread>
 
 namespace Hexicord {
@@ -45,7 +43,6 @@ private:
 	void createRole(Hexicord::Snowflake guildid, const std::string &rolename, const Hexicord::Snowflake &userid);
 
 	bool _isEnabled = false;
-	boost::asio::io_service ioService;
 
 	std::shared_ptr<Hexicord::GatewayClient> gclient;
 	std::shared_ptr<Hexicord::RestClient> rclient;
@@ -57,7 +54,6 @@ private:
 	std::uint64_t _ownerID = 0;
 	std::string _webhookURL;
 	std::string _selfWebhook;
-	std::thread _clientThread;
 
 #ifdef _BUILD_TESTS
 	FRIEND_TEST(DiscordTest, XMPP2DiscordNickTest);

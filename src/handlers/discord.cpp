@@ -76,9 +76,6 @@ Discord::~Discord()
 {
 	if (_isEnabled) {
 		gclient->disconnect();
-		ioService.stop();
-
-		_clientThread.join();
 	}
 }
 
@@ -234,12 +231,12 @@ bool Discord::Init()
 		return false;
 	}
 
-	rclient.reset(new Hexicord::RestClient(ioService, botToken));
+	rclient.reset(new Hexicord::RestClient(botToken));
 	auto gatewayurl = rclient->getGatewayUrlBot();
 	std::cout << "Gateway URL: " << gatewayurl.first << std::endl;
 
 
-	gclient.reset(new Hexicord::GatewayClient(ioService, botToken));
+	gclient.reset(new Hexicord::GatewayClient(botToken));
 
 
 /*
