@@ -238,192 +238,160 @@ bool Discord::Init()
 
 	gclient.reset(new Hexicord::GatewayClient(botToken));
 
+	gclient->eventDispatcher.addHandler(Hexicord::Event::Ready, [&](const nlohmann::json& json) {
+		_myID = json["user"]["id"].get<std::string>();
+	});
 
-/*
-	_clientThread = std::thread([=]() noexcept
-	{*/
-
-		gclient->eventDispatcher.addHandler(Hexicord::Event::Ready, [&](const nlohmann::json& json) {
-			_myID = json["user"]["id"].get<std::string>();
-		});
-
-		gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberUpdate, [&](const nlohmann::json& json) {
-			try {
-				auto id = json["user"]["id"].get<std::string>();
-				auto nickname = json["user"]["username"].get<std::string>();
-				if (json["nick"].is_string()) {
-					nickname = json["nick"].get<std::string>();
-				}
-
-				_users[id]._nick = nickname;
-				LOG(INFO) << "User " << id << " nick is set to " << nickname;
-				if (json["user"]["avatar"].is_string()) {
-					_users[id]._avatar = json["user"]["avatar"].get<std::string>();
-				}
-			} catch (std::exception &e) {
-				LOG(ERROR) << e.what();
+	gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberUpdate, [&](const nlohmann::json& json) {
+		try {
+			auto id = json["user"]["id"].get<std::string>();
+			auto nickname = json["user"]["username"].get<std::string>();
+			if (json["nick"].is_string()) {
+				nickname = json["nick"].get<std::string>();
 			}
-		});
 
-		gclient->eventDispatcher.addHandler(Hexicord::Event::MessageCreate, [&](const nlohmann::json& json) {
-			//try
-			{
-				Hexicord::Snowflake senderId(json["author"].count("id") ? json["author"]["id"].get<std::string>()
-					: json["author"]["webhook_id"].get<std::string>());
+			_users[id]._nick = nickname;
+			LOG(INFO) << "User " << id << " nick is set to " << nickname;
+			if (json["user"]["avatar"].is_string()) {
+				_users[id]._avatar = json["user"]["avatar"].get<std::string>();
+			}
+		} catch (std::exception &e) {
+			LOG(ERROR) << e.what();
+		}
+	});
 
-				auto id = json["author"]["id"].get<std::string>();
+	gclient->eventDispatcher.addHandler(Hexicord::Event::MessageCreate, [&](const nlohmann::json& json) {
+		try
+		{
+			Hexicord::Snowflake senderId(json["author"].count("id") ? json["author"]["id"].get<std::string>()
+				: json["author"]["webhook_id"].get<std::string>());
 
-				// Avoid responing to messages of bot.
-				if (senderId == Hexicord::Snowflake(_myID)
-						|| senderId == Hexicord::Snowflake(_selfWebhook)) return;
+			auto id = json["author"]["id"].get<std::string>();
 
-				std::string text = json["content"];
+			// Avoid responing to messages of bot.
+			if (senderId == Hexicord::Snowflake(_myID)
+					|| senderId == Hexicord::Snowflake(_selfWebhook)) return;
 
-				std::string args;
-				if (getCommandArguments(text, "!sub", args)) {
-					createRole(guildId, args, Hexicord::Snowflake(id));
-				}
+			std::string text = json["content"];
 
-				auto mentions =  json["mentions"];
-				for (const auto &mention : mentions) {
-					// FIXME: apparently mentions can have multiple formats? Can't find info on it anywhere
-					boost::algorithm::replace_all(text, "<@!" + mention["id"].get<std::string>() + ">", "@" + _users[mention["id"].get<std::string>()]._nick);
-					boost::algorithm::replace_all(text, "<@" + mention["id"].get<std::string>() + ">", "@" + _users[mention["id"].get<std::string>()]._nick);
-				}
+			std::string args;
+			if (getCommandArguments(text, "!sub", args)) {
+				createRole(guildId, args, Hexicord::Snowflake(id));
+			}
 
-				auto attachements = json["attachments"];
-				for (const auto &attachment : attachements) {
-					text.append("\n[ " + attachment["url"].get<std::string>() + " ]");
-				}
+			auto mentions =  json["mentions"];
+			for (const auto &mention : mentions) {
+				// FIXME: apparently mentions can have multiple formats? Can't find info on it anywhere
+				boost::algorithm::replace_all(text, "<@!" + mention["id"].get<std::string>() + ">", "@" + _users[mention["id"].get<std::string>()]._nick);
+				boost::algorithm::replace_all(text, "<@" + mention["id"].get<std::string>() + ">", "@" + _users[mention["id"].get<std::string>()]._nick);
+			}
 
-				bool hasEmbeds = false;
-				auto embeds = json["embeds"];
-				for (const auto &embed : embeds) {
-					hasEmbeds = true;
+			auto attachements = json["attachments"];
+			for (const auto &attachment : attachements) {
+				text.append("\n[ " + attachment["url"].get<std::string>() + " ]");
+			}
+
+			bool hasEmbeds = false;
+			auto embeds = json["embeds"];
+			for (const auto &embed : embeds) {
+				hasEmbeds = true;
+				if (embed["title"].is_string()) {
 					text.append("\n" + embed["title"].get<std::string>());
 				}
-
-				ChatMessage jabberTunneledMessage;
-				jabberTunneledMessage._body = "<" + _users[id]._nick + "> " + text;
-				jabberTunneledMessage._origin = ChatMessage::Origin::Discord;
-				this->SendMessage(jabberTunneledMessage);
-
-				ChatMessage msg;
-				msg._nick = _users[id]._nick;
-				msg._body = text;
-				msg._jid = _users[id]._username;
-				msg._isAdmin = senderId == ownerId;
-				msg._isPrivate = false;
-				msg._hasDiscordEmbed = hasEmbeds;
-				msg._origin = ChatMessage::Origin::Discord;
-				this->TunnelMessage(msg);
-			}/* catch (std::exception &e) {
-				LOG(ERROR) << e.what();
-			}*/
-		});
-
-		gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberAdd, [&](const nlohmann::json& json) {
-			try {
-				auto id = json["user"]["id"].get<std::string>();
-				auto nickname = json["user"]["username"].get<std::string>();
-				if (json["nick"].is_string()) {
-					nickname = json["nick"].get<std::string>();
-				}
-
-				_users[id]._nick = nickname;
-				LOG(INFO) << "User " << id << " nick is set to " << nickname;
-
-				if (json["user"]["avatar"].is_string()) {
-					_users[id]._avatar = json["user"]["avatar"].get<std::string>();
-				}
-			} catch (std::exception &e) {
-				LOG(ERROR) << e.what();
 			}
-		});
 
-		gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberRemove, [&](const nlohmann::json& json) {
-			try {
-				auto id = json["user"]["id"].get<std::string>();
-				_users.erase(id);
-			} catch (std::exception &e) {
-				LOG(ERROR) << e.what();
+			ChatMessage jabberTunneledMessage;
+			jabberTunneledMessage._body = "<" + _users[id]._nick + "> " + text;
+			jabberTunneledMessage._origin = ChatMessage::Origin::Discord;
+			this->SendMessage(jabberTunneledMessage);
+
+			ChatMessage msg;
+			msg._nick = _users[id]._nick;
+			msg._body = text;
+			msg._jid = _users[id]._username;
+			msg._isAdmin = senderId == ownerId;
+			msg._isPrivate = false;
+			msg._hasDiscordEmbed = hasEmbeds;
+			msg._origin = ChatMessage::Origin::Discord;
+			this->TunnelMessage(msg);
+		} catch (std::exception &e) {
+			LOG(ERROR) << e.what();
+		}
+	});
+
+	gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberAdd, [&](const nlohmann::json& json) {
+		try {
+			auto id = json["user"]["id"].get<std::string>();
+			auto nickname = json["user"]["username"].get<std::string>();
+			if (json["nick"].is_string()) {
+				nickname = json["nick"].get<std::string>();
 			}
-		});
 
-		gclient->eventDispatcher.addHandler(Hexicord::Event::PresenceUpdate, [&](const nlohmann::json& json) {
-			try {
-				auto id = json["user"]["id"].get<std::string>();
+			_users[id]._nick = nickname;
+			LOG(INFO) << "User " << id << " nick is set to " << nickname;
 
-				if (json["status"].is_string()) {
-					_users[id]._status = json["status"].get<std::string>();
+			if (json["user"]["avatar"].is_string()) {
+				_users[id]._avatar = json["user"]["avatar"].get<std::string>();
+			}
+		} catch (std::exception &e) {
+			LOG(ERROR) << e.what();
+		}
+	});
+
+	gclient->eventDispatcher.addHandler(Hexicord::Event::GuildMemberRemove, [&](const nlohmann::json& json) {
+		try {
+			auto id = json["user"]["id"].get<std::string>();
+			_users.erase(id);
+		} catch (std::exception &e) {
+			LOG(ERROR) << e.what();
+		}
+	});
+
+	gclient->eventDispatcher.addHandler(Hexicord::Event::PresenceUpdate, [&](const nlohmann::json& json) {
+		try {
+			auto id = json["user"]["id"].get<std::string>();
+
+			if (json["status"].is_string()) {
+				_users[id]._status = json["status"].get<std::string>();
+			}
+		} catch (std::exception &e) {
+			LOG(ERROR) << e.what();
+		}
+	});
+
+	gclient->eventDispatcher.addHandler(Hexicord::Event::GuildCreate, [&](const nlohmann::json& json) {
+		try {
+			auto members = json["members"];
+
+			for (auto member : members) {
+				auto id = member["user"]["id"].get<std::string>();
+
+				if (member["nick"].is_string()) {
+					_users[id]._nick = member["nick"].get<std::string>();
+					LOG(INFO) << "User " << id << " nick is set to " << _users[id]._nick;
+				} else {
+					_users[id]._nick = member["user"]["username"].get<std::string>();
+					LOG(INFO) << "User " << id << " nick is set to " << _users[id]._nick;
+				};
+
+				_users[id]._username = member["user"]["username"].get<std::string>() + "#" + member["user"]["discriminator"].get<std::string>();
+				if (member["user"]["avatar"].is_string()) {
+					_users[id]._avatar = member["user"]["avatar"].get<std::string>();
 				}
-			} catch (std::exception &e) {
-				LOG(ERROR) << e.what();
 			}
-		});
+		} catch (std::exception &e) {
+			LOG(ERROR) << e.what();
+		}
+	});
 
-		gclient->eventDispatcher.addHandler(Hexicord::Event::GuildCreate, [&](const nlohmann::json& json) {
-			try {
-				auto members = json["members"];
-
-				for (auto member : members) {
-					auto id = member["user"]["id"].get<std::string>();
-
-					if (member["nick"].is_string()) {
-						_users[id]._nick = member["nick"].get<std::string>();
-						LOG(INFO) << "User " << id << " nick is set to " << _users[id]._nick;
-					} else {
-						_users[id]._nick = member["user"]["username"].get<std::string>();
-						LOG(INFO) << "User " << id << " nick is set to " << _users[id]._nick;
-					};
-
-					_users[id]._username = member["user"]["username"].get<std::string>() + "#" + member["user"]["discriminator"].get<std::string>();
-					if (member["user"]["avatar"].is_string()) {
-						_users[id]._avatar = member["user"]["avatar"].get<std::string>();
-					}
-				}
-			} catch (std::exception &e) {
-				LOG(ERROR) << e.what();
-			}
-		});
-
-		gclient->connect(rclient->getGatewayUrlBot().first,
-						 Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
-		{
-							 { "since", nullptr   },
-							 { "status", "online" },
-							 { "game", {{ "name", "LEMONGRAB"}, { "type", 0 }}},
-							 { "afk", false }
-						 });
-		/*
-
-		bool noErrors = true;
-		do {
-			try {
-				noErrors = true;
-				gclient->connect("", //rclient->getGatewayUrlBot().first,
-								 Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
-				{
-									 { "since", nullptr   },
-									 { "status", "online" },
-									 { "game", {{ "name", "LEMONGRAB"}, { "type", 0 }}},
-									 { "afk", false }
-								 });
-//				ioService.run();
-			} catch (Hexicord::GatewayError &e) {
-				LOG(ERROR) << "Gateway error: " << e.what();
-			} catch (std::exception &e) {
-				noErrors = false;
-				LOG(ERROR) << "ioService error: " << e.what();
-				gclient->disconnect();
-				LOG(ERROR) << "Reconnecting in 2 minutes";
-				std::this_thread::sleep_for(std::chrono::minutes(2));
-			};
-			LOG(WARNING) << "Discord loop exited";
-		} while (!noErrors);
-
-		LOG(INFO) << "Discord thread terminated";
-	});*/
+	gclient->connect(rclient->getGatewayUrlBot().first,
+					 Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
+	{
+						 { "since", nullptr   },
+						 { "status", "online" },
+						 { "game", {{ "name", "LEMONGRAB"}, { "type", 0 }}},
+						 { "afk", false }
+					 });
 
 	_isEnabled = true;
 	return true;
