@@ -295,9 +295,7 @@ bool Discord::Init()
 			auto embeds = json["embeds"];
 			for (const auto &embed : embeds) {
 				hasEmbeds = true;
-				if (embed["title"].is_string()) {
-					text.append("\n" + embed["title"].get<std::string>());
-				}
+				text.append("\n" + embed.value<std::string>("title", "<no title>"));
 			}
 
 			ChatMessage jabberTunneledMessage;
