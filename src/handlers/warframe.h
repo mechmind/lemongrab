@@ -15,7 +15,7 @@ public:
 	const std::string GetHelp() const override;
 
 	std::thread _updateThread;
-	bool _isRunning = true;
+	bool _isRunning = false;
 	int _updateSecondsCurrent = 0;
 	int _updateSecondsMax = 0;
 	friend void UpdateThread(Warframe *parent);

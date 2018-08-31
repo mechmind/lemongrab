@@ -29,6 +29,7 @@ Warframe::Warframe(LemonBot *bot)
 
 bool Warframe::Init()
 {
+	_isRunning = true;
 	_updateThread = std::thread(&UpdateThread, this);
 	nameThread(_updateThread, "Warframe updater");
 
@@ -38,8 +39,10 @@ bool Warframe::Init()
 
 Warframe::~Warframe()
 {
-	_isRunning = false;
-	_updateThread.join();
+	if (_isRunning) {
+		_isRunning = false;
+		_updateThread.join();
+	}
 }
 
 LemonHandler::ProcessingResult Warframe::HandleMessage(const ChatMessage &msg)
