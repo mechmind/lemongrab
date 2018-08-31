@@ -48,6 +48,8 @@ private:
 	std::shared_ptr<Hexicord::RestClient> rclient;
 
 	std::map<std::string, DiscordUser> _users;
+	std::map<Hexicord::Snowflake, std::string> _channels;
+
 	std::string _myID;
 
 	std::uint64_t _channelID = 0;

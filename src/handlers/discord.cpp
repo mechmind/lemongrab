@@ -260,6 +260,20 @@ bool Discord::Init()
 		}
 	});
 
+	gclient->eventDispatcher.addHandler(Hexicord::Event::GuildCreate, [&](const nlohmann::json& json) {
+		try {
+			auto channels = json["channels"];
+			for (const auto &channel : channels) {
+				const auto channelID = Hexicord::Snowflake(channel["id"].get<std::string>());
+				const auto channelName = channel["name"].get<std::string>();
+				_channels[channelID] = channelName;
+				LOG(INFO) << "Channel " << channelID << " has name " << channelName;
+			};
+		} catch (...) {
+
+		}
+	});
+
 	gclient->eventDispatcher.addHandler(Hexicord::Event::MessageCreate, [&](const nlohmann::json& json) {
 		try
 		{
@@ -298,8 +312,15 @@ bool Discord::Init()
 				text.append("\n" + embed.value<std::string>("title", "<no title>"));
 			}
 
+			const auto channel = _channels.find(Hexicord::Snowflake(json["channel_id"].get<std::string>()));
+			std::string channelName;
+			if (channel != _channels.end() && Hexicord::Snowflake(_channelID) != (*channel).first) {
+				channelName = "[#" + (*channel).second + "] ";
+			}
+
+
 			ChatMessage jabberTunneledMessage;
-			jabberTunneledMessage._body = "<" + _users[id]._nick + "> " + text;
+			jabberTunneledMessage._body = channelName + "<" + _users[id]._nick + "> " + text;
 			jabberTunneledMessage._origin = ChatMessage::Origin::Discord;
 			this->SendMessage(jabberTunneledMessage);
 
