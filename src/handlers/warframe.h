@@ -2,6 +2,7 @@
 
 #include <string>
 #include <thread>
+#include <future>
 
 #include "lemonhandler.h"
 
@@ -16,7 +17,6 @@ public:
 
 	std::thread _updateThread;
 	bool _isRunning = false;
-	int _updateSecondsCurrent = 0;
 	int _updateSecondsMax = 0;
 	friend void UpdateThread(Warframe *parent);
 	bool isOfIntereest(const std::string &description);
@@ -25,4 +25,6 @@ public:
 
 private:
 	std::set<std::string> _guids;
+
+	std::promise<void> _stopThread;
 };

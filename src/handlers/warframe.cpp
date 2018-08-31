@@ -9,16 +9,17 @@
 
 static const std::string rssUrl = "http://content.warframe.com/dynamic/rss.php";
 
-void UpdateThread(Warframe *parent)
+void UpdateThread(std::future<void> &&stop, Warframe *parent, int updateSeconds)
 {
-	while (parent->_isRunning) {
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-		if (++parent->_updateSecondsCurrent >= parent->_updateSecondsMax)
-		{
-			parent->_updateSecondsCurrent = 0;
+	bool running = true;
+	do {
+		auto result = stop.wait_for(std::chrono::seconds(updateSeconds));
+		if (result == std::future_status::timeout) {
 			parent->Update();
+		} else {
+			running = false;
 		}
-	}
+	} while (running);
 }
 
 Warframe::Warframe(LemonBot *bot)
@@ -29,8 +30,11 @@ Warframe::Warframe(LemonBot *bot)
 
 bool Warframe::Init()
 {
+	_stopThread = std::promise<void>();
 	_isRunning = true;
-	_updateThread = std::thread(&UpdateThread, this);
+	_updateThread = std::thread([&](){
+		UpdateThread(std::move(_stopThread.get_future()), this, _updateSecondsMax);
+	});
 	nameThread(_updateThread, "Warframe updater");
 
 	Update();
@@ -40,7 +44,7 @@ bool Warframe::Init()
 Warframe::~Warframe()
 {
 	if (_isRunning) {
-		_isRunning = false;
+		_stopThread.set_value();
 		_updateThread.join();
 	}
 }
