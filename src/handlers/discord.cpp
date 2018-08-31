@@ -382,14 +382,15 @@ bool Discord::Init()
 		}
 	});
 
-	gclient->connect(rclient->getGatewayUrlBot().first,
-					 Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
-	{
-						 { "since", nullptr   },
-						 { "status", "online" },
-						 { "game", {{ "name", "LEMONGRAB"}, { "type", 0 }}},
-						 { "afk", false }
-					 });
+	gclient->init(rclient->getGatewayUrlBot().first,
+				  Hexicord::GatewayClient::NoSharding, Hexicord::GatewayClient::NoSharding,
+ {
+					  { "since", nullptr   },
+					  { "status", "online" },
+					  { "game", {{ "name", "LEMONGRAB"}, { "type", 0 }}},
+					  { "afk", false }
+				  });
+	gclient->connect();
 
 	_isEnabled = true;
 	return true;
