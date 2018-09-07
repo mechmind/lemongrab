@@ -39,7 +39,7 @@ LemonHandler::ProcessingResult Discord::HandleMessage(const ChatMessage &msg)
 					  });
 
 		} else if (_channelID != 0) {
-			rclientSafeSend(msg._body);
+            rclientSafeSend(msg._body, "");
 		}
 	}
 
@@ -57,15 +57,16 @@ LemonHandler::ProcessingResult Discord::HandleMessage(const ChatMessage &msg)
 		}
 
 		SendMessage(result);
-		rclientSafeSend(result);
+        rclientSafeSend(result, "");
 		return LemonHandler::ProcessingResult::StopProcessing;
 	}
 
 	if ((msg._body == "!jabber" || msg._body == "!xmpp")
 			&& msg._module_name == "discord") {
 		//SendMessage(_botPtr->GetOnlineUsers());
-		rclientSafeSend("\n" + _botPtr->GetOnlineUsers()
-						+ "\n`this message is invisible to xmpp users to avoid highlighting`");
+        rclientSafeSend("\n" + _botPtr->GetOnlineUsers()
+                        + "\n`this message is invisible to xmpp users to avoid highlighting`",
+                        msg._discordChannel);
 		return ProcessingResult::StopProcessing;
 	}
 
@@ -96,7 +97,7 @@ std::string Discord::sanitizeDiscord(const std::string &input)
 	return output;
 }
 
-void Discord::rclientSafeSend(const std::string &message)
+void Discord::rclientSafeSend(const std::string &message, const std::string &channel)
 {
 	if (!_isEnabled)
 		return;
@@ -105,11 +106,11 @@ void Discord::rclientSafeSend(const std::string &message)
 
 	try {
 		if (text.size() < 200) {
-			rclient->sendTextMessage(_channelID, text);
+            rclient->sendTextMessage(channel.empty() ? Hexicord::Snowflake(_channelID) : Hexicord::Snowflake(channel), text);
 		} else {
 			for (size_t i = 0; i <= text.length(); i+=200) {
 				auto cutText = text.substr(i, 200);
-				rclient->sendTextMessage(_channelID, cutText);
+                rclient->sendTextMessage(channel.empty() ? Hexicord::Snowflake(_channelID) : Hexicord::Snowflake(channel), cutText);
 				std::this_thread::sleep_for(std::chrono::seconds(1));
 			}
 		}
@@ -332,6 +333,7 @@ bool Discord::Init()
 			msg._isPrivate = false;
 			msg._hasDiscordEmbed = hasEmbeds;
 			msg._origin = ChatMessage::Origin::Discord;
+            msg._discordChannel = json["channel_id"].get<std::string>();
 			this->TunnelMessage(msg);
 		} catch (std::exception &e) {
 			LOG(ERROR) << e.what();
@@ -413,6 +415,8 @@ bool Discord::Init()
 				  });
 	gclient->connect();
 
+    LOG(INFO) << "Connected to discord";
+
 	_isEnabled = true;
 	return true;
 }
@@ -428,9 +432,9 @@ const std::string Discord::GetHelp() const
 		   "!jabber - list current jabber users online (works only in discord)";
 }
 
-void Discord::SendToDiscord(const std::string &text)
+void Discord::SendToDiscord(const std::string &text, const std::string &discordChannel)
 {
-	rclientSafeSend(text);
+    rclientSafeSend(text, discordChannel);
 }
 
 

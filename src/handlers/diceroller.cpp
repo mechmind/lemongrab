@@ -180,7 +180,7 @@ LemonHandler::ProcessingResult DiceRoller::HandleMessage(const ChatMessage &msg)
 	if (diceTokens.size() > 1)
 		resultDescription.append("= " + std::to_string(result));
 
-	SendMessage(msg._nick + ": " + resultDescription);
+    SendMessage(msg._nick + ": " + resultDescription, msg._discordChannel);
 
 	return ProcessingResult::StopProcessing;
 }

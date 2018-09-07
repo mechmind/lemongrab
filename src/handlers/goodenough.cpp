@@ -26,7 +26,7 @@ LemonHandler::ProcessingResult GoodEnough::HandleMessage(const ChatMessage &msg)
 		auto loc = lowercase.find(phrase);
 		if (loc != lowercase.npos)
 		{
-			SendMessage(msg._nick + ": " + response);
+            SendMessage(msg._nick + ": " + response, msg._discordChannel);
 			return ProcessingResult::StopProcessing;
 		}
 	}

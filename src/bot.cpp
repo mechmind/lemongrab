@@ -251,12 +251,13 @@ std::string Bot::GetOnlineUsers() const
 	return result;
 }
 
-void Bot::SendMessage(const std::string &message)
+void Bot::SendMessage(const std::string &message, const std::string &channel)
 {
 	// FIXME: get rid of this
 	ChatMessage msg;
 	msg._body = message;
 	msg._origin = ChatMessage::Origin::Bot;
+    msg._discordChannel = channel;
 
 	SendMessage(msg);
 }
@@ -283,7 +284,7 @@ void Bot::SendMessage(const ChatMessage &message)
 	_xmpp->SendMessage(message._body, ""); // FIXME: unused arg
 
 	if (message._origin != ChatMessage::Origin::Discord) {
-		dynamic_cast<Discord*>(_handlersByName["discord"].get())->SendToDiscord(message._body);
+        dynamic_cast<Discord*>(_handlersByName["discord"].get())->SendToDiscord(message._body, message._discordChannel);
 	}
 
 	_lastMessage = std::chrono::system_clock::now();

@@ -33,7 +33,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 
 	if (msg._body == "!seenstat")
 	{
-		SendMessage(GetStats());
+        SendMessage(GetStats(), msg._discordChannel);
 		return ProcessingResult::KeepGoing;
 	}
 
@@ -41,7 +41,7 @@ LemonHandler::ProcessingResult LastSeen::HandleMessage(const ChatMessage &msg)
 	if (!getCommandArguments(msg._body, "!seen", wantedUser))
 		return ProcessingResult::KeepGoing;
 
-	SendMessage(GetUserInfo(wantedUser));
+    SendMessage(GetUserInfo(wantedUser), msg._discordChannel);
 	return ProcessingResult::KeepGoing;
 }
 

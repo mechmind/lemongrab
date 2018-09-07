@@ -33,13 +33,13 @@ public:
 	void HandlePresence(const std::string &from, const std::string &jid, bool connected) final;
 	const std::string GetHelp() const final;
 
-	void SendToDiscord(const std::string &text);
+    void SendToDiscord(const std::string &text, const std::string &discordChannel);
 
 	virtual ~Discord() final;
 
 private:
 	std::string sanitizeDiscord(const std::string &input);
-	void rclientSafeSend(const std::string &message);
+    void rclientSafeSend(const std::string &message, const std::string &channel);
 	void createRole(Hexicord::Snowflake guildid, const std::string &rolename, const Hexicord::Snowflake &userid);
 
 	bool _isEnabled = false;

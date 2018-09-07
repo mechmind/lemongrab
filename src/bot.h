@@ -43,7 +43,7 @@ public:
 	std::string GetOnlineUsers() const final;
 
 	// LemonBot interface
-	void SendMessage(const std::string &message) final;
+    void SendMessage(const std::string &message, const std::string &channel = "") final;
 	void SendMessage(const ChatMessage &message) final;
 	void TunnelMessage(const ChatMessage &msg, const std::string &module_name) final;
 

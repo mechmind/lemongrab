@@ -34,6 +34,7 @@ public:
 	std::string _module_name;
 
 	Origin _origin = Origin::Unknown;
+    std::string _discordChannel;
 };
 
 class XMPPHandler

@@ -14,9 +14,9 @@ public:
 		: _storage(initStorage(storagePath))
 	{}
 
-	virtual void SendMessage(const std::string &text) {}
+    virtual void SendMessage(const std::string &text, const std::string &channel) {}
 	virtual void SendMessage(const ChatMessage &msg) {
-		SendMessage(msg._body);
+        SendMessage(msg._body, "");
 	}
 	virtual void TunnelMessage(const ChatMessage &msg, const std::string &module_name) {}
 
@@ -74,7 +74,7 @@ protected:
 	 * @brief Send reply to MUC
 	 * @param text
 	 */
-	void SendMessage(const std::string &text);
+    void SendMessage(const std::string &text, const std::string &channel = "");
 	void SendMessage(const ChatMessage &message);
 
 	/**

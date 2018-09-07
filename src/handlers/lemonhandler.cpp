@@ -22,12 +22,13 @@ const std::string &LemonHandler::GetName() const
 	return _moduleName;
 }
 
-void LemonHandler::SendMessage(const std::string &text)
+void LemonHandler::SendMessage(const std::string &text, const std::string &channel)
 {
 	if (_botPtr) {
 		ChatMessage msg;
 		msg._body = text;
 		msg._origin = ChatMessage::Origin::Bot;
+        msg._discordChannel = channel;
 		_botPtr->SendMessage(msg);
 	};
 }
