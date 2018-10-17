@@ -314,8 +314,10 @@ bool Discord::Init()
 			}
 
 			const auto channel = _channels.find(Hexicord::Snowflake(json["channel_id"].get<std::string>()));
+			bool mirror = true;
 			std::string channelName;
 			if (channel != _channels.end() && Hexicord::Snowflake(_channelID) != (*channel).first) {
+				mirror = false;
 				channelName = "[#" + (*channel).second + "] ";
 			}
 
@@ -323,7 +325,7 @@ bool Discord::Init()
 			ChatMessage jabberTunneledMessage;
 			jabberTunneledMessage._body = channelName + "<" + _users[id]._nick + "> " + text;
 			jabberTunneledMessage._origin = ChatMessage::Origin::Discord;
-			this->SendMessage(jabberTunneledMessage);
+			if (mirror) this->SendMessage(jabberTunneledMessage);
 
 			ChatMessage msg;
 			msg._nick = _users[id]._nick;
@@ -333,7 +335,7 @@ bool Discord::Init()
 			msg._isPrivate = false;
 			msg._hasDiscordEmbed = hasEmbeds;
 			msg._origin = ChatMessage::Origin::Discord;
-            msg._discordChannel = json["channel_id"].get<std::string>();
+			msg._discordChannel = json["channel_id"].get<std::string>();
 			this->TunnelMessage(msg);
 		} catch (std::exception &e) {
 			LOG(ERROR) << e.what();
