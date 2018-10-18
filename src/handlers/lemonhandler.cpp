@@ -28,7 +28,7 @@ void LemonHandler::SendMessage(const std::string &text, const std::string &chann
 		ChatMessage msg;
 		msg._body = text;
 		msg._origin = ChatMessage::Origin::Bot;
-        msg._discordChannel = channel;
+		msg._discordChannel = channel;
 		_botPtr->SendMessage(msg);
 	};
 }

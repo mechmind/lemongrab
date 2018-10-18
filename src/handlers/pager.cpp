@@ -160,7 +160,7 @@ public:
 		_storage.sync_schema();
 	}
 
-	void SendMessage(const std::string &text)
+	void SendMessage(const std::string &text, const std::string &channel)
 	{
 		_received.push_back(text);
 	}

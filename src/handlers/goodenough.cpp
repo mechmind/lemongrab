@@ -26,7 +26,7 @@ LemonHandler::ProcessingResult GoodEnough::HandleMessage(const ChatMessage &msg)
 		auto loc = lowercase.find(phrase);
 		if (loc != lowercase.npos)
 		{
-            SendMessage(msg._nick + ": " + response, msg._discordChannel);
+			SendMessage(msg._nick + ": " + response, msg._discordChannel);
 			return ProcessingResult::StopProcessing;
 		}
 	}
@@ -43,7 +43,7 @@ class GoodEnoughBot : public LemonBot
 public:
 	GoodEnoughBot() : LemonBot(":memory:") { }
 
-	void SendMessage(const std::string &text)
+	void SendMessage(const std::string &text, const std::string &channel)
 	{
 		_success = (text == "TestUser: " + response);
 	}

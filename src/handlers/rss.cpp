@@ -206,11 +206,11 @@ public:
 		_storage.sync_schema();
 	}
 
-	void SendMessage(const std::string &text);
+	void SendMessage(const std::string &text, const std::string &channel);
 	std::vector<std::string> _received;
 };
 
-void RssTestBot::SendMessage(const std::string &text)
+void RssTestBot::SendMessage(const std::string &text, const std::string &channel)
 {
 	_received.push_back(text);
 }

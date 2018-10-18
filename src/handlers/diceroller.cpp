@@ -180,7 +180,7 @@ LemonHandler::ProcessingResult DiceRoller::HandleMessage(const ChatMessage &msg)
 	if (diceTokens.size() > 1)
 		resultDescription.append("= " + std::to_string(result));
 
-    SendMessage(msg._nick + ": " + resultDescription, msg._discordChannel);
+	SendMessage(msg._nick + ": " + resultDescription, msg._discordChannel);
 
 	return ProcessingResult::StopProcessing;
 }
@@ -207,7 +207,7 @@ class DiceTestBot : public LemonBot
 public:
 	DiceTestBot() : LemonBot(":memory:") { }
 
-	void SendMessage(const std::string &text)
+	void SendMessage(const std::string &text, const std::string &channel)
 	{
 		if (text.find('=') > text.find('}') && text.find('=') < text.npos)
 			_lastResult = std::stoi(text.substr(text.find_last_of('=') + 1));
