@@ -3,7 +3,14 @@ cmake_minimum_required(VERSION 3.8.0 FATAL_ERROR)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb3 -O0 -Wall")
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CLANG_SANITIZERS "-fsanitize=undefined,address -fno-omit-frame-pointer")
+  # using regular Clang or AppleClang
+endif()
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CLANG_SANITIZERS} -ggdb3 -O0 -Wall")
+set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} ${CLANG_SANITIZERS}")
 
 option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_COVER "Generate test coverage" OFF)
