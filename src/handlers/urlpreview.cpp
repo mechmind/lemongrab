@@ -104,7 +104,7 @@ LemonHandler::ProcessingResult UrlPreview::HandleMessage(const ChatMessage &msg)
 		if (shouldPrintTitle(site._url) && urlsFound < maxURLsInOneMessage) {
 			auto formattedTitle = formatHTMLchars(title);
 			if (!formattedTitle.empty()) {
-				SendMessage(formattedTitle);
+				SendMessage(formattedTitle, msg._discordChannel);
 			}
 		}
 
