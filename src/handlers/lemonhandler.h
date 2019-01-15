@@ -28,6 +28,8 @@ public:
 	virtual std::string GetDBPathPrefix() const { return "db/"; }
 	virtual ~LemonBot() {}
 
+    virtual void SendDiscordPresense(const std::string &nick, const std::string &userid, bool online) {}
+
 	Storage _storage;
 };
 

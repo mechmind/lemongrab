@@ -46,6 +46,7 @@ public:
     void SendMessage(const std::string &message, const std::string &channel = "") final;
 	void SendMessage(const ChatMessage &message) final;
 	void TunnelMessage(const ChatMessage &msg, const std::string &module_name) final;
+    void SendDiscordPresense(const std::string &nick, const std::string &userid, bool online) final;
 
 	std::string GetRawConfigValue(const std::string &name) const final;
 	std::string GetRawConfigValue(const std::string &table, const std::string &name) const final;

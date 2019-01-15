@@ -294,7 +294,12 @@ void Bot::TunnelMessage(const ChatMessage &msg, const std::string &module_name)
 {
 	auto newMsg = msg;
 	newMsg._module_name = module_name;
-	OnMessage(newMsg);
+    OnMessage(newMsg);
+}
+
+void Bot::SendDiscordPresense(const std::string &nick, const std::string &userid, bool online)
+{
+    OnPresence(nick, userid, online, "");
 }
 
 std::string Bot::GetRawConfigValue(const std::string &name) const

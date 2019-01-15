@@ -356,6 +356,8 @@ bool Discord::Init()
 			if (json["user"]["avatar"].is_string()) {
 				_users[id]._avatar = json["user"]["avatar"].get<std::string>();
 			}
+
+            _botPtr->SendDiscordPresense(nickname, id, false);
 		} catch (std::exception &e) {
 			LOG(ERROR) << e.what();
 		}
@@ -376,6 +378,7 @@ bool Discord::Init()
 
 			if (json["status"].is_string()) {
 				_users[id]._status = json["status"].get<std::string>();
+                _botPtr->SendDiscordPresense(_users[id]._nick, id, _users[id]._status != "offline");
 			}
 		} catch (std::exception &e) {
 			LOG(ERROR) << e.what();
