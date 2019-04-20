@@ -117,7 +117,7 @@ void Discord::rclientSafeSend(const std::string &message, const std::string &cha
                     lastSplit = cursor + defaultSplitSize;
 				}
 
-                auto cutText = text.substr(cursor, lastSplit);
+                auto cutText = text.substr(cursor, lastSplit - cursor);
 				rclient->sendTextMessage(channel.empty() ? Hexicord::Snowflake(_channelID) : Hexicord::Snowflake(channel), cutText);
 				std::this_thread::sleep_for(std::chrono::seconds(1));
 			}
